@@ -1,15 +1,12 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header class="bg-white text-grey-8">
+    <q-header class="bg-grey-1 text-grey-8 inset-shadow" elevated>
       <q-toolbar class="GNL__toolbar">
-
         <q-toolbar-title shrink class="row items-center no-wrap">
           <img width="100px" height="40px" src="../assets/logo.png" />
         </q-toolbar-title>
-
         <q-space />
         <q-space />
-
         <div class="q-gutter-sm row items-center no-wrap">
           <q-btn
             v-if="$q.screen.gt.sm"
@@ -43,7 +40,10 @@
     </q-header>
 
     <q-page-container>
-      <router-view />
+      <div class="row">
+          <router-view />
+      </div>
+
     </q-page-container>
   </q-layout>
 </template>
