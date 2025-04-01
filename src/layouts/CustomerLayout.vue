@@ -1,4 +1,5 @@
 <template>
+
   <q-layout view="hHh lpR fFf">
     <q-header class="bg-grey-1 text-grey-8 inset-shadow" elevated>
       <q-toolbar class="GNL__toolbar">
@@ -40,10 +41,7 @@
     </q-header>
 
     <q-page-container>
-      <div class="row">
           <router-view />
-      </div>
-
     </q-page-container>
   </q-layout>
 </template>

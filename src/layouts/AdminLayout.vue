@@ -150,30 +150,47 @@ const zoomLeftDrawer = () => {
               <q-item-label>Dashboard</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item active-class="q-item-no-link-highlighting">
+          <q-item to="/admin/appointment" active-class="q-item-no-link-highlighting">
+            <q-item-section avatar>
+              <q-icon name="calendar_month" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Appointment</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item to="/admin/schedule" active-class="q-item-no-link-highlighting">
+            <q-item-section avatar>
+              <q-icon name="calendar_month" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Schedule</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item to="/admin/staff" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Setting</q-item-label>
+              <q-item-label>Staff</q-item-label>
             </q-item-section>
           </q-item>
-          <q-expansion-item icon="pages" label="Products">
+          <q-expansion-item icon="pages" label="Services">
             <q-list class="q-pl-lg">
-              <q-item active-class="q-item-no-link-highlighting">
+              <q-item to="/admin/package" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="view_list" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>All</q-item-label>
+                  <q-item-label>Package</q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item active-class="q-item-no-link-highlighting">
+              <q-item to="/admin/service"  active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="add_box" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>Add</q-item-label>
+                  <q-item-label>Service</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
