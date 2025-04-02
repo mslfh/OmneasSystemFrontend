@@ -753,7 +753,8 @@ const tick_options = [
 const submitAppointment = async () => {
   try {
     const payload = {
-      booking_time: date.value+' '+ time.value,
+      booking_date: date.value,
+      booking_time: time.value,
       customer_first_name: name.value.first_name,
       customer_last_name: name.value.last_name,
       is_first: first_time.value,
