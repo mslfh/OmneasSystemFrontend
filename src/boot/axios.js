@@ -20,7 +20,7 @@ api.interceptors.response.use((response) => {
   if (error.response?.status === 401) {
     console.error("Unauthenticated. Redirecting to login...");
     localStorage.removeItem("authToken");
-    window.location.href = "/admin/login";
+    window.location.href = "/login";
   }
   return Promise.reject(error);
 });

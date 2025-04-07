@@ -1,13 +1,16 @@
 <template>
 
   <q-layout view="hHh lpR fFf">
-    <q-header class="bg-grey-1 text-grey-8 inset-shadow" elevated>
+    <q-header class="bg-grey-1 text-grey-8" elevated  :inset-shadow="!$q.screen.gt.sm">
       <q-toolbar class="GNL__toolbar">
+
         <q-toolbar-title shrink class="row items-center no-wrap">
           <img width="100px" height="40px" src="../assets/logo.png" />
         </q-toolbar-title>
+
         <q-space />
         <q-space />
+
         <div class="q-gutter-sm row items-center no-wrap">
           <q-btn
             v-if="$q.screen.gt.sm"
@@ -19,15 +22,14 @@
           >
             <q-tooltip>Google Apps</q-tooltip>
           </q-btn>
-
           <q-btn round dense flat color="grey-8" icon="notifications">
-            <q-badge color="red" text-color="white" floating> 2 </q-badge>
+            <q-badge color="deep-orange-5" text-color="white" floating> 2 </q-badge>
             <q-tooltip>Notifications</q-tooltip>
           </q-btn>
 
           <q-btn round flat>
             <q-avatar size="26px">
-              <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+              <img src="https://cdn.quasar.dev/img/avatar5.jpg" />
             </q-avatar>
             <q-menu>
               <q-list style="min-width: 200px">

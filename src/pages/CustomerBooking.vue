@@ -1,8 +1,10 @@
 <template>
   <div class="row bg-grey-1">
+
     <div class="col-md-2 col-sm-0 col-xs-0"></div>
     <div class="col-md-9 col-sm-12 col-xs-12">
       <q-page class="q-pa-sm q-ma-md">
+
         <!-- notice -->
         <!-- <q-card class="q-mb-md">
       <q-card-header>
@@ -66,15 +68,20 @@
                 :done="step > 1"
                 :header-nav="step > 1"
               >
+
                 <!-- Service List -->
-                <q-card
+                 <q-card
                   flat
                   bordered
                   class="q-mb-md"
                   v-for="pkg in packages"
                   :key="pkg.id"
                 >
-                  <q-card-section class="q-pa-sm">
+
+                  <q-card-section
+                    class="q-pa-sm"
+                    @click="toggleExpanded(pkg.id)"
+                  >
                     <div
                       class="text-subtitle1 text-weight-bold q-mt-sm q-mb-xs text-blue-9"
                     >
@@ -137,7 +144,7 @@
                                   () => {
                                     done1 = true;
                                     step = 2;
-                                    selectedService = service.id;
+                                    selectedService = service;
                                   }
                                 "
                               />
@@ -148,18 +155,21 @@
                     </div>
                   </q-slide-transition>
                 </q-card>
+
               </q-step>
 
-              <!-- Select a Time & Practitioner -->
+              <!-- Select a Time & Therapist -->
               <q-step
                 :name="2"
-                title="Time & Practitioner"
+                title="Time & Therapist"
                 icon="date_range"
                 :done="step > 2"
                 :header-nav="step > 2"
               >
                 <div class="q-pa-md-md q-pa-none-xs">
-                  <div class="text-h6 text-grey-8 q-pb-md">* Select Time</div>
+                  <div class="text-h6 text-grey-8 q-pb-md">
+                    <q-icon name="o_alarm" /> Select Time
+                  </div>
                   <q-input filled v-model="date" mask="date" :rules="['date']">
                     <template v-slot:append>
                       <q-icon name="event" class="cursor-pointer">
@@ -172,10 +182,10 @@
                           <q-date
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
-                            @update:model-value="selectDate"
+                            @update:model-value="fetchUnavailabelTime"
                             :events="events"
-                            :event-color="(date) => eventColors[date] || ''"
-                            :options="dateOptions"
+                            event-color="teal"
+                            :options="dateOptionsFn"
                           >
                             <div class="row items-center justify-end">
                               <q-btn
@@ -200,7 +210,6 @@
                           transition-hide="scale"
                         >
                           <q-time
-                            now-btn
                             v-model="time"
                             :landscape="$q.screen.gt.xs"
                             :options="optionsFnTime"
@@ -223,20 +232,31 @@
                 <div class="q-pa-md-md q-pa-none-xs q-gutter-md">
                   <q-separator />
                   <div class="text-h6 text-grey-8 q-pb-md">
-                    * Select Practitioner
+                    <q-icon name="favorite_border" /> Select Therapist
                   </div>
-                  <div class="row q-pa-md-md q-pa-none-xs">
+                  <div v-if="availableStaff.length == 0">
+                    <q-chip
+                      class="q-mb-xm"
+                      color="deep-orange-2"
+                      icon="hourglass_bottom"
+                      label="No therapist available at this time."
+                    />
+                  </div>
+                  <div
+                    v-if="availableStaff.length != 0"
+                    class="row q-pa-md-md q-pa-none-xs"
+                  >
                     <q-chip
                       clickable
                       @click="
                         () => {
-                          selectedStaff = '';
+                          selectedStaff.id = '';
                         }
                       "
-                      :color="selectedStaff === '' ? 'orange-2' : 'blue-1'"
+                      :color="selectedStaff.id === '' ? 'orange-2' : 'blue-1'"
                       icon="chevron_right"
                     >
-                      Any practitioner
+                      Any therapist
                     </q-chip>
                     <q-separator vertical />
                     <q-chip
@@ -244,16 +264,20 @@
                       :key="staff.id"
                       clickable
                       :color="
-                        selectedStaff === staff.id ? 'orange-2' : 'blue-2'
+                        selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'
                       "
                       @click="
                         () => {
-                          selectedStaff = staff.id;
+                          selectedStaff.id = staff.id;
+                          selectedStaff.name = staff.name;
+                          selectedStaff.profile_photo_url =
+                            staff.profile_photo_url;
+                          selectedStaff.position = staff.position;
                         }
                       "
                     >
                       <q-avatar>
-                        <img src="https://cdn.quasar.dev/img/avatar5.jpg" />
+                        <img :src="staff.profile_photo_url" />
                       </q-avatar>
                       {{ staff.name }}
                     </q-chip>
@@ -269,7 +293,7 @@
                       }
                     "
                     class="float-right q-mr-md q-mb-md"
-                    color="blue"
+                    color="blue-9"
                     label="Next"
                   />
                   <q-btn
@@ -293,7 +317,8 @@
               >
                 <div class="row q-gutter-md">
                   <div class="col-10 text-h6 text-grey-7">
-                    <q-icon name="account_circle"></q-icon> Personal Information
+                    <q-icon name="o_account_circle"></q-icon> Personal
+                    Information
                   </div>
                   <div class="col-10">
                     <q-checkbox
@@ -301,7 +326,17 @@
                       v-model="first_time"
                       label="This is my first time!"
                       label-class="text-h6"
-                      color="orange"
+                      color="teal"
+                    />
+                  </div>
+
+                  <div class="col-10">
+                    <q-checkbox
+                      keep-color
+                      v-model="first_time"
+                      label="Store my profile"
+                      label-class="text-h6"
+                      color="teal"
                     />
                   </div>
                   <div class="col-5">
@@ -335,9 +370,9 @@
                         <div class="row items-center all-pointer-events">
                           <q-icon
                             class="q-mr-xs"
-                            color="deep-orange"
+                            color="teal"
                             size="24px"
-                            name="mail"
+                            name="o_mail"
                           />
                           Email Address
                         </div>
@@ -357,9 +392,9 @@
                         <div class="row items-center all-pointer-events">
                           <q-icon
                             class="q-mr-xs"
-                            color="deep-orange"
+                            color="teal"
                             size="24px"
-                            name="phone_iphone"
+                            name="o_phone_iphone"
                           />
                           Phone Number
 
@@ -386,7 +421,7 @@
                       :options-dense="denseOpts"
                     >
                       <template v-slot:prepend>
-                        <q-icon name="place" @click.stop />
+                        <q-icon name="o_place" color="teal" @click.stop />
                       </template>
                     </q-select>
                   </div>
@@ -394,7 +429,7 @@
                   <div class="col-10"><q-separator /></div>
 
                   <div class="col-10 text-h6 text-grey-7">
-                    <q-icon name="info"></q-icon> Extra Information
+                    <q-icon name="o_info"></q-icon> Extra Information
                   </div>
 
                   <div class="col-10">
@@ -429,7 +464,7 @@
                       }
                     "
                     class="float-right q-mr-md q-mb-md"
-                    color="blue"
+                    color="blue-9"
                     label="Next"
                   />
                   <q-btn
@@ -456,80 +491,86 @@
                     <q-item-label header class="text-h6"
                       >Booking Summary</q-item-label
                     >
-                    <q-item class="full-width">
+                    <q-item class="full-width q-pa-md-md">
                       <q-item-section>
-                        <q-icon name="explore"></q-icon>
-                        <q-item-label>
-                          Aim Remedial Massage 141 Penquite Road Newstead, TAS
-                          7250
+                        <q-item-label class="text-subtitle2">
+                          * {{ selectedService.title }}
                         </q-item-label>
-                        <q-item-label caption>Caption</q-item-label>
+                        <q-item-label caption>{{
+                          selectedService.description
+                        }}</q-item-label>
                       </q-item-section>
-                      <q-item-section side> $10.99 </q-item-section>
+                      <q-item-section side
+                        >$ {{ selectedService.price }}
+                      </q-item-section>
                     </q-item>
                     <q-separator></q-separator>
-                    <q-item class="full-width">
+                    <q-item class="full-width q-pa-md-md">
                       <q-item-section>
-                        <q-item-label lines="1">Product 2</q-item-label>
-                        <q-item-label caption>Caption Product 2</q-item-label>
+                        <q-item-label lines="1" class="text-subtitle2">
+                          <q-icon
+                            class="q-mr-xs-md"
+                            name="o_person"
+                            size="25px"
+                            color="grey-8"
+                          />
+                          {{ selectedStaff.name }}
+                        </q-item-label>
+                        <q-item-label caption>{{
+                          selectedStaff.position
+                        }}</q-item-label>
                       </q-item-section>
-                      <q-item-section side> $19.99 </q-item-section>
                     </q-item>
                     <q-separator></q-separator>
-                    <q-item class="full-width">
+                    <q-item class="full-width q-pa-md-md">
                       <q-item-section>
-                        <q-item-label lines="1">Product 3</q-item-label>
-                        <q-item-label caption>Caption Product 3</q-item-label>
+                        <q-item-label class="text-subtitle2 text-grey-8">
+                          <q-icon
+                            class="q-mr-xs-md"
+                            name="o_calendar_month"
+                            size="25px"
+                            color="grey-8"
+                          />
+                          {{ time + " - " + getEndTime() + ", " + showDate() }}
+                        </q-item-label>
                       </q-item-section>
-                      <q-item-section side> $78.99 </q-item-section>
                     </q-item>
-                    <q-separator></q-separator>
-                    <q-item class="full-width">
-                      <q-item-section>
-                        <q-item-label lines="1">Product 4</q-item-label>
-                        <q-item-label caption>Caption Product 4</q-item-label>
-                      </q-item-section>
-                      <q-item-section side> $178.99 </q-item-section>
-                    </q-item>
-                    <q-separator></q-separator>
 
-                    <q-item class="full-width">
-                      <q-item-section>
-                        <q-item-label lines="1">Shipping</q-item-label>
-                      </q-item-section>
-                      <q-item-section side> Free </q-item-section>
-                    </q-item>
-                    <q-separator></q-separator>
                     <q-item
                       class="full-width"
                       style="border-top: 3px dotted blue"
                     >
                       <q-item-section>
-                        <q-item-label lines="1">Total</q-item-label>
+                        <q-item-label class="text-subtitle2"
+                          >Total</q-item-label
+                        >
                       </q-item-section>
-                      <q-item-section side> $288.96 </q-item-section>
+                      <q-item-section side class="text-subtitle1">
+                        $ {{ selectedService.price }}
+                      </q-item-section>
                     </q-item>
                   </div>
                 </div>
 
                 <q-card class="rounded-borders">
-                  <q-card-section horizontal>
-                    <q-card-section class="col-5 q-pt-xs">
-                      <div class="text-h6 text-center">Shipping</div>
-                      <div class="text-subtitle1">Pratik Patel</div>
-                      <div class="text-subtitle2">4841 Johnston Locks</div>
+                  <q-card-section :horizontal="!$q.screen.lt.sm">
+                    <q-card-section class="col-md-5 col-xs-12 q-pt-xs">
+                      <div class="text-subtitle1 text-center">Appointment</div>
+                      <div class="text-subtitle2 text-weight-bold">
+                        {{ name.first_name + " " + name.last_name }}
+                      </div>
+                      <div class="text-subtitle2">{{ email }}</div>
+                      <div class="text-subtitle2">{{ phone }}</div>
                     </q-card-section>
-                    <q-card-section class="col-7 q-pt-xs">
-                      <div class="text-h6 text-center">Payment details</div>
-                      <div class="text-subtitle1 q-mb-xs">Card type - Visa</div>
-                      <div class="text-subtitle1 q-mb-xs">
-                        Card holder - P***ik Patel
-                      </div>
-                      <div class="text-subtitle1 q-mb-xs">
-                        Card Number - xxxx-xxxx-xxxx-1234
-                      </div>
-                      <div class="text-subtitle1 q-mb-xs">
-                        Expiry date - 04/2012
+                    <q-separator v-if="$q.screen.lt.sm" />
+                    <q-card-section class="col-md-7 col-xs-12 q-pt-xs">
+                      <div class="text-subtitle1 text-center">Comments</div>
+                      <div class="text-subtitle2 q-mb-xs text-grey-8">
+                        {{
+                          comments == ""
+                            ? "You don't write any comments."
+                            : comments
+                        }}
                       </div>
                     </q-card-section>
                   </q-card-section>
@@ -545,7 +586,7 @@
                       }
                     "
                     class="float-right q-mr-md q-mb-md"
-                    color="blue"
+                    color="blue-9"
                     label="Confirm"
                   />
                   <q-btn
@@ -562,48 +603,17 @@
           </div>
           <!--summary -->
           <div v-if="!$q.screen.lt.sm" class="col-4">
-            <q-card class="bg-grey-2 no-shadow" bordered>
-              <q-card-section class="text-center text-h6 text-black">
-                <q-icon name="shopping_cart" class="q-mr-sm" />
-                Order Summary
-              </q-card-section>
-              <q-card-section horizontal>
-                <q-card-section class="col-5 flex flex-center">
-                  <q-img
-                    height="80px"
-                    class="rounded-borders"
-                    src="https://cdn.quasar.dev/img/parallax2.jpg"
-                  />
-                </q-card-section>
-                <q-card-section class="">
-                  <div class="text-subtitle2 q-mt-sm">Product 1</div>
-                  <div class="text-subtitle2 q-mb-xs">$10.99</div>
-                </q-card-section>
-              </q-card-section>
-              <q-separator />
-              <q-card-section horizontal class="q-pa-none">
-                <q-card-section class="col-5 flex flex-center">
-                  <q-img
-                    height="80px"
-                    class="rounded-borders"
-                    src="https://cdn.quasar.dev/img/parallax2.jpg"
-                  />
-                </q-card-section>
-                <q-card-section class="">
-                  <div class="text-subtitle2 q-mt-md">Product 2</div>
-                  <div class="text-subtitle2 q-mb-xs">$19.99</div>
-                </q-card-section>
-              </q-card-section>
-              <q-separator />
-
-              <q-separator></q-separator>
-              <q-card-section class="row">
-                <div class="col-12 text-h6 full-width">
-                  <div class="float-right q-mr-md">
-                    Total : <span class="text-blue">$288.96</span>
-                  </div>
-                </div>
-              </q-card-section>
+            <q-card class="bg-grey-1 no-shadow" bordered>
+              <SummaryContent
+                :ratingModel="ratingModel"
+                :selectedService="selectedService"
+                :selectedStaff="selectedStaff"
+                :time="time"
+                :showDate="showDate"
+                @editService="step = 1"
+                @editDate="step = 2"
+                @editTherapist="step = 2"
+              />
             </q-card>
           </div>
         </div>
@@ -613,8 +623,29 @@
         position="bottom-right"
         :offset="[10, 20]"
       >
-        <q-btn round icon="checklist" direction="up" color="purple-4"> </q-btn>
+        <q-btn
+          round
+          icon="checklist"
+          direction="up"
+          color="teal-4"
+          @click="showSummaryDialog = true"
+        ></q-btn>
       </q-page-sticky>
+
+      <q-dialog v-model="showSummaryDialog">
+        <q-card class="bg-grey-1 no-shadow" bordered>
+          <SummaryContent
+            :ratingModel="ratingModel"
+            :selectedService="selectedService"
+            :selectedStaff="selectedStaff"
+            :time="time"
+            :showDate="showDate"
+            @editService="step = 1"
+            @editDate="step = 2"
+            @editTherapist="step = 2"
+          />
+        </q-card>
+      </q-dialog>
     </div>
     <div v-if="!$q.screen.lt.sm" class="col-2"></div>
   </div>
@@ -624,6 +655,10 @@
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { comment } from "postcss";
+import SummaryContent from "../components/SummaryContent.vue";
+import { useQuasar } from "quasar";
+
+const $q = useQuasar();
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 // ***Book from service List page
@@ -632,7 +667,9 @@ const VITE_API_URL = import.meta.env.VITE_API_URL;
 // const selectedProduct = productStore.selectedProduct;
 // console.log(selectedProduct);
 const packages = ref([]);
-const selectedService = ref("");
+const ratingModel = ref(4.5);
+
+const selectedService = ref([]);
 
 const step = ref(1);
 const expandedStates = ref({}); // Object to track expanded state for each card
@@ -642,12 +679,34 @@ const toggleExpanded = (pkgId) => {
 };
 
 const date = ref(new Date().toLocaleDateString("en-CA").replace(/-/g, "/")); // Default to today's date in Y/m/d format
+const showDate = () => {
+  const dateObj = new Date(date.value);
+  const options = { weekday: "long", day: "numeric", month: "long" };
+  return dateObj.toLocaleDateString("en-US", options);
+};
+const getEndTime = () => {
+  if (!time.value || !selectedService.value.duration) {
+    return "";
+  }
+
+  const [hours, minutes] = time.value.split(":").map(Number);
+  console.log("time", hours, minutes);
+  const duration = selectedService.value.duration; // Assuming duration is in minutes
+  const endTime = new Date();
+  endTime.setHours(hours);
+  endTime.setMinutes(minutes + duration);
+
+  return endTime.toTimeString().slice(0, 5); // Return in HH:mm format
+};
 
 const availableStaff = ref([]);
-const dateOptions = ref([]);
 const events = ref([]);
-const selectedStaff = ref("");
-const eventColors = ref({}); // Change to an object to map dates to colors
+const selectedStaff = ref({
+  id: "",
+  name: "",
+  profile_photo_url: "",
+  position: "",
+});
 
 onMounted(async () => {
   try {
@@ -657,17 +716,51 @@ onMounted(async () => {
     response = await axios.get(VITE_API_URL + "/api/get-available-shedules");
     if (response.data.length > 0) {
       response.data.forEach((element) => {
-        dateOptions.value.push(element.date); // Corrected syntax
         events.value.push(element.date);
-        eventColors.value[element.date] =
-          element.status === "nearFull" ? "orange" : "teal";
       });
     }
+    fetchUnavailabelTime();
     refreshStaff();
   } catch (error) {
     console.error("Error fetching packages:", error);
   }
 });
+
+const dateOptionsFn = (date) => {
+  const today = new Date();
+  const threeMonthsLater = new Date(today);
+  threeMonthsLater.setMonth(today.getMonth() + 3);
+
+  const formatDate = (d) =>
+    `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+
+  const formattedToday = formatDate(today);
+  const formattedThreeMonthsLater = formatDate(threeMonthsLater);
+
+  // Get the min and max dates from the events list
+  const minEventDate = events.value.length > 0 ? events.value[0] : null;
+  const maxEventDate =
+    events.value.length > 0 ? events.value[events.value.length - 1] : null;
+
+  // Check if the date is within the range of today and three months later
+  const isWithinThreeMonths =
+    date >= formattedToday && date <= formattedThreeMonthsLater;
+
+  // If the date is within the events range, restrict to only those in events
+  if (
+    minEventDate &&
+    maxEventDate &&
+    date >= minEventDate &&
+    date <= maxEventDate
+  ) {
+    return events.value.includes(date);
+  }
+
+  // Allow dates beyond the events range but within three months
+  return isWithinThreeMonths;
+};
 
 const refreshStaff = async () => {
   const response = await axios.get(
@@ -686,35 +779,57 @@ const refreshStaff = async () => {
   }
 };
 
-const selectDate = () => {
-  const response = axios.get(
-    VITE_API_URL + "/api/get-unavailable-time-from-date",
-    {
-      params: {
-        date: date.value,
-      },
+const fetchUnavailabelTime = async () => {
+  try {
+    const response = await axios.get(
+      VITE_API_URL + "/api/get-unavailable-time-from-date",
+      {
+        params: {
+          date: date.value,
+        },
+      }
+    );
+    if (response.data) {
+      unavailabelTime.value = response.data.map((timeRange) => ({
+        start: timeRange.start_time,
+        end: timeRange.end_time,
+      }));
     }
-  );
-  if (response.data) {
-    unavailabelTime.value = response.data;
+    console.log("Unavailable time:", unavailabelTime.value);
+    refreshStaff();
+  } catch (error) {
+    console.error("Error fetching unavailable time:", error);
   }
-
-  refreshStaff();
 };
 
-const time = ref("10:00");
+const time = ref();
 const unavailabelTime = ref([]);
 
 const optionsFnTime = (hr, min, sec) => {
+  var noMin = false;
+  if (min === null) {
+    min = 0;
+    noMin = true;
+  }
+  const time = `${hr.toString().padStart(2, "0")}:${min
+    .toString()
+    .padStart(2, "0")}`;
+
   if (hr < 9 || hr > 18) {
     return false;
   }
-  if (unavailabelTime.value.length > 0) {
-    const time = `${hr}:${min}`;
-    for (let i = 0; i < unavailabelTime.value.length; i++) {
-      if (unavailabelTime.value[i].time === time) {
+  for (const range of unavailabelTime.value) {
+    if (hr == range.end.split(":")[0]) {
+      if (noMin) {
+        return true;
+      }
+      if (min <= range.end.split(":")[1]) {
         return false;
       }
+      return true;
+    }
+    if (time >= range.start && time <= range.end) {
+      return false;
     }
   }
   return true;
@@ -764,10 +879,10 @@ const submitAppointment = async () => {
       tag: tick_group.value,
       customer_service: [
         {
-          customer_name: name.value.first_name + ' ' + name.value.last_name,
-          service_id: selectedService.value,
-          staff_id: selectedStaff.value,
-          staff_name: selectedStaff.value,
+          customer_name: name.value.first_name + " " + name.value.last_name,
+          service_id: selectedService.value.id,
+          staff_id: selectedStaff.value.id,
+          staff_name: selectedStaff.value.name,
           comments: comments.value,
         },
       ],
@@ -778,9 +893,21 @@ const submitAppointment = async () => {
       payload
     );
 
-    if (response.status === 200) {
-      console.log("Appointment successfully created:", response.data);
-      // Optionally, redirect or show a success message
+    if (response.status === 201) {
+      console.log("Appointment created successfully:", response.data);
+      // Optionally, you can reset the form or navigate to another page
+      // Reset form fields
+      selectedService.value = [];
+      // Show success message or navigate to a confirmation page
+      showSummaryDialog.value = false;
+      $q.notify({
+        message: "Appointment created successfully!",
+        color: "green",
+        icon: "check_circle",
+        position: "top",
+        timeout: 3000,
+      });
+
     } else {
       console.error("Failed to create appointment:", response.data);
     }
@@ -788,6 +915,8 @@ const submitAppointment = async () => {
     console.error("Error submitting appointment:", error);
   }
 };
+
+const showSummaryDialog = ref(false);
 </script>
 
 <style scoped></style>

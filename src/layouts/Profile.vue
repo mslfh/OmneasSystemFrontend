@@ -3,7 +3,7 @@
     <q-item class="q-mb-sm" clickable v-ripple>
       <q-item-section avatar>
         <q-avatar size="26px">
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+          <img src="https://cdn.quasar.dev/img/avatar5.jpg" />
         </q-avatar>
       </q-item-section>
 

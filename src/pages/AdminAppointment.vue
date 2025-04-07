@@ -1,23 +1,40 @@
 <template>
   <div class="subcontent">
-    <div class="text-h6 q-my-md text-center">
+    <q-btn
+      label="Add Appointment"
+      color="primary"
+      @click="showAddAppointmentDialog"
+    />
+    <div class="text-h6 text-center">
       {{ currentMonth }}
     </div>
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-    <q-btn label="Add Appointment" color="primary" @click="showAddAppointmentDialog" class="q-my-md" />
+
     <div class="row">
       <div class="q-mx-sm col-2">
-        <div class="text-h6 q-my-md text-center">Unassign Staff Appointment</div>
-
+        <div class="text-h6 q-my-md text-center text-brown-9">
+          <q-icon name="date_range"></q-icon>Coming Appointment
+        </div>
         <ul class="column">
           <li
             v-for="item in dragItems"
             :key="item.id"
-            class=" bg-blue text-white "
             draggable="true"
             @dragstart="onDragStart($event, item)"
           >
-            {{ item.title }}
+            <q-card class="text-subtitle q-mb-sm bg-amber-11" flat bordered>
+              <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }} ({{
+                item.duration
+              }}
+              min)
+              <q-separator></q-separator>
+              <q-card-section class="q-pt-none q-pb-none">
+                BookingName: {{ item.customer_name }}
+              </q-card-section>
+              <q-card-section class="q-pt-none text-caption">
+                * {{ item.title }}
+              </q-card-section>
+            </q-card>
           </li>
         </ul>
       </div>
@@ -137,12 +154,35 @@
                 :style="
                   badgeStyles(event, 'body', timeStartPos, timeDurationHeight)
                 "
+                @click="openEditEventDialog(event)"
               >
-                <div class="title q-calendar__ellipsis">
-                  {{ event.title }}
-                  <q-tooltip>{{
-                    event.time + " - " + event.details
-                  }}</q-tooltip>
+                <div class="title q-ma-xs">
+                  <q-list>
+                    <q-item-label class="text-subtitle1">
+                      {{ event.customer_name }}
+                    </q-item-label>
+                    <q-item-label class="text-caption">{{ event.time }} / {{ event.duration }}min</q-item-label>
+                    <q-item-label class="text-subtitle">
+                      {{ event.title }}
+                    </q-item-label>
+                    <q-chip
+                      outline
+                      color="white"
+                      text-color="white"
+                      icon="event"
+                    >
+                      Start
+                    </q-chip>
+                    <q-chip
+                      outline
+                      color="white"
+                      text-color="white"
+                      icon="check_circle_outline"
+                    >
+                      Finish
+                    </q-chip>
+                  </q-list>
+                  <q-tooltip>{{ event.time + " - " + event.title }}</q-tooltip>
                 </div>
               </div>
             </template>
@@ -156,11 +196,23 @@
     <q-card>
       <q-card-section>
         <div class="text-h6">Confirm Assignment</div>
-        <div>Do you want to assign this item to {{ confirmDialog.staffName }}?</div>
+        <div>
+          Do you want to assign this item to {{ confirmDialog.staffName }}?
+        </div>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="negative" @click="confirmDialog.reject" />
-        <q-btn flat label="Confirm" color="positive" @click="confirmDialog.resolve" />
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="confirmDialog.reject"
+        />
+        <q-btn
+          flat
+          label="Confirm"
+          color="positive"
+          @click="confirmDialog.resolve"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -172,14 +224,33 @@
         <div class="text-h6">Add Appointment</div>
       </q-card-section>
       <q-card-section>
-        <q-input v-model="addAppointmentForm.booking_date" filled type="date" hint="Native date" />
-        <q-input v-model="addAppointmentForm.booking_time" filled type="time" hint="Native time" />
-        <q-input v-model="addAppointmentForm.customer_first_name" label="First Name" />
-        <q-input v-model="addAppointmentForm.customer_last_name" label="Last Name" />
+        <q-input
+          v-model="addAppointmentForm.booking_date"
+          filled
+          type="date"
+          hint="Native date"
+        />
+        <q-input
+          v-model="addAppointmentForm.booking_time"
+          filled
+          type="time"
+          hint="Native time"
+        />
+        <q-input
+          v-model="addAppointmentForm.customer_first_name"
+          label="First Name"
+        />
+        <q-input
+          v-model="addAppointmentForm.customer_last_name"
+          label="Last Name"
+        />
         <q-input v-model="addAppointmentForm.customer_email" label="Email" />
         <q-input v-model="addAppointmentForm.customer_phone" label="Phone" />
         <q-input v-model="addAppointmentForm.comments" label="Comments" />
-        <q-input v-model="addAppointmentForm.customer_service[0].customer_name" label="Customer Name" />
+        <q-input
+          v-model="addAppointmentForm.customer_service[0].customer_name"
+          label="Customer Name"
+        />
         <q-select
           v-model="addAppointmentForm.customer_service[0].service"
           :options="serviceOptions"
@@ -194,11 +265,55 @@
           option-value="id"
           option-label="name"
         />
-        <q-input v-model="addAppointmentForm.customer_service[0].comments" label="Service Comments" />
+        <q-input
+          v-model="addAppointmentForm.customer_service[0].comments"
+          label="Service Comments"
+        />
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="negative" @click="addAppointmentDialog.visible = false" />
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="addAppointmentDialog.visible = false"
+        />
         <q-btn flat label="Add" color="positive" @click="addAppointment" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- Edit Event Dialog -->
+  <q-dialog v-model="editEventDialog.visible">
+    <q-card style="min-width: 450px">
+      <q-card-section>
+        <div class="text-h6">Edit Event</div>
+      </q-card-section>
+      <q-card-section>
+        <q-input v-model="editEventForm.title" label="Title" />
+        <q-input v-model="editEventForm.details" label="Details" />
+        <q-input v-model="editEventForm.date" filled type="date" label="Date" />
+        <q-input v-model="editEventForm.time" filled type="time" label="Time" />
+        <q-input
+          v-model="editEventForm.duration"
+          type="number"
+          label="Duration (minutes)"
+        />
+        <q-select
+          v-model="editEventForm.staff_id"
+          :options="practitionerOptions"
+          label="Practitioner"
+          option-value="staff_id"
+          option-label="staff_name"
+        />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="editEventDialog.visible = false"
+        />
+        <q-btn flat label="Save" color="positive" @click="saveEditedEvent" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -219,8 +334,9 @@ import "@quasar/quasar-ui-qcalendar/index.css";
 import { ref, computed, onMounted } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "components/NavigationBar.vue";
-import { QDialog, QCard, QCardSection, QCardActions, QBtn } from "quasar";
+import { useQuasar, QDialog, QCard, QCardSection, QCardActions, QBtn } from "quasar";
 
+const $q = useQuasar();
 interface Event {
   id: number;
   title: string;
@@ -241,7 +357,6 @@ const selectedDate = ref(today());
 const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
 
 onMounted(() => {
-  selectedDate.value = "2025-03-31";
   fetchAppointments();
   fetchServiceOptions();
   fetchPractitionerOptions();
@@ -249,29 +364,29 @@ onMounted(() => {
 
 const events = ref<Event[]>([]);
 
-const dragItems = ref<Event[]>([
-]);
+const dragItems = ref<Event[]>([]);
 const defaultEvent = {
   id: 0,
-  title: '',
-  details: '',
-  date: '',
-  time:'',
+  title: "",
+  details: "",
+  date: "",
+  time: "",
   duration: 0,
-  bgcolor:'',
-  icon: '',
-  side: '',
+  bgcolor: "",
+  customer_name: "",
+  icon: "",
+  side: "",
   days: 0,
   staff_id: 0,
-  staff_name: ''
-}
+  staff_name: "",
+};
 interface CustomDragEvent extends Event {
-  dataTransfer: DataTransfer
-  preventDefault: () => void
+  dataTransfer: DataTransfer;
+  preventDefault: () => void;
 }
 
 interface Scope {
-  scope: any
+  scope: any;
 }
 
 const confirmDialog = ref({
@@ -346,6 +461,7 @@ async function fetchAppointments() {
       date: selectedDate.value,
       time: bookedService.booking_time.slice(11, 16),
       duration: bookedService.service_duration,
+      customer_name: bookedService.customer_name,
       price: bookedService.service_price,
       staff_id: bookedService.staff_id,
       staff_name: bookedService.staff_name,
@@ -354,24 +470,16 @@ async function fetchAppointments() {
     }));
 
     events.value = fetchedData.filter((event) => event.staff_id !== 0);
-    dragItems.value =fetchedData.filter((event) => event.staff_id === 0);
-    staffList.value = Array.from(
-      new Map(
-        fetchedData
-          .filter((event) => event.staff_id !== 0)
-          .map((event) => [
-            event.staff_id,
-            {
-              staff_id: event.staff_id,
-              staff_name: event.staff_name,
-            },
-          ])
-      ).values()
-    );
+    dragItems.value = fetchedData.filter((event) => event.staff_id === 0);
 
-    console.log("events.value", events.value);
-    console.log("dragItems.value", dragItems.value);
-    console.log("staffList.value", staffList.value);
+    const staffResponse = await api.get("/api/staff");
+    staffResponse.data.forEach((staff) => {
+      const staffId = staff.id;
+      const staffName = staff.name;
+      if (!staffList.value.some((s) => s.staff_id === staffId)) {
+        staffList.value.push({ staff_id: staffId, staff_name: staffName });
+      }
+    });
   } catch (error) {
     console.error("Error fetching schedules:", error);
   }
@@ -478,6 +586,17 @@ function onClickDate(data: Timestamp) {
 }
 function onClickTime(data: Timestamp) {
   console.info("onClickTime", data);
+  //show a dialog to have a break
+  $q.dialog({
+    title: "Break Time",
+    message: "Do you want to take a break?",
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    console.log("Break time confirmed");
+  }).onCancel(() => {
+    console.log("Break time canceled");
+  });
 }
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
@@ -487,42 +606,46 @@ function onClickHeadDay(data: Timestamp) {
 }
 
 function onDragStart(e: DragEvent, item: DragItem) {
-  console.info('onDragStart called')
+  console.info("onDragStart called");
   if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = 'copy'
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('ID', String(item.id))
+    e.dataTransfer.dropEffect = "copy";
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("ID", String(item.id));
   }
 }
 
 function onDragEnter(e: DragEvent, type: string, { scope }: Scope) {
-  console.info('onDragEnter', type, scope)
-  e.preventDefault()
-  return true
+  console.info("onDragEnter", type, scope);
+  e.preventDefault();
+  return true;
 }
 
 function onDragOver(e: DragEvent, type: string, { scope }: Scope) {
-  console.info('onDragOver', type, scope)
-  e.preventDefault()
-  return true
+  console.info("onDragOver", type, scope);
+  e.preventDefault();
+  return true;
 }
 
 function onDragLeave(_e: DragEvent, type: string, { scope }: Scope) {
-  console.info('onDragLeave', type, scope)
-  return false
+  console.info("onDragLeave", type, scope);
+  return false;
 }
 
 interface DropEvent extends CustomDragEvent {
-  dataTransfer: DataTransfer
+  dataTransfer: DataTransfer;
 }
 
 interface DropScope extends Scope {
-  timestamp: Timestamp,
-  staff_id: number,
-  staff_name: string
+  timestamp: Timestamp;
+  staff_id: number;
+  staff_name: string;
 }
 
-async function onDrop(e: DropEvent, type: string, { scope }: DropScope): Promise<boolean> {
+async function onDrop(
+  e: DropEvent,
+  type: string,
+  { scope }: DropScope
+): Promise<boolean> {
   console.info("onDrop", type, scope);
   const itemID = parseInt(e.dataTransfer.getData("ID"), 10);
   const item = dragItems.value.filter((item) => item.id === itemID);
@@ -544,9 +667,9 @@ async function onDrop(e: DropEvent, type: string, { scope }: DropScope): Promise
   try {
     const payload = {
       staff_id: event.staff_id,
-      staff_name: event.staff_name
+      staff_name: event.staff_name,
     };
-    await api.put("/api/service-appointments/"+event.id, payload);
+    await api.put("/api/service-appointments/" + event.id, payload);
   } catch (error) {
     console.error("Error updating appointments:", error);
     return false;
@@ -560,14 +683,14 @@ async function onDrop(e: DropEvent, type: string, { scope }: DropScope): Promise
 function onIntervalClass({ scope }) {
   return {
     droppable: scope.droppable === true,
-  }
+  };
 }
 
 /// @ts-expect-error ignore
 function onWeekdayClass({ scope }) {
   return {
     droppable: scope.droppable === true,
-  }
+  };
 }
 
 const addAppointmentDialog = ref({ visible: false });
@@ -622,7 +745,6 @@ function showAddAppointmentDialog() {
 }
 
 async function addAppointment() {
-
   try {
     const payload = {
       ...addAppointmentForm.value,
@@ -632,6 +754,33 @@ async function addAppointment() {
     fetchAppointments(); // Refresh appointments after adding
   } catch (error) {
     console.error("Error adding appointment:", error);
+  }
+}
+
+const editEventDialog = ref({ visible: false });
+const editEventForm = ref({
+  id: 0,
+  title: "",
+  details: "",
+  date: "",
+  time: "",
+  duration: 0,
+  staff_id: 0,
+});
+
+function openEditEventDialog(event: Event) {
+  editEventForm.value = { ...event };
+  editEventDialog.value.visible = true;
+}
+
+async function saveEditedEvent() {
+  try {
+    const payload = { ...editEventForm.value };
+    await api.put(`/api/service-appointments/${payload.id}`, payload);
+    editEventDialog.value.visible = false;
+    fetchAppointments(); // Refresh appointments after editing
+  } catch (error) {
+    console.error("Error saving edited event:", error);
   }
 }
 </script>

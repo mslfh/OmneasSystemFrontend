@@ -13,6 +13,23 @@
           <div class="text-h6">Add New Staff</div>
         </q-card-section>
         <q-card-section>
+          <q-avatar size="100px" class="q-mb-md">
+            <img v-if="addForm.avatar" :src="addForm.avatar" />
+          </q-avatar>
+          <q-btn
+            flat
+            label="Upload Avatar"
+            color="primary"
+            @click="triggerFileInput('add')"
+          />
+          <q-file
+            ref="addFileInput"
+            label="Upload Avatar"
+            accept="image/*"
+            style="display: none"
+            @update:model-value="(file) => handleFileChange(file, 'add')"
+          />
+
           <q-input v-model="addForm.name" label="Name" />
           <q-input v-model="addForm.position" label="Position" />
           <q-select
@@ -64,7 +81,7 @@
     >
       <template v-slot:body-cell-profile_photo="props">
         <q-avatar>
-          <img src="https://cdn.quasar.dev/img/avatar.png" />
+          <img :src="props.row.profile_photo_url" />
         </q-avatar>
       </template>
       <template v-slot:body-cell-status="props">
@@ -97,6 +114,7 @@
         </q-card-section>
         <q-card-section>
           <q-input v-model="editForm.name" label="Name" />
+          <q-input filled v-model="editForm.email" label="Email" type="email" readonly />
           <q-input v-model="editForm.position" label="Position" />
           <q-select
             v-model="editForm.status"
@@ -110,12 +128,29 @@
             label="Description"
             type="textarea"
           />
-          <q-input v-model="editForm.email" label="Email" type="email" />
+          <q-input v-model="editForm.tag" label="Tag" />
+          <q-input v-model="editForm.level" label="Level" type="number" />
+          <q-input v-model="editForm.sort" label="Sort" type="number" />
+          <q-checkbox
+            v-model="editForm.has_certificate"
+            label="Has Certificate"
+          />
           <q-input v-model="editForm.phone" label="Phone" />
-          <q-input
-            v-model="editForm.password"
-            label="Password"
-            type="password"
+          <q-avatar size="100px" class="q-mb-md">
+            <img v-if="editForm.avatar" :src="editForm.avatar" />
+          </q-avatar>
+          <q-btn
+            flat
+            label="Upload Avatar"
+            color="primary"
+            @click="triggerFileInput('edit')"
+          />
+          <q-file
+            ref="editFileInput"
+            label="Upload Avatar"
+            accept="image/*"
+            style="display: none"
+            @update:model-value="(file) => handleFileChange(file, 'edit')"
           />
         </q-card-section>
         <q-card-actions align="right">
@@ -173,21 +208,20 @@ const columns = [
   { name: "actions", label: "Actions", align: "center" },
 ];
 
-onMounted(async () => {
+onMounted(() => {
+  fetchStaff();
+});
+
+const fetchStaff = async () => {
   try {
-    var response = await axios.get(VITE_API_URL + "/api/staff");
+    const response = await api.get("/api/staff");
     if (response.data.length > 0) {
       staff.value = response.data;
     }
   } catch (error) {
-    if (error.response?.status === 401) {
-      console.error("Unauthorized access. Redirecting to login...");
-      window.location.href = "/admin/login"; // Redirect to login
-    } else {
-      console.error("Error fetching staff:", error);
-    }
+    console.error("Error fetching staff:", error);
   }
-});
+};
 
 const isAddDialogOpen = ref(false);
 const addForm = ref({
@@ -199,34 +233,78 @@ const addForm = ref({
   level: null,
   sort: null,
   has_certificate: false,
+  email: "",
+  phone: "",
+  password: "",
+  avatar: null,
+  avatarFile: null,
 });
 
+const addFileInput = ref(null);
+const editFileInput = ref(null);
+
 const openAddStaffDialog = () => {
-  addForm.value = {
-    name: "",
-    position: "",
-    status: "",
-    description: "",
-    tag: "",
-    level: null,
-    sort: null,
-    has_certificate: false,
-    email: "",
-    phone: "",
-    password: "",
-  };
   isAddDialogOpen.value = true;
+};
+
+const handleFileChange = (file, formType) => {
+  const form = formType === "add" ? addForm : editForm;
+  form.value.avatarFile = file;
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      form.value.avatar = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    form.value.avatar = null;
+  }
+};
+
+const triggerFileInput = (formType) => {
+  const fileInput =
+    formType === "add" ? addFileInput.value : editFileInput.value;
+  if (fileInput) {
+    fileInput.pickFiles();
+  }
 };
 
 const addStaff = async () => {
   try {
-    const response = await api.post("/api/staff", addForm.value);
+    const formData = new FormData();
+    Object.keys(addForm.value).forEach((key) => {
+      if (key !== "avatarFile") {
+        formData.append(key, addForm.value[key]);
+      }
+    });
+    if (addForm.value.avatarFile) {
+      formData.append("avatar", addForm.value.avatarFile);
+    }
+    console.log("Form data:", formData);
+
+    const response = await api.post("/api/staff", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     console.log("Add response:", response.data);
 
-    // Add the new staff to the staff list
     staff.value.push(response.data);
+    isAddDialogOpen.value = false;
 
-    isAddDialogOpen.value = false; // Close the dialog
+    addForm.value = {
+      name: "",
+      position: "",
+      status: "",
+      description: "",
+      tag: "",
+      level: null,
+      sort: null,
+      has_certificate: false,
+      email: "",
+      phone: "",
+      password: "",
+      avatar: null,
+      avatarFile: null,
+    };
   } catch (error) {
     console.error("Error adding staff:", error);
   }
@@ -239,30 +317,60 @@ const editForm = ref({
   position: "",
   status: "",
   description: "",
+  tag: "",
+  level: null,
+  sort: null,
+  has_certificate: false,
   email: "",
   phone: "",
-  password: "",
+  avatar: null,
+  avatarFile: null,
 });
 
 const editStaff = (row) => {
-  editForm.value = { ...row }; // Populate the form with the selected staff's data
+  editForm.value = { ...row };
+  editForm.value.avatar = row.profile_photo_url; // Set the avatar URL
   isEditDialogOpen.value = true;
 };
 
 const updateStaff = async () => {
   try {
-    const response = await api.put(
-      `/api/staff/${editForm.value.id}`,
-      editForm.value
-    );
-    console.log("Update response:", response.data);
+    const formData = new FormData();
+    formData.append("_method", "PUT");
+    Object.keys(editForm.value).forEach((key) => {
+      if (key !== "avatarFile" && key !== "id" && key !== "avatar") {
+        formData.append(key, editForm.value[key]);
+      }
+    });
+    if (editForm.value.avatarFile) {
+      formData.append("avatar", editForm.value.avatarFile);
+    }
+    await api.post(`/api/staff/${editForm.value.id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-    // Update the staff list with the updated data
+    // Update the staff list with the edited staff
     const index = staff.value.findIndex((s) => s.id === editForm.value.id);
     if (index !== -1) {
       staff.value[index] = { ...editForm.value };
     }
-
+    fetchStaff(); // Refresh the staff list
+    // Reset the edit form
+    editForm.value = {
+      id: null,
+      name: "",
+      position: "",
+      status: "",
+      description: "",
+      tag: "",
+      level: null,
+      sort: null,
+      has_certificate: false,
+      email: "",
+      phone: "",
+      avatar: null,
+      avatarFile: null,
+    };
     isEditDialogOpen.value = false; // Close the dialog
   } catch (error) {
     console.error("Error updating staff:", error);
@@ -279,7 +387,7 @@ const deleteStaff = (row) => {
 
 const confirmDelete = async () => {
   try {
-     // Call the API to delete the staff
+    // Call the API to delete the staff
     await api.delete(`/api/staff/${deleteTarget.value.id}`);
     staff.value = staff.value.filter((s) => s.id !== deleteTarget.value.id);
     isDeleteDialogOpen.value = false;

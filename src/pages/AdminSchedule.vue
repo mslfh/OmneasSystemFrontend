@@ -16,15 +16,11 @@
       v-model="selectedDate"
       animated
       bordered
-      show-day-of-year-label
       focusable
       hoverable
       no-active-date
-      :day-min-height="140"
-      :day-height="10"
-      @change="onChange"
-      @moved="onMoved"
-      @click-date="onClickDate"
+      :focus-type="['day']"
+      :day-min-height="100"
       @click-day="onClickDay"
     >
       <template #day="{ scope: { timestamp } }">
@@ -35,18 +31,19 @@
             @click="openEventDialog(event)"
           >
             <abbr :title="event.details" class="tooltip">
-              <div>Staff: {{ event.title }}</div>
-              <div>Time: {{ event.time }}</div>
-              <div>Status: {{ event.status }}</div>
-              <div>Remark: {{ event.remark }}</div>
+              <div :class=" 'bg-'+eventColors[event.title]">
+                {{ event.title }} {{ event.time }} {{ event.status }}
+                <div>Remark: {{ event.remark }}</div>
+              </div>
+
             </abbr>
           </div>
         </template>
       </template>
     </q-calendar-month>
 
-    <q-dialog v-model="scheduleDialog">
-      <q-card>
+    <q-dialog v-model="scheduleDialog"  persistent >
+      <q-card >
         <q-card-section>
           <div class="text-h6">Set Staff Schedule</div>
         </q-card-section>
@@ -72,14 +69,17 @@
             label="Break End Time"
           />
           <q-date v-model="schedule.work_date" range label="Work Date Range" />
+          <q-separator />
+          <q-label  class="q-mt-xl">
+            <q-icon name="access_time" class="q-mr-sm" />
+            <span class="text-subtitle1">Working Hours</span>
+          </q-label>
           <q-range
             class="q-mt-xl"
             v-model="timeRangeModel"
             color="green"
             :inner-min="8"
             :inner-max="18"
-            markers
-            :marker-labels="timeMarkerLabels"
             label-always
             :left-label-value="minTimeLabel"
             :right-label-value="maxTimeLabel"
@@ -97,6 +97,65 @@
             @click="closeScheduleDialog"
           />
           <q-btn flat label="Save" color="primary" @click="saveSchedule" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="dayScheduleDialog" >
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Add Day Schedule</div>
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="schedule.work_date"
+            filled
+            type="date"
+            label="Work Date"
+          />
+          <q-select
+            v-model="selectedStaff"
+            :options="staffList"
+            option-label="name"
+            option-value="id"
+            label="Select Staff"
+            dense
+          />
+          <q-input
+            v-model="schedule.break_start_time"
+            filled
+            type="time"
+            label="Break Start Time"
+          />
+          <q-input
+            v-model="schedule.break_end_time"
+            filled
+            type="time"
+            label="Break End Time"
+          />
+          <q-label >
+            <q-icon name="access_time" class="q-mr-sm" />
+            <span class="text-subtitle1">Working Hours</span>
+          </q-label>
+          <q-range
+            v-model="timeRangeModel"
+            color="green"
+            :inner-min="8"
+            :inner-max="18"
+            markers
+            label-always
+            :left-label-value="minTimeLabel"
+            :right-label-value="maxTimeLabel"
+            switch-label-side
+            switch-marker-labels-side
+            :min="8"
+            :max="18"
+          />
+          <q-input v-model="schedule.remark" label="Remark" filled />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="primary" @click="closeDayScheduleDialog" />
+          <q-btn flat label="Save" color="primary" @click="saveDaySchedule" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -126,12 +185,25 @@
             type="time"
             label="End Time"
           />
+          <q-input
+            v-model="selectedEvent.break_start_time"
+            filled
+            type="time"
+            label="Break Start Time"
+          />
+          <q-input
+            v-model="selectedEvent.break_end_time"
+            filled
+            type="time"
+            label="Break End Time"
+          />
           <q-option-group
             v-model="selectedEvent.status"
             label="Status"
             :options="[
               { label: 'Active', value: 'active' },
               { label: 'Inactive', value: 'inactive' },
+              { label: 'Off', value: 'off' },
             ]"
             inline
           />
@@ -152,16 +224,18 @@
   </q-page>
 </template>
 
-<script setup>
-import { QCalendarMonth, today } from "@quasar/quasar-ui-qcalendar";
+<script setup lang="ts">
+import { QCalendarMonth, today,Timestamp  } from "@quasar/quasar-ui-qcalendar";
 import { ref, computed, onMounted } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "src/components/NavigationBar.vue"; // Import NavigationBar
+import { matHeight } from "@quasar/extras/material-icons";
 
 const calendar = ref(null); // Ensure this is initialized as null
 const selectedDate = ref(today());
 const events = ref([]);
 const scheduleDialog = ref(false);
+const dayScheduleDialog = ref(false);
 const staffList = ref([]);
 const selectedStaff = ref(null);
 const schedule = ref({
@@ -174,6 +248,7 @@ const timeRangeModel = ref({ min: 8, max: 18 });
 
 const minTimeLabel = computed(() => `${timeRangeModel.value.min}:00`);
 const maxTimeLabel = computed(() => `${timeRangeModel.value.max}:00`);
+
 const timeMarkerLabels = Array.from({ length: 11 }, (_, i) => ({
   value: 8 + i,
   label: `${8 + i}:00`,
@@ -187,9 +262,28 @@ const eventsMap = computed(() => {
   return map;
 });
 
+const eventColors = computed(() => {
+  const colorMap = {};
+  const colors = ["teal-6", "blue-6", "orange-6", "prown-6"];
+  let colorIndex = 0;
+
+  events.value.forEach((event) => {
+    if (!colorMap[event.title]) {
+      colorMap[event.title] = colors[colorIndex % colors.length];
+      colorIndex++;
+    }
+  });
+
+  return colorMap;
+});
+
 const currentMonth = computed(() => {
   const date = new Date(selectedDate.value);
-  return date.toLocaleString("default", { month: "long", year: "numeric", day: "numeric" });
+  return date.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+    day: "numeric",
+  });
 });
 
 async function fetchSchedules() {
@@ -202,6 +296,8 @@ async function fetchSchedules() {
       time: `${schedule.start_time} - ${schedule.end_time}`,
       start_time: schedule.start_time,
       end_time: schedule.end_time,
+      break_end_time: schedule.break_end_time,
+      break_start_time: schedule.break_start_time,
       status: schedule.status,
       remark: schedule.remark,
       bgcolor: "blue",
@@ -221,7 +317,6 @@ async function fetchStaffList() {
 }
 
 function openScheduleDialog() {
-  fetchStaffList();
   scheduleDialog.value = true;
 }
 
@@ -244,10 +339,16 @@ async function saveSchedule() {
     alert("Please select a staff member.");
     return;
   }
-
   // Set start_time and end_time based on timeRangeModel
   schedule.value.start_time = `${timeRangeModel.value.min}:00`;
   schedule.value.end_time = `${timeRangeModel.value.max}:00`;
+  if (schedule.value.start_time.length == 4) {
+    schedule.value.start_time = "0" + schedule.value.start_time;
+  }
+  if (schedule.value.end_time.length == 4) {
+    schedule.value.end_time = "0" + schedule.value.end_time;
+  }
+  console.log("Schedule Data:", schedule.value);
 
   try {
     const payload = {
@@ -275,9 +376,12 @@ const selectedEvent = ref({});
 function openEventDialog(event) {
   selectedEvent.value = {
     ...event,
-    start_time: event.start_time || "08:00", // Default to 08:00 if not provided
-    end_time: event.end_time || "18:00", // Default to 18:00 if not provided
+    start_time: event.start_time,
+    end_time: event.end_time,
+    break_start_time: event.break_start_time, // Include break start time
+    break_end_time: event.break_end_time, // Include break end time
   };
+  console.log("Selected Event:", event);
   eventDialog.value = true;
 }
 
@@ -288,8 +392,23 @@ function closeEventDialog() {
 
 async function updateEvent() {
   try {
-    const { id, start_time, end_time, status, remark } = selectedEvent.value;
-    await api.put(`/api/schedules/${id}`, { start_time, end_time, status, remark });
+    const {
+      id,
+      start_time,
+      end_time,
+      status,
+      remark,
+      break_start_time,
+      break_end_time,
+    } = selectedEvent.value;
+    await api.put(`/api/schedules/${id}`, {
+      start_time,
+      end_time,
+      status,
+      remark,
+      break_start_time,
+      break_end_time,
+    });
     fetchSchedules();
     closeEventDialog();
   } catch (error) {
@@ -332,8 +451,52 @@ function onNext() {
   }
 }
 
+function onClickDay(data: Timestamp) {
+  if(eventDialog.value == true){
+    return;
+  }
+  schedule.value.work_date = data.scope.timestamp.date; // Set the selected date
+  dayScheduleDialog.value = true; // Open the dialog
+}
+
+function closeDayScheduleDialog() {
+  dayScheduleDialog.value = false;
+  resetScheduleForm();
+}
+
+async function saveDaySchedule() {
+  if (!selectedStaff.value) {
+    alert("Please select a staff member.");
+    return;
+  }
+  // Set date into yyyy/mm/dd format
+  schedule.value.work_date = schedule.value.work_date.replace(/-/g, "/");
+  // Set start_time and end_time based on timeRangeModel
+  schedule.value.start_time = `${timeRangeModel.value.min}:00`;
+  schedule.value.end_time = `${timeRangeModel.value.max}:00`;
+  if (schedule.value.start_time.length == 4) {
+    schedule.value.start_time = "0" + schedule.value.start_time;
+  }
+  if (schedule.value.end_time.length == 4) {
+    schedule.value.end_time = "0" + schedule.value.end_time;
+  }
+  console.log("Day Schedule Data:", schedule.value);
+  try {
+    const payload = {
+      staff_id: selectedStaff.value.id,
+      ...schedule.value,
+    };
+    await api.post("/api/schedules", payload);
+    fetchSchedules();
+    closeDayScheduleDialog();
+  } catch (error) {
+    console.error("Error saving day schedule:", error);
+  }
+}
+
 onMounted(() => {
   fetchSchedules();
+  fetchStaffList(); // Ensure this is only called once and does not trigger unnecessary reactivity
 });
 </script>
 
