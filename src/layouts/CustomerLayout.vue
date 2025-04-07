@@ -11,7 +11,7 @@
         <q-space />
         <q-space />
 
-        <div class="q-gutter-sm row items-center no-wrap">
+        <div class="q-gutter-sm row items-center no-wrap hidden">
           <q-btn
             v-if="$q.screen.gt.sm"
             round

@@ -1,8 +1,10 @@
 <template>
   <div class="row bg-grey-1">
+
     <div class="col-md-2 col-sm-0 col-xs-0"></div>
     <div class="col-md-9 col-sm-12 col-xs-12">
       <q-page class="q-pa-sm q-ma-md">
+
         <!-- notice -->
         <!-- <q-card class="q-mb-md">
       <q-card-header>
@@ -66,14 +68,16 @@
                 :done="step > 1"
                 :header-nav="step > 1"
               >
+
                 <!-- Service List -->
-                <q-card
+                 <q-card
                   flat
                   bordered
                   class="q-mb-md"
                   v-for="pkg in packages"
                   :key="pkg.id"
                 >
+
                   <q-card-section
                     class="q-pa-sm"
                     @click="toggleExpanded(pkg.id)"
@@ -88,11 +92,7 @@
                     </div>
                   </q-card-section>
 
-                  <q-card-actions
-                    align="right"
-                    class="q-pa-none"
-                    @click="toggleExpanded(pkg.id)"
-                  >
+                  <q-card-actions align="right" class="q-pa-none">
                     <q-btn
                       color="grey"
                       round
@@ -103,6 +103,7 @@
                           ? 'keyboard_arrow_up'
                           : 'keyboard_arrow_down'
                       "
+                      @click="toggleExpanded(pkg.id)"
                     />
                   </q-card-actions>
 
@@ -154,6 +155,7 @@
                     </div>
                   </q-slide-transition>
                 </q-card>
+
               </q-step>
 
               <!-- Select a Time & Therapist -->
@@ -168,7 +170,6 @@
                   <div class="text-h6 text-grey-8 q-pb-md">
                     <q-icon name="o_alarm" /> Select Time
                   </div>
-                  <!-- date picker -->
                   <q-input filled v-model="date" mask="date" :rules="['date']">
                     <template v-slot:append>
                       <q-icon name="event" class="cursor-pointer">
@@ -199,64 +200,38 @@
                       </q-icon>
                     </template>
                   </q-input>
-                  <!-- time picker -->
-                  <div
-                    class="q-mb-xl bg-grey-2 q-pa-sm"
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      align-items: center;
-                    "
-                  >
-                    <div class="time-picker">
-                      <!-- 选择小时 -->
-                      <el-select
-                        v-model="selectedHour"
-                        clearable
-                        placeholder="HH"
-                        style="width: 85px"
-                        @change="handleTimeChange(true)"
-                      >
-                        <el-option
-                          v-for="hour in hours"
-                          :key="hour"
-                          :label="
-                            hour > 11
-                              ? hour == 12
-                                ? '12 pm'
-                                : (hour % 12) + ' pm'
-                              : hour + ' am'
-                          "
-                          :value="hour"
-                          :disabled="isHourUnavailable(hour)"
-                        />
-                      </el-select>
-                      ：
-                      <!-- 选择分钟 -->
-                      <el-select
-                        v-model="selectedMinute"
-                        clearable
-                        placeholder="MM"
-                        style="width: 85px"
-                        @change="handleTimeChange(false)"
-                      >
-                        <el-option
-                          v-for="minute in minutes"
-                          :key="minute"
-                          :label="minute"
-                          :value="minute"
-                          :disabled="isMinuteUnavailable(minute)"
-                        />
-                      </el-select>
-                    </div>
-                    <div>
-                      <q-icon name="schedule" size="25px" color="grey-8" />
-                    </div>
-                  </div>
+                  <!-- time -->
+                  <q-input filled v-model="time" mask="time" :rules="['time']">
+                    <template v-slot:append>
+                      <q-icon name="access_time" class="cursor-pointer">
+                        <q-popup-proxy
+                          cover
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-time
+                            v-model="time"
+                            :landscape="$q.screen.gt.xs"
+                            :options="optionsFnTime"
+                            @update:model-value="selectTime"
+                          >
+                            <div class="row items-center justify-end">
+                              <q-btn
+                                v-close-popup
+                                label="Close"
+                                color="primary"
+                                flat
+                              />
+                            </div>
+                          </q-time>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
                 </div>
                 <div class="q-pa-md-md q-pa-none-xs q-gutter-md">
                   <q-separator />
-                  <div class="text-h6 text-grey-8 q-pb-xs">
+                  <div class="text-h6 text-grey-8 q-pb-md">
                     <q-icon name="favorite_border" /> Select Therapist
                   </div>
                   <div v-if="availableStaff.length == 0">
@@ -313,19 +288,8 @@
                     rounded
                     @click="
                       () => {
-                        if (availableStaff.length == 0 || !time || !date) {
-                          $q.notify({
-                            message: 'No therapist available at this time.',
-                            color: 'red-4',
-                            icon: 'error',
-                            position: 'top',
-                            timeout: 3000,
-                          });
-                          return;
-                        } else {
-                          done2 = true;
-                          step = 3;
-                        }
+                        done2 = true;
+                        step = 3;
                       }
                     "
                     class="float-right q-mr-md q-mb-md"
@@ -366,7 +330,7 @@
                     />
                   </div>
 
-                  <!-- <div class="col-10">
+                  <div class="col-10">
                     <q-checkbox
                       keep-color
                       v-model="first_time"
@@ -374,7 +338,7 @@
                       label-class="text-h6"
                       color="teal"
                     />
-                  </div> -->
+                  </div>
                   <div class="col-5">
                     <q-input
                       dense
@@ -382,7 +346,6 @@
                       class="full-width"
                       v-model="name.first_name"
                       label="First Name *"
-                      :rules="[(val) => !!val]"
                     />
                   </div>
                   <div class="col-5">
@@ -392,47 +355,13 @@
                       class="full-width"
                       v-model="name.last_name"
                       label="Last Name *"
-                      :rules="[(val) => !!val]"
                     />
                   </div>
-                  <!-- phone -->
-                  <div class="col-10 q-mt-xs">
-                    <q-input
-                      outlined
-                      v-model="phone"
-                      input-class="text-right"
-                      label-slot
-                      clearable
-                      mask="#### ### ###"
-                      :rules="[(val) => !!val || 'Phone Number is required']"
-                    >
-                      <template v-slot:label>
-                        <div class="row items-center all-pointer-events">
-                          <q-icon
-                            class="q-mr-xs"
-                            color="teal"
-                            size="24px"
-                            name="o_phone_iphone"
-                          />
-                          * Phone Number
-
-                          <q-tooltip
-                            class="bg-grey-8"
-                            anchor="top left"
-                            self="bottom left"
-                            :offset="[0, 8]"
-                            >Mobile phone</q-tooltip
-                          >
-                        </div>
-                      </template>
-                    </q-input>
-                  </div>
                   <!-- email -->
-                  <div class="col-10 q-mt-xs">
+                  <div class="col-10">
                     <q-input
                       outlined
                       v-model="email"
-                      type="email"
                       input-class="text-right"
                       label-slot
                       clearable
@@ -450,9 +379,38 @@
                       </template>
                     </q-input>
                   </div>
+                  <!-- phone -->
+                  <div class="col-10">
+                    <q-input
+                      outlined
+                      v-model="phone"
+                      input-class="text-right"
+                      label-slot
+                      clearable
+                    >
+                      <template v-slot:label>
+                        <div class="row items-center all-pointer-events">
+                          <q-icon
+                            class="q-mr-xs"
+                            color="teal"
+                            size="24px"
+                            name="o_phone_iphone"
+                          />
+                          Phone Number
 
+                          <q-tooltip
+                            class="bg-grey-8"
+                            anchor="top left"
+                            self="bottom left"
+                            :offset="[0, 8]"
+                            >Mobile phone</q-tooltip
+                          >
+                        </div>
+                      </template>
+                    </q-input>
+                  </div>
                   <!-- travel -->
-                  <div class="col-10" hidden>
+                  <div class="col-10">
                     <q-select
                       outlined
                       bottom-slots
@@ -483,7 +441,7 @@
                     />
                   </div>
 
-                  <div class="col-10 q-pa-md" hidden>
+                  <div class="col-10 q-pa-md">
                     <q-item-label class="text-subtitle1">
                       * Tick the following that best describes what you are
                       experiencing?
@@ -501,16 +459,6 @@
                     rounded
                     @click="
                       () => {
-                        if (!name.first_name || !name.last_name || !phone) {
-                          $q.notify({
-                            message: 'Please fill in all required fields.',
-                            color: 'red-4',
-                            icon: 'error',
-                            position: 'top',
-                            timeout: 3000,
-                          });
-                          return;
-                        }
                         done3 = true;
                         step = 4;
                       }
@@ -538,40 +486,15 @@
                 :header-nav="step > 4"
               >
                 <div class="row">
-                  <q-card v-if="$q.screen.lt.sm" class="bg-grey-1 no-shadow">
-                    <q-card-section horizontal outlined>
-                      <q-card-section>
-                        <div class="text-subtitle text-weight-bold">
-                          Mia's Massage Launceston
-                        </div>
-                        <q-label class="text-weight-bold text-orange-10"
-                          >4.9</q-label
-                        >
-                        <q-rating
-                          :value="ratingModel"
-                          color="orange-6"
-                          readonly
-                        />
-                        <div class="text-caption text-grey-9 q-mt-xs">
-                          Shop 2, 198-216 Charles Street, Launceston
-                        </div>
-                      </q-card-section>
-                    </q-card-section>
-                  </q-card>
-                  <div class="col-12 q-pa-md-md q-pa-none-xs">
+                  <q-card class="col-12 col-md-6 col-lg-6 q-mb-md"> </q-card>
+                  <div class="col-12">
                     <q-item-label header class="text-h6"
                       >Booking Summary</q-item-label
                     >
                     <q-item class="full-width q-pa-md-md">
                       <q-item-section>
                         <q-item-label class="text-subtitle2">
-                          <q-icon
-                            class="q-mr-xs-md"
-                            name="o_spa"
-                            size="20px"
-                            color="grey-8"
-                          />
-                          {{ selectedService.title }}
+                          * {{ selectedService.title }}
                         </q-item-label>
                         <q-item-label caption>{{
                           selectedService.description
@@ -582,23 +505,18 @@
                       </q-item-section>
                     </q-item>
                     <q-separator></q-separator>
-
                     <q-item class="full-width q-pa-md-md">
                       <q-item-section>
                         <q-item-label lines="1" class="text-subtitle2">
                           <q-icon
                             class="q-mr-xs-md"
                             name="o_person"
-                            size="22px"
+                            size="25px"
                             color="grey-8"
                           />
-                          {{
-                            selectedStaff.id
-                              ? selectedStaff.name
-                              : "Any therapist"
-                          }}
+                          {{ selectedStaff.name }}
                         </q-item-label>
-                        <q-item-label caption v-if="selectedStaff.id">{{
+                        <q-item-label caption>{{
                           selectedStaff.position
                         }}</q-item-label>
                       </q-item-section>
@@ -606,72 +524,54 @@
                     <q-separator></q-separator>
                     <q-item class="full-width q-pa-md-md">
                       <q-item-section>
-                        <q-item-label class="text-subtitle2">
+                        <q-item-label class="text-subtitle2 text-grey-8">
                           <q-icon
                             class="q-mr-xs-md"
                             name="o_calendar_month"
-                            size="20px"
+                            size="25px"
                             color="grey-8"
                           />
-                          {{
-                            showTime(time) +
-                            " - " +
-                            showTime(getEndTime()) +
-                            ", " +
-                            showDate()
-                          }}
+                          {{ time + " - " + getEndTime() + ", " + showDate() }}
                         </q-item-label>
                       </q-item-section>
                     </q-item>
-                    <q-separator></q-separator>
-                    <q-item class="full-width q-pa-md-md">
+
+                    <q-item
+                      class="full-width"
+                      style="border-top: 3px dotted blue"
+                    >
                       <q-item-section>
-                        <q-item-label lines="1" class="text-subtitle2">
-                          <q-icon
-                            class="q-mr-xs-md"
-                            name="o_description"
-                            size="20px"
-                            color="grey-8"
-                          />
-                          Booking Notes
-                        </q-item-label>
-                        <q-item-label caption>{{
-                          comments == ""
-                            ? "You don't write any comments."
-                            : comments
-                        }}</q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-separator></q-separator>
-                    <q-item class="full-width">
-                      <q-item-section>
-                        <q-item-label class="text-subtitle2 text-weight-bold">
-                          Total</q-item-label
+                        <q-item-label class="text-subtitle2"
+                          >Total</q-item-label
                         >
                       </q-item-section>
-                      <q-item-section
-                        side
-                        class="text-subtitle1 text-black text-weight-bold"
-                      >
+                      <q-item-section side class="text-subtitle1">
                         $ {{ selectedService.price }}
                       </q-item-section>
                     </q-item>
                   </div>
                 </div>
 
-                <q-card class="rounded-borders shadow-1">
+                <q-card class="rounded-borders">
                   <q-card-section :horizontal="!$q.screen.lt.sm">
-                    <q-card-section class="col-md-12 col-xs-12 q-pt-xs">
-                      <div
-                        class="text-subtitle1 text-weight-bold text-grey-7 text-center"
-                      >
-                        Client Details
-                      </div>
+                    <q-card-section class="col-md-5 col-xs-12 q-pt-xs">
+                      <div class="text-subtitle1 text-center">Appointment</div>
                       <div class="text-subtitle2 text-weight-bold">
                         {{ name.first_name + " " + name.last_name }}
                       </div>
-                      <div class="text-subtitle3">Email: {{ email }}</div>
-                      <div class="text-subtitle3">Phone: {{ phone }}</div>
+                      <div class="text-subtitle2">{{ email }}</div>
+                      <div class="text-subtitle2">{{ phone }}</div>
+                    </q-card-section>
+                    <q-separator v-if="$q.screen.lt.sm" />
+                    <q-card-section class="col-md-7 col-xs-12 q-pt-xs">
+                      <div class="text-subtitle1 text-center">Comments</div>
+                      <div class="text-subtitle2 q-mb-xs text-grey-8">
+                        {{
+                          comments == ""
+                            ? "You don't write any comments."
+                            : comments
+                        }}
+                      </div>
                     </q-card-section>
                   </q-card-section>
                 </q-card>
@@ -710,8 +610,6 @@
                 :selectedStaff="selectedStaff"
                 :time="time"
                 :showDate="showDate"
-                :showTime="showTime"
-                :availableStaff="availableStaff"
                 @editService="step = 1"
                 @editDate="step = 2"
                 @editTherapist="step = 2"
@@ -742,8 +640,6 @@
             :selectedStaff="selectedStaff"
             :time="time"
             :showDate="showDate"
-            :showTime="showTime"
-            :availableStaff="availableStaff"
             @editService="step = 1"
             @editDate="step = 2"
             @editTherapist="step = 2"
@@ -753,15 +649,16 @@
     </div>
     <div v-if="!$q.screen.lt.sm" class="col-2"></div>
   </div>
+
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted, computed } from "vue";
+<script setup>
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import { comment } from "postcss";
 import SummaryContent from "../components/SummaryContent.vue";
 import { useQuasar } from "quasar";
-import { ElTimePicker, ElDialog } from "element-plus";
+import { ElTimePicker } from 'element-plus'
 
 const $q = useQuasar();
 const VITE_API_URL = import.meta.env.VITE_API_URL;
@@ -776,7 +673,7 @@ const ratingModel = ref(4.5);
 
 const selectedService = ref([]);
 
-const step = ref(3);
+const step = ref(2);
 const expandedStates = ref({}); // Object to track expanded state for each card
 
 const toggleExpanded = (pkgId) => {
@@ -895,97 +792,53 @@ const fetchUnavailabelTime = async () => {
       }
     );
     if (response.data) {
-      unavailableTime.value = response.data.map((timeRange) => ({
+      unavailabelTime.value = response.data.map((timeRange) => ({
         start: timeRange.start_time,
         end: timeRange.end_time,
       }));
     }
-    console.log("Unavailable time:", unavailableTime.value);
-    time.value = "";
-    selectedHour.value = "";
-    selectedMinute.value = "";
+    console.log("Unavailable time:", unavailabelTime.value);
     refreshStaff();
   } catch (error) {
     console.error("Error fetching unavailable time:", error);
   }
 };
 
-const time = ref("");
+const time = ref();
+const unavailabelTime = ref([]);
 
-const unavailableTime = ref([]);
-
-const selectedHour = ref("");
-const selectedMinute = ref("");
-const showTimePickerDialog = ref(false);
-const pmIndex = ref(0);
-
-const openingTime = ref({
-  start: "08:00",
-  end: "19:00",
-});
-const hours = computed(() => {
-  const availableHours = [];
-  const startHour = parseInt(openingTime.value.start.split(":")[0]);
-  const endHour = parseInt(openingTime.value.end.split(":")[0]);
-  for (let i = startHour; i < endHour; i++) {
-    const hour = `${i < 10 ? "0" : ""}${i}`;
-    availableHours.push(hour);
+const optionsFnTime = (hr, min, sec) => {
+  var noMin = false;
+  if (min === null) {
+    min = 0;
+    noMin = true;
   }
-  return availableHours;
-});
+  const time = `${hr.toString().padStart(2, "0")}:${min
+    .toString()
+    .padStart(2, "0")}`;
 
-// 可用的分钟范围：0, 10, 20, 30, 40, 50
-const minutes = [
-  "00",
-  "05",
-  "10",
-  "15",
-  "20",
-  "25",
-  "30",
-  "35",
-  "40",
-  "45",
-  "50",
-  "55",
-];
-
-// 判断选中的小时是否不可用
-const isHourUnavailable = (hour: string) => {
-  return unavailableTime.value.some((timeRange) => {
-    if (hour === "PM" || hour === "AM") {
+  if (hr < 9 || hr > 18) {
+    return false;
+  }
+  for (const range of unavailabelTime.value) {
+    if (hr == range.end.split(":")[0]) {
+      if (noMin) {
+        return true;
+      }
+      if (min <= range.end.split(":")[1]) {
+        return false;
+      }
       return true;
     }
-    const { start, end } = timeRange;
-    const endHour = end.split(":")[0];
-    // Convert hour to 24-hour format for comparison
-
-    // Allow the end hour but block all other hours in the range
-    return hour !== endHour && `${hour}:00` >= start && `${hour}:00` < end;
-  });
-};
-
-// 判断选中的分钟是否不可用
-const isMinuteUnavailable = (minute: string) => {
-  const hour = selectedHour.value;
-  return unavailableTime.value.some((timeRange) => {
-    const { start, end } = timeRange;
-    const [endHour, endMinute] = end.split(":");
-    // Block minutes only if it's the end hour and within the restricted range
-    return (
-      hour === endHour &&
-      parseInt(minute) < parseInt(endMinute) &&
-      `${hour}:${minute}` >= start
-    );
-  });
-};
-
-const handleTimeChange = async (isHourChange) => {
-  try {
-    if (isHourChange) {
-      selectedMinute.value = "";
+    if (time >= range.start && time <= range.end) {
+      return false;
     }
-    time.value = `${selectedHour.value}:${selectedMinute.value}`;
+  }
+  return true;
+};
+
+const selectTime = async () => {
+  try {
     refreshStaff();
   } catch (error) {
     console.error("Error fetching available staff:", error);
@@ -1056,6 +909,7 @@ const submitAppointment = async () => {
         position: "top",
         timeout: 3000,
       });
+
     } else {
       console.error("Failed to create appointment:", response.data);
     }
@@ -1065,22 +919,6 @@ const submitAppointment = async () => {
 };
 
 const showSummaryDialog = ref(false);
-
-const showTime = (time) => {
-  if (!time || time.includes("undefined")) {
-    return ""; // Return empty string if time is invalid
-  }
-  let hour = time.split(":")[0]; // Changed from const to let
-  const minute = time.split(":")[1];
-  if (hour > 12) {
-    hour = hour - 12;
-    return hour + ":" + minute + " PM";
-  } else if (hour == 12) {
-    return hour + ":" + minute + " PM";
-  } else {
-    return hour + ":" + minute + " AM";
-  }
-};
 </script>
 
 <style scoped></style>

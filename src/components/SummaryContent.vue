@@ -45,7 +45,7 @@
     </q-card-section>
   </q-card-section>
   <q-separator />
-  <q-card-section v-if="selectedStaff.id">
+  <q-card-section v-if="selectedStaff.id || availableStaff.length">
     <q-lable class="text-subtitle1">
       <q-icon name="check_circle" color="teal-7" /> Date
     </q-lable>
@@ -54,27 +54,23 @@
       color="teal"
       text-color="white"
       icon="alarm"
-      :label="time ? time + ', ' + showDate() : showDate()"
+      :label=" showTime(time) ? showTime(time) + ', ' + showDate() : showDate()"
       clickable
       @click="$emit('editDate')"
     >
     </q-chip>
   </q-card-section>
   <q-separator v-if="selectedStaff.id" />
-  <q-card-section v-if="selectedStaff.id" horizontal>
+  <q-card-section v-if="selectedStaff.id || availableStaff.length" horizontal>
     <q-card-section>
       <q-lable class="text-subtitle1">
         <q-icon name="check_circle" color="teal-7" /> Therapist
       </q-lable>
-      <q-chip
-        color="teal-1"
-        clickable
-        @click="$emit('editTherapist')"
-      >
-        <q-avatar size="30px">
+      <q-chip color="teal-1" clickable @click="$emit('editTherapist')">
+        <q-avatar v-if="selectedStaff.id" size="30px">
           <img :src="selectedStaff.profile_photo_url" />
         </q-avatar>
-        {{ selectedStaff.name }}
+        {{ selectedStaff.id ? selectedStaff.name : "Any therapist" }}
       </q-chip>
     </q-card-section>
   </q-card-section>
@@ -95,6 +91,8 @@ defineProps({
   selectedService: Object,
   selectedStaff: Object,
   time: String,
+  showTime: Function,
   showDate: Function,
+  availableStaff: Array,
 });
 </script>
