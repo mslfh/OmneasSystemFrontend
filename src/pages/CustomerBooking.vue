@@ -758,6 +758,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed } from "vue";
 import axios from "axios";
+import { useRouter } from "vue-router";
 import { comment } from "postcss";
 import SummaryContent from "../components/SummaryContent.vue";
 import { useQuasar } from "quasar";
@@ -776,7 +777,7 @@ const ratingModel = ref(4.5);
 
 const selectedService = ref([]);
 
-const step = ref(3);
+const step = ref(2);
 const expandedStates = ref({}); // Object to track expanded state for each card
 
 const toggleExpanded = (pkgId) => {
@@ -917,7 +918,6 @@ const unavailableTime = ref([]);
 const selectedHour = ref("");
 const selectedMinute = ref("");
 const showTimePickerDialog = ref(false);
-const pmIndex = ref(0);
 
 const openingTime = ref({
   start: "08:00",
@@ -952,30 +952,49 @@ const minutes = [
 
 // 判断选中的小时是否不可用
 const isHourUnavailable = (hour: string) => {
+  const duration = selectedService.value.duration ?? 0;
   return unavailableTime.value.some((timeRange) => {
-    if (hour === "PM" || hour === "AM") {
-      return true;
+    const startTime = hour + ":00:00";
+    let endHour = parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+    let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+    if (endMinute >= 60) {
+      endMinute -= 60;
+      endHour += 1;
     }
+    const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+      .toString()
+      .padStart(2, "0")}:00`;
     const { start, end } = timeRange;
-    const endHour = end.split(":")[0];
-    // Convert hour to 24-hour format for comparison
-
-    // Allow the end hour but block all other hours in the range
-    return hour !== endHour && `${hour}:00` >= start && `${hour}:00` < end;
+    return (
+      (startTime >= timeRange.start && startTime < timeRange.end) ||
+      (endTime > timeRange.start && endTime < timeRange.end) ||
+      (startTime <= timeRange.start && endTime > timeRange.end)
+    );
   });
 };
 
 // 判断选中的分钟是否不可用
 const isMinuteUnavailable = (minute: string) => {
+  const duration = selectedService.value.duration ?? 0;
   const hour = selectedHour.value;
+  const startTime = hour + ":" + minute + ":00";
+  // Calculate end time based on duration
+  let endHour = parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+  let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+  if (endMinute >= 60) {
+    endMinute -= 60;
+    endHour += 1;
+  }
+  const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+    .toString()
+    .padStart(2, "0")}:00`;
+
+  // Check if the selected time is within any of the unavailable time ranges
   return unavailableTime.value.some((timeRange) => {
-    const { start, end } = timeRange;
-    const [endHour, endMinute] = end.split(":");
-    // Block minutes only if it's the end hour and within the restricted range
     return (
-      hour === endHour &&
-      parseInt(minute) < parseInt(endMinute) &&
-      `${hour}:${minute}` >= start
+      (startTime >= timeRange.start && startTime < timeRange.end) ||
+      (endTime > timeRange.start && endTime <= timeRange.end) ||
+      (startTime <= timeRange.start && endTime >= timeRange.end)
     );
   });
 };
@@ -1013,6 +1032,7 @@ const tick_options = [
   { label: "Friend request", value: "friend", color: "green" },
   { label: "Picture uploaded", value: "upload", color: "red" },
 ];
+const router = useRouter();
 
 const submitAppointment = async () => {
   try {
@@ -1044,17 +1064,26 @@ const submitAppointment = async () => {
 
     if (response.status === 201) {
       console.log("Appointment created successfully:", response.data);
-      // Optionally, you can reset the form or navigate to another page
+
+      return;
+
       // Reset form fields
       selectedService.value = [];
-      // Show success message or navigate to a confirmation page
       showSummaryDialog.value = false;
+      // step.value = 1;
+      // Navigate to appointment page
       $q.notify({
-        message: "Appointment created successfully!",
+        message: "Appointment booked successfully!",
         color: "green",
         icon: "check_circle",
         position: "top",
         timeout: 3000,
+      });
+      router.push({
+        path: "/appointment",
+        query: {
+          id: response.data.id,
+        },
       });
     } else {
       console.error("Failed to create appointment:", response.data);

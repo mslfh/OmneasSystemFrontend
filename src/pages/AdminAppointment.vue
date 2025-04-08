@@ -161,7 +161,9 @@
                     <q-item-label class="text-subtitle1">
                       {{ event.customer_name }}
                     </q-item-label>
-                    <q-item-label class="text-caption">{{ event.time }} / {{ event.duration }}min</q-item-label>
+                    <q-item-label class="text-caption"
+                      >{{ event.time }} / {{ event.duration }}min</q-item-label
+                    >
                     <q-item-label class="text-subtitle">
                       {{ event.title }}
                     </q-item-label>
@@ -225,17 +227,35 @@
       </q-card-section>
       <q-card-section>
         <q-input
-          v-model="addAppointmentForm.booking_date"
-          filled
-          type="date"
-          hint="Native date"
+          v-model="addAppointmentForm.customer_service[0].customer_name"
+          label="Customer Name"
         />
-        <q-input
-          v-model="addAppointmentForm.booking_time"
-          filled
-          type="time"
-          hint="Native time"
+        <q-select
+          v-model="addAppointmentForm.customer_service[0].staff"
+          :options="practitionerOptions"
+          label="Practitioner"
+          option-value="id"
+          option-label="name"
         />
+        <q-select
+          v-model="addAppointmentForm.customer_service[0].service"
+          :options="serviceOptions"
+          label="Service"
+          option-value="id"
+          option-label="name"
+        />
+        Date:
+        <q-input v-model="addAppointmentForm.booking_date" filled type="date" />
+        Time:
+        <q-chip
+          v-for="item in available_booking_time"
+          class="bg-teal-1"
+          :key="item"
+          clickable
+          :icon="addAppointmentForm.booking_time == item ? 'check_circle' : 'o_fiber_manual_record'"
+          @click="addAppointmentForm.booking_time = item"
+          >{{ item }}</q-chip
+        >
         <q-input
           v-model="addAppointmentForm.customer_first_name"
           label="First Name"
@@ -247,24 +267,6 @@
         <q-input v-model="addAppointmentForm.customer_email" label="Email" />
         <q-input v-model="addAppointmentForm.customer_phone" label="Phone" />
         <q-input v-model="addAppointmentForm.comments" label="Comments" />
-        <q-input
-          v-model="addAppointmentForm.customer_service[0].customer_name"
-          label="Customer Name"
-        />
-        <q-select
-          v-model="addAppointmentForm.customer_service[0].service"
-          :options="serviceOptions"
-          label="Service"
-          option-value="id"
-          option-label="name"
-        />
-        <q-select
-          v-model="addAppointmentForm.customer_service[0].staff"
-          :options="practitionerOptions"
-          label="Practitioner"
-          option-value="id"
-          option-label="name"
-        />
         <q-input
           v-model="addAppointmentForm.customer_service[0].comments"
           label="Service Comments"
@@ -334,7 +336,14 @@ import "@quasar/quasar-ui-qcalendar/index.css";
 import { ref, computed, onMounted } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "components/NavigationBar.vue";
-import { useQuasar, QDialog, QCard, QCardSection, QCardActions, QBtn } from "quasar";
+import {
+  useQuasar,
+  QDialog,
+  QCard,
+  QCardSection,
+  QCardActions,
+  QBtn,
+} from "quasar";
 
 const $q = useQuasar();
 interface Event {
@@ -355,9 +364,11 @@ interface Event {
 const calendar = ref<QCalendarDay>();
 const selectedDate = ref(today());
 const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
+const available_booking_time = ref<string[]>([]);
 
 onMounted(() => {
   fetchAppointments();
+  fetchAvailableBookingTime();
   fetchServiceOptions();
   fetchPractitionerOptions();
 });
@@ -592,11 +603,13 @@ function onClickTime(data: Timestamp) {
     message: "Do you want to take a break?",
     cancel: true,
     persistent: true,
-  }).onOk(() => {
-    console.log("Break time confirmed");
-  }).onCancel(() => {
-    console.log("Break time canceled");
-  });
+  })
+    .onOk(() => {
+      console.log("Break time confirmed");
+    })
+    .onCancel(() => {
+      console.log("Break time canceled");
+    });
 }
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
@@ -725,6 +738,43 @@ async function fetchServiceOptions() {
     }));
   } catch (error) {
     console.error("Error fetching services:", error);
+  }
+}
+
+async function fetchAvailableBookingTime() {
+  try {
+    let formattedDate = new Date(selectedDate.value);
+    const day = String(formattedDate.getDate()).padStart(2, "0");
+    const month = String(formattedDate.getMonth() + 1).padStart(2, "0");
+    const year = formattedDate.getFullYear();
+    const response = await api.get("/api/get-unavailable-time-from-date", {
+      params: {
+        date: `${year}/${month}/${day}`,
+      },
+    });
+    const unavailable_booking_time = response.data;
+    console.log("Unavailable booking times:", unavailable_booking_time);
+    const allTimes = [];
+    for (let i = 8; i < 18; i++) {
+      allTimes.push(`${i.toString().padStart(2, "0")}:00`);
+      allTimes.push(`${i.toString().padStart(2, "0")}:10`);
+      allTimes.push(`${i.toString().padStart(2, "0")}:20`);
+      allTimes.push(`${i.toString().padStart(2, "0")}:30`);
+      allTimes.push(`${i.toString().padStart(2, "0")}:40`);
+      allTimes.push(`${i.toString().padStart(2, "0")}:50`);
+    }
+    // Filter out unavailable times
+    available_booking_time.value = allTimes.filter((time) => {
+      return !unavailable_booking_time.some((slot) => {
+        const start = slot.start_time.slice(0, 5);
+        const end = slot.end_time.slice(0, 5);
+        return time >= start && time < end;
+      });
+    });
+
+    console.log("Available booking times:", available_booking_time.value);
+  } catch (error) {
+    console.error("Error fetching available booking times:", error);
   }
 }
 
