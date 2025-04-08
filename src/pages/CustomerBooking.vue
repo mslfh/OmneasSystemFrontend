@@ -869,6 +869,12 @@ const dateOptionsFn = (date) => {
 };
 
 const refreshStaff = async () => {
+  console.log(time.value);
+  if (!time.value || !date.value) {
+    availableStaff.value = [];
+    return;
+  }
+
   const response = await axios.get(
     VITE_API_URL + "/api/get-available-staff-from-scheduletime",
     {

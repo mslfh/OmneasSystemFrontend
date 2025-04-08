@@ -4,7 +4,7 @@ const routes = [
     path: '/',
     component: () => import('layouts/CustomerLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/CustomerIndex.vue') },
+      //{ path: '', component: () => import('pages/CustomerIndex.vue') },
       { path: 'book', component: () => import('pages/CustomerBooking.vue') },
       { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
     ]
@@ -29,6 +29,7 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/AdminDashboard.vue') },
       { path: 'staff', component: () => import('pages/AdminStaff.vue') },
+      { path: 'user', component: () => import('pages/AdminUser.vue') },
       { path: 'package', component: () => import('pages/AdminPackage.vue') },
       { path: 'service', component: () => import('pages/AdminService.vue') },
       { path: 'schedule', component: () => import('pages/AdminSchedule.vue') },
