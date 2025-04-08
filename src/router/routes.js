@@ -4,7 +4,7 @@ const routes = [
     path: '/',
     component: () => import('layouts/CustomerLayout.vue'),
     children: [
-      //{ path: '', component: () => import('pages/CustomerIndex.vue') },
+      { path: '', component: () => import('pages/CustomerIndex.vue') },
       { path: 'book', component: () => import('pages/CustomerBooking.vue') },
       { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
     ]

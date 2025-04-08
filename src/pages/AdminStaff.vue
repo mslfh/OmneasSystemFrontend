@@ -45,8 +45,8 @@
             type="textarea"
           />
           <q-input v-model="addForm.tag" label="Tag" />
-          <q-input v-model="addForm.level" label="Level" type="number" />
-          <q-input v-model="addForm.sort" label="Sort" type="number" />
+          <!-- <q-input v-model="addForm.level" label="Level" type="number" /> -->
+          <!-- <q-input v-model="addForm.sort" label="Sort" type="number" /> -->
           <q-checkbox
             v-model="addForm.has_certificate"
             label="Has Certificate"
@@ -80,7 +80,7 @@
       row-key="id"
     >
       <template v-slot:body-cell-profile_photo="props">
-        <q-avatar>
+        <q-avatar size="40px" class="q-ml-md">
           <img :src="props.row.profile_photo_url" />
         </q-avatar>
       </template>
@@ -113,29 +113,6 @@
           <div class="text-h6">Edit Staff</div>
         </q-card-section>
         <q-card-section>
-          <q-input v-model="editForm.name" label="Name" />
-          <q-input filled v-model="editForm.email" label="Email" type="email" readonly />
-          <q-input v-model="editForm.position" label="Position" />
-          <q-select
-            v-model="editForm.status"
-            label="Status"
-            :options="statusOptions"
-            emit-value
-            map-options
-          />
-          <q-input
-            v-model="editForm.description"
-            label="Description"
-            type="textarea"
-          />
-          <q-input v-model="editForm.tag" label="Tag" />
-          <q-input v-model="editForm.level" label="Level" type="number" />
-          <q-input v-model="editForm.sort" label="Sort" type="number" />
-          <q-checkbox
-            v-model="editForm.has_certificate"
-            label="Has Certificate"
-          />
-          <q-input v-model="editForm.phone" label="Phone" />
           <q-avatar size="100px" class="q-mb-md">
             <img v-if="editForm.avatar" :src="editForm.avatar" />
           </q-avatar>
@@ -152,6 +129,31 @@
             style="display: none"
             @update:model-value="(file) => handleFileChange(file, 'edit')"
           />
+
+          <q-input v-model="editForm.name" label="Name" />
+          <q-input filled v-model="editForm.email" label="Email" type="email" readonly />
+          <q-input v-model="editForm.position" label="Position" />
+          <q-select
+            v-model="editForm.status"
+            label="Status"
+            :options="statusOptions"
+            emit-value
+            map-options
+          />
+          <q-input
+            v-model="editForm.description"
+            label="Description"
+            type="textarea"
+          />
+          <q-input v-model="editForm.tag" label="Tag" />
+          <!-- <q-input v-model="editForm.level" label="Level" type="number" /> -->
+          <!-- <q-input v-model="editForm.sort" label="Sort" type="number" /> -->
+          <q-checkbox
+            v-model="editForm.has_certificate"
+            label="Has Certificate"
+          />
+          <q-input v-model="editForm.phone" label="Phone" />
+
         </q-card-section>
         <q-card-actions align="right">
           <q-btn
@@ -227,11 +229,11 @@ const isAddDialogOpen = ref(false);
 const addForm = ref({
   name: "",
   position: "",
-  status: "",
+  status: "active",
   description: "",
   tag: "",
-  level: null,
-  sort: null,
+  // level: 1,
+  // sort: 1,
   has_certificate: false,
   email: "",
   phone: "",
@@ -296,8 +298,8 @@ const addStaff = async () => {
       status: "",
       description: "",
       tag: "",
-      level: null,
-      sort: null,
+      // level: null,
+      // sort: null,
       has_certificate: false,
       email: "",
       phone: "",
@@ -318,8 +320,8 @@ const editForm = ref({
   status: "",
   description: "",
   tag: "",
-  level: null,
-  sort: null,
+  // level: null,
+  // sort: null,
   has_certificate: false,
   email: "",
   phone: "",
@@ -363,8 +365,8 @@ const updateStaff = async () => {
       status: "",
       description: "",
       tag: "",
-      level: null,
-      sort: null,
+      // level: null,
+      // sort: null,
       has_certificate: false,
       email: "",
       phone: "",

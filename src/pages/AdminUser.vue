@@ -1,5 +1,13 @@
 <template>
   <div class="q-pa-md">
+    <!-- Add search input and dropdown for field selection -->
+    <div class="col-8 items-center q-pa-md">
+      <SearchInput
+        v-model="user_search"
+        placeholder="Search Customer"
+      />
+    </div>
+
     <q-table
       title="Users"
       no-data-label="No users found"
@@ -26,7 +34,12 @@
       </template>
     </q-table>
 
-    <q-btn flat label="Import Users" color="primary" @click="triggerFileInput" />
+    <q-btn
+      flat
+      label="Import Users"
+      color="primary"
+      @click="triggerFileInput"
+    />
     <input
       type="file"
       ref="fileInput"
@@ -34,6 +47,23 @@
       @change="importUsers"
       accept=".xlsx, .xls"
     />
+
+    <q-inner-loading :showing="isLoading" />
+    <q-dialog v-model="isSuccessDialogOpen">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Import Successful</div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="OK"
+            color="primary"
+            @click="isSuccessDialogOpen = false"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <q-dialog v-model="isEditDialogOpen">
       <q-card style="min-width: 400px">
@@ -44,7 +74,13 @@
           <q-input v-model="editForm.name" label="Username" />
           <q-input v-model="editForm.first_name" label="First Name" />
           <q-input v-model="editForm.last_name" label="Last Name" />
-          <q-input filled v-model="editForm.email" label="Email" type="email" readonly />
+          <q-input
+            filled
+            v-model="editForm.email"
+            label="Email"
+            type="email"
+            readonly
+          />
           <q-input v-model="editForm.phone" label="Phone" />
         </q-card-section>
         <q-card-actions align="right">
@@ -84,15 +120,45 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { api } from "boot/axios";
+import SearchInput from "src/components/SearchInput.vue";
 
 const users = ref([]);
 const columns = [
-  { name: "name", required: true, label: "Username", align: "left", field: "name" },
+  {
+    name: "name",
+    required: true,
+    label: "Username",
+    align: "left",
+    field: "name",
+  },
   { name: "phone", label: "Phone", align: "left", field: "phone" },
-  { name: "first_name", required: true, label: "First Name", align: "left", field: "first_name" },
-  { name: "last_name", required: true, label: "Last Name", align: "left", field: "last_name" },
-  { name: "email", required: true, label: "Email", align: "left", field: "email" },
-  { name: "created_at", label: "Created At", align: "left", field: "created_at" },
+  {
+    name: "first_name",
+    required: true,
+    label: "First Name",
+    align: "left",
+    field: "first_name",
+  },
+  {
+    name: "last_name",
+    required: true,
+    label: "Last Name",
+    align: "left",
+    field: "last_name",
+  },
+  {
+    name: "email",
+    required: true,
+    label: "Email",
+    align: "left",
+    field: "email",
+  },
+  {
+    name: "created_at",
+    label: "Created At",
+    align: "left",
+    field: "created_at",
+  },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
@@ -104,7 +170,7 @@ const fetchUsers = async () => {
   try {
     const response = await api.get("/api/user");
     if (response.data.length > 0) {
-      users.value = response.data.map(user => ({
+      users.value = response.data.map((user) => ({
         ...user,
         first_name: user.first_name || "N/A",
         last_name: user.last_name || "N/A",
@@ -115,7 +181,6 @@ const fetchUsers = async () => {
     console.error("Error fetching users:", error);
   }
 };
-
 const isEditDialogOpen = ref(false);
 const editForm = ref({
   id: null,
@@ -147,7 +212,14 @@ const updateUser = async () => {
       users.value[index] = { ...editForm.value };
     }
     fetchUsers();
-    editForm.value = { id: null, name: "", first_name: "", last_name: "", email: "", phone: "" };
+    editForm.value = {
+      id: null,
+      name: "",
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+    };
     isEditDialogOpen.value = false;
   } catch (error) {
     console.error("Error updating user:", error);
@@ -174,6 +246,9 @@ const confirmDelete = async () => {
 };
 
 const fileInput = ref(null);
+const isLoading = ref(false);
+const isSuccessDialogOpen = ref(false);
+
 
 const triggerFileInput = () => {
   fileInput.value.click();
@@ -186,17 +261,21 @@ const importUsers = async (event) => {
   const formData = new FormData();
   formData.append("file", file);
 
+  isLoading.value = true; // Show loading indicator
   try {
     await api.post("/api/importUser", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 10000 * 300, // Increase timeout to 10 seconds
     });
     fetchUsers();
+    isSuccessDialogOpen.value = true; // Show success dialog
   } catch (error) {
     console.error("Error importing users:", error);
   } finally {
-    event.target.value = null; // Reset file input
+    isLoading.value = false; // Hide loading indicator
+    event.target.value = null;
   }
 };
 </script>

@@ -226,6 +226,24 @@
         <div class="text-h6">Add Appointment</div>
       </q-card-section>
       <q-card-section>
+
+        <q-input
+            rounded
+            v-model="add_search"
+            outlined
+            placeholder="Search Customer"
+          >
+            <template v-slot:append>
+              <q-icon v-if="add_search === ''" name="search" />
+              <q-icon
+                v-else
+                name="clear"
+                class="cursor-pointer"
+                @click="add_search = ''"
+              />
+            </template>
+          </q-input>
+
         <q-input
           v-model="addAppointmentForm.customer_service[0].customer_name"
           label="Customer Name"
@@ -719,8 +737,8 @@ const addAppointmentForm = ref({
   customer_service: [
     {
       customer_name: "",
-      service: {},
-      staff: {},
+      service: "",
+      staff: "",
       comments: "",
     },
   ],
