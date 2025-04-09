@@ -27,7 +27,7 @@ const routes = [
       }
     },
     children: [
-      { path: '', component: () => import('pages/AdminDashboard.vue') },
+      { path: '', component: () => import('pages/AdminAppointment.vue') },
       { path: 'staff', component: () => import('pages/AdminStaff.vue') },
       { path: 'user', component: () => import('pages/AdminUser.vue') },
       { path: 'package', component: () => import('pages/AdminPackage.vue') },

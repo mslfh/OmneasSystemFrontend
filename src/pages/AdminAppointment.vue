@@ -13,13 +13,15 @@
 
     <div class="row">
       <div class="q-mx-sm col-2">
-        <div class="text-h6 q-my-md text-center text-brown-9">
-          <q-btn round dense flat color="grey-8" icon="calendar_month">
+        <div
+          class="text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center"
+        >
+          <q-btn dense flat color="grey-8" icon="calendar_month" size="md">
             <q-badge color="deep-orange" text-color="white" floating>
               {{ dragItems.length }}
             </q-badge>
           </q-btn>
-          Coming Appointment
+          Unassigned
         </div>
         <ul class="column">
           <li
@@ -35,7 +37,7 @@
               min)
               <q-separator></q-separator>
               <q-card-section class="q-pt-none q-pb-none">
-                BookingName: {{ item.customer_name }}
+                Name: {{ item.customer_name }}
               </q-card-section>
               <q-card-section class="q-pt-none text-caption">
                 * {{ item.service_title }}
@@ -185,22 +187,38 @@
                       {{ event.service_title }} |
                       {{ event.service_duration }} min
                     </q-item-label>
+
                     <q-chip
+                    v-if="event.status === 'pending'"
                       outline
                       color="white"
                       text-color="white"
                       icon="event"
+                      clickable
+                      @click="startAppointment(event)"
                     >
                       Start
                     </q-chip>
-                    <q-chip
+
+                    <q-icon
+                    size="20px"
+                      v-if="event.status === 'in_progress'"
+                      outline
+                      color="white"
+                      text-color="white"
+                      name="hourglass_top"
+                    >
+                    </q-icon>
+                    <!-- <q-chip
                       outline
                       color="white"
                       text-color="white"
                       icon="check_circle_outline"
+                      clickable
+                      @click="finishAppointment(event)"
                     >
-                      Finish
-                    </q-chip>
+                      Done
+                    </q-chip> -->
                   </q-list>
                   <q-tooltip>{{
                     event.time +
@@ -377,13 +395,14 @@
           label="Date"
           @change="fetchAvailableBookingTime(editEventForm.date)"
         />
-        Time:
-        <q-chip
-         class="bg-teal-1"
-         icon="check_circle"
-        >
-        {{ editEventForm.time }}
-        </q-chip>
+
+        <div class="q-mb-sm text-weight-bold">
+          Time:
+          <q-chip class="bg-amber-4" icon="check_circle">
+            {{ editEventForm.time }}
+          </q-chip>
+        </div>
+
         <q-chip
           v-for="item in available_booking_time"
           v-model:model-value="editEventForm.time"
@@ -453,6 +472,8 @@ import {
   QBtn,
 } from "quasar";
 import { comment } from "postcss";
+import { id } from "element-plus/es/locales.mjs";
+import NoWorkResult_ from "postcss/lib/no-work-result";
 
 const $q = useQuasar();
 interface Event {
@@ -469,7 +490,8 @@ interface Event {
   customer_name: string;
   comments: string;
   bgcolor: string;
-  icon: string;
+  status: string;
+  appointment_id: number;
 }
 
 const calendar = ref<QCalendarDay>();
@@ -575,8 +597,9 @@ async function fetchAppointments() {
       customer_name: bookedService.customer_name,
       staff_id: bookedService.staff_id,
       staff_name: bookedService.staff_name,
-      bgcolor: "teal",
-      icon: "fas fa-handshake",
+      bgcolor: bookedService.status === "in_progress" ? "teal-14":"teal" ,
+      status: bookedService.status,
+      appointment_id: bookedService.appointment_id,
     }));
 
     events.value = fetchedData.filter((event) => event.staff_id !== 0);
@@ -979,6 +1002,66 @@ const selectUserFromSearch = async () => {
     console.error("Error fetching users:", error);
   }
 };
+
+const startAppointment = async (event: Event) => {
+  // Show confirmation dialog before starting the appointment
+  //get the current time
+  const start_time = new Date();
+  const hours = String(start_time.getHours()).padStart(2, "0");
+  const minutes = String(start_time.getMinutes()).padStart(2, "0");
+  // const formattedTime = `${hours}:${minutes}`;
+
+  const formattedTime = `13:30`;
+
+  $q.dialog({
+    title: "Start Appointment",
+    message:
+      "Do you want to start this appointment? it will be " + formattedTime,
+    cancel: true,
+    persistent: true,
+  })
+    .onOk(() => {
+      try {
+        const payload = {
+          id: event.appointment_id,
+          time: formattedTime,
+          status: "in_progress",
+        };
+       api.put(`/api/appointments/${event.appointment_id}`, payload);
+        fetchAppointments(); // Refresh appointments after finishing
+      } catch (error) {
+        console.error("Error finishing appointment:", error);
+      }
+    })
+    .onCancel(() => {});
+};
+
+const finishAppointment = async (event: Event) => {
+  // Show confirmation dialog before finishing the appointment
+  $q.dialog({
+    title: "Finish Appointment",
+    message: "Do you want to finish this appointment?",
+    cancel: true,
+    persistent: true,
+  })
+    .onOk(() => {
+      console.log("Break time confirmed");
+    })
+    .onCancel(() => {
+      console.log("Break time canceled");
+    });
+
+  try {
+    const payload = {
+      id: event.id,
+      status: "finished",
+    };
+    await api.put(`/api/service-appointments/${event.id}`, payload);
+    fetchAppointments(); // Refresh appointments after finishing
+  } catch (error) {
+    console.error("Error finishing appointment:", error);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -990,56 +1073,5 @@ const selectUserFromSearch = async () => {
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
-}
-
-.text-white {
-  color: white;
-}
-
-.bg-blue {
-  background: blue;
-}
-
-.bg-green {
-  background: green;
-}
-
-.bg-orange {
-  background: orange;
-}
-
-.bg-red {
-  background: red;
-}
-
-.bg-teal {
-  background: teal;
-}
-
-.bg-grey {
-  background: grey;
-}
-
-.bg-purple {
-  background: purple;
-}
-
-.full-width {
-  left: 0;
-  width: calc(100% - 2px);
-}
-
-.left-side {
-  left: 0;
-  width: calc(50% - 3px);
-}
-
-.right-side {
-  left: 50%;
-  width: calc(50% - 3px);
-}
-
-.rounded-border {
-  border-radius: 2px;
 }
 </style>

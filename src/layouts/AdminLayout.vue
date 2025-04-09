@@ -142,14 +142,14 @@ const zoomLeftDrawer = () => {
         "
       >
         <q-list>
-          <q-item active-class="q-item-no-link-highlighting">
+          <!-- <q-item active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
             <q-item-section>
               <q-item-label>Dashboard</q-item-label>
             </q-item-section>
-          </q-item>
+          </q-item> -->
           <q-item to="/admin/appointment" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="bookmark" />
@@ -168,7 +168,7 @@ const zoomLeftDrawer = () => {
           </q-item>
           <q-item to="/admin/staff" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
-              <q-icon name="dashboard" />
+              <q-icon name="storefront" />
             </q-item-section>
             <q-item-section>
               <q-item-label>Staff</q-item-label>
@@ -177,7 +177,7 @@ const zoomLeftDrawer = () => {
 
           <q-item to="/admin/user" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
-              <q-icon name="dashboard" />
+              <q-icon name="supervisor_account" />
             </q-item-section>
             <q-item-section>
               <q-item-label>Customer</q-item-label>
@@ -204,14 +204,14 @@ const zoomLeftDrawer = () => {
             </q-list>
           </q-expansion-item>
 
-          <q-item to="/Mail" active-class="q-item-no-link-highlighting">
+          <!-- <q-item to="/Mail" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="email" />
             </q-item-section>
             <q-item-section>
               <q-item-label>Notification</q-item-label>
             </q-item-section>
-          </q-item>
+          </q-item> -->
         </q-list>
       </q-scroll-area>
       <div class="absolute-top" style="height: 80px; padding-left: 10px">

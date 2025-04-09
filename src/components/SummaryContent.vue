@@ -8,7 +8,7 @@
       <q-img
         height="80px"
         class="rounded-borders"
-        src="src/assets/miamassage.png"
+        src="../assets/miamassage.png"
       />
     </q-card-section>
     <q-card-section>
