@@ -777,7 +777,7 @@ const ratingModel = ref(4.5);
 
 const selectedService = ref([]);
 
-const step = ref(2);
+const step = ref(1);
 const expandedStates = ref({}); // Object to track expanded state for each card
 
 const toggleExpanded = (pkgId) => {

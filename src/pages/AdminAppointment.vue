@@ -1,6 +1,7 @@
 <template>
   <div class="subcontent">
     <q-btn
+      class="float-left q-ma-md"
       label="Add Appointment"
       color="primary"
       @click="showAddAppointmentDialog"
@@ -13,7 +14,12 @@
     <div class="row">
       <div class="q-mx-sm col-2">
         <div class="text-h6 q-my-md text-center text-brown-9">
-          <q-icon name="date_range"></q-icon>Coming Appointment
+          <q-btn round dense flat color="grey-8" icon="calendar_month">
+            <q-badge color="deep-orange" text-color="white" floating>
+              {{ dragItems.length }}
+            </q-badge>
+          </q-btn>
+          Coming Appointment
         </div>
         <ul class="column">
           <li
@@ -24,7 +30,7 @@
           >
             <q-card class="text-subtitle q-mb-sm bg-amber-11" flat bordered>
               <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }} ({{
-                item.duration
+                item.service_duration
               }}
               min)
               <q-separator></q-separator>
@@ -32,7 +38,7 @@
                 BookingName: {{ item.customer_name }}
               </q-card-section>
               <q-card-section class="q-pt-none text-caption">
-                * {{ item.title }}
+                * {{ item.service_title }}
               </q-card-section>
             </q-card>
           </li>
@@ -82,6 +88,7 @@
               >
                 <div>{{ staffList[columnIndex].staff_name }}</div>
               </div>
+
               <div class="col-12" style="text-align: center">
                 <template
                   v-for="event in getEventsByStaff(
@@ -102,10 +109,6 @@
                       margin: 1px;
                     "
                   >
-                    <div class="title q-calendar__ellipsis">
-                      {{ event.title }}
-                      <q-tooltip>{{ event.details }}</q-tooltip>
-                    </div>
                   </q-badge>
                   <q-badge
                     v-else
@@ -122,7 +125,12 @@
                     @click="scrollToEvent(event)"
                   >
                     <q-tooltip>{{
-                      event.time + " - " + event.details
+                      event.time +
+                      " - " +
+                      event.service_title +
+                      " | " +
+                      event.service_duration +
+                      " min"
                     }}</q-tooltip>
                   </q-badge>
                 </template>
@@ -154,18 +162,28 @@
                 :style="
                   badgeStyles(event, 'body', timeStartPos, timeDurationHeight)
                 "
-                @click="openEditEventDialog(event)"
               >
-                <div class="title q-ma-xs">
+                <div align="right" class="q-ma-xs">
+                  <q-icon
+                    name="edit_calendar"
+                    size="20px"
+                    class="float-right"
+                    @click="openEditEventDialog(event)"
+                    clickable
+                  />
+                </div>
+                <div class="q-ma-md">
                   <q-list>
-                    <q-item-label class="text-subtitle1">
-                      {{ event.customer_name }}
+                    <q-item-label class="text-subtitle2">
+                      Name: {{ event.customer_name }}
                     </q-item-label>
-                    <q-item-label class="text-caption"
-                      >{{ event.time }} / {{ event.duration }}min</q-item-label
-                    >
+                    <q-item-label class="text-caption">
+                      Time: {{ event.time }} -
+                      {{ event.expected_end_time }}
+                    </q-item-label>
                     <q-item-label class="text-subtitle">
-                      {{ event.title }}
+                      {{ event.service_title }} |
+                      {{ event.service_duration }} min
                     </q-item-label>
                     <q-chip
                       outline
@@ -184,7 +202,14 @@
                       Finish
                     </q-chip>
                   </q-list>
-                  <q-tooltip>{{ event.time + " - " + event.title }}</q-tooltip>
+                  <q-tooltip>{{
+                    event.time +
+                    " - " +
+                    event.service_title +
+                    " | " +
+                    event.service_duration +
+                    " min"
+                  }}</q-tooltip>
                 </div>
               </div>
             </template>
@@ -226,23 +251,47 @@
         <div class="text-h6">Add Appointment</div>
       </q-card-section>
       <q-card-section>
-
         <q-input
-            rounded
-            v-model="add_search"
-            outlined
-            placeholder="Search Customer"
+          rounded
+          v-model="user_search"
+          outlined
+          placeholder="Find User by Name, Phone, or Email"
+          @keyup.enter="selectUserFromSearch"
+        >
+          <template v-slot:append>
+            <q-icon v-if="user_search === ''" name="search" />
+            <q-icon
+              v-else
+              name="clear"
+              class="cursor-pointer"
+              @click="user_search = ''"
+            />
+          </template>
+        </q-input>
+
+        <q-list v-if="user_search !== ''">
+          <q-item-label v-if="foundUsers.length == 0" class="text-caption"
+            >No data found</q-item-label
           >
-            <template v-slot:append>
-              <q-icon v-if="add_search === ''" name="search" />
-              <q-icon
-                v-else
-                name="clear"
-                class="cursor-pointer"
-                @click="add_search = ''"
-              />
-            </template>
-          </q-input>
+          <q-item
+            v-for="user in foundUsers"
+            :key="user.id"
+            clickable
+            @click="
+              addAppointmentForm.customer_service[0].customer_name = user.name;
+              addAppointmentForm.customer_first_name = user.first_name;
+              addAppointmentForm.customer_last_name = user.last_name;
+              addAppointmentForm.customer_email = user.email;
+              addAppointmentForm.customer_phone = user.phone;
+            "
+          >
+            <q-item-section>
+              <q-item-label>{{ user.name }}</q-item-label>
+              <q-item-label caption>{{ user.phone }}</q-item-label>
+              <q-item-label caption>{{ user.email }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
 
         <q-input
           v-model="addAppointmentForm.customer_service[0].customer_name"
@@ -254,6 +303,7 @@
           label="Practitioner"
           option-value="id"
           option-label="name"
+          clearable
         />
         <q-select
           v-model="addAppointmentForm.customer_service[0].service"
@@ -261,16 +311,27 @@
           label="Service"
           option-value="id"
           option-label="name"
+          clearable
         />
         Date:
-        <q-input v-model="addAppointmentForm.booking_date" filled type="date" />
-        Time:
+        <q-input
+          v-model="addAppointmentForm.booking_date"
+          filled
+          type="date"
+          label="Date"
+          @change="fetchAvailableBookingTime(addAppointmentForm.booking_date)"
+        />
+        Available Time:
         <q-chip
           v-for="item in available_booking_time"
           class="bg-teal-1"
           :key="item"
           clickable
-          :icon="addAppointmentForm.booking_time == item ? 'check_circle' : 'o_fiber_manual_record'"
+          :icon="
+            addAppointmentForm.booking_time == item
+              ? 'check_circle'
+              : 'o_fiber_manual_record'
+          "
           @click="addAppointmentForm.booking_time = item"
           >{{ item }}</q-chip
         >
@@ -309,22 +370,51 @@
         <div class="text-h6">Edit Event</div>
       </q-card-section>
       <q-card-section>
-        <q-input v-model="editEventForm.title" label="Title" />
-        <q-input v-model="editEventForm.details" label="Details" />
-        <q-input v-model="editEventForm.date" filled type="date" label="Date" />
-        <q-input v-model="editEventForm.time" filled type="time" label="Time" />
         <q-input
-          v-model="editEventForm.duration"
-          type="number"
-          label="Duration (minutes)"
+          v-model="editEventForm.date"
+          filled
+          type="date"
+          label="Date"
+          @change="fetchAvailableBookingTime(editEventForm.date)"
+        />
+        Time:
+        <q-chip
+         class="bg-teal-1"
+         icon="check_circle"
+        >
+        {{ editEventForm.time }}
+        </q-chip>
+        <q-chip
+          v-for="item in available_booking_time"
+          v-model:model-value="editEventForm.time"
+          class="bg-teal-1"
+          :key="item"
+          clickable
+          icon="o_fiber_manual_record"
+          @click="editEventForm.time = item"
+          >{{ item }}</q-chip
+        >
+        <q-input v-model="editEventForm.customer_name" label="Customer Name" />
+        <q-select
+          v-model="editEventForm.service"
+          :options="serviceOptions"
+          use-input
+          label="Service"
+          option-value="id"
+          option-label="name"
+          clearable
         />
         <q-select
-          v-model="editEventForm.staff_id"
+          v-model="editEventForm.staff"
           :options="practitionerOptions"
           label="Practitioner"
-          option-value="staff_id"
-          option-label="staff_name"
+          option-value="id"
+          option-label="name"
+          clearable
         />
+        <q-lable class="text-caption">Comments:</q-lable>
+
+        <q-input v-model="editEventForm.comments" filled type="textarea" />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
@@ -362,21 +452,24 @@ import {
   QCardActions,
   QBtn,
 } from "quasar";
+import { comment } from "postcss";
 
 const $q = useQuasar();
 interface Event {
   id: number;
-  title: string;
-  details: string;
-  date: string;
-  time: string;
-  duration: number;
-  bgcolor: string;
-  icon: string;
-  side?: string;
-  days?: number;
   staff_id: number;
   staff_name: string;
+  date: string;
+  time: string;
+  expected_end_time: string;
+  service_id: number;
+  service_title: string;
+  service_duration: number;
+  service_price: number;
+  customer_name: string;
+  comments: string;
+  bgcolor: string;
+  icon: string;
 }
 
 const calendar = ref<QCalendarDay>();
@@ -386,29 +479,15 @@ const available_booking_time = ref<string[]>([]);
 
 onMounted(() => {
   fetchAppointments();
-  fetchAvailableBookingTime();
   fetchServiceOptions();
   fetchPractitionerOptions();
+  fetchAvailableBookingTime(selectedDate.value);
 });
 
 const events = ref<Event[]>([]);
-
 const dragItems = ref<Event[]>([]);
-const defaultEvent = {
-  id: 0,
-  title: "",
-  details: "",
-  date: "",
-  time: "",
-  duration: 0,
-  bgcolor: "",
-  customer_name: "",
-  icon: "",
-  side: "",
-  days: 0,
-  staff_id: 0,
-  staff_name: "",
-};
+const defaultEvent = ref<Event[]>([]);
+
 interface CustomDragEvent extends Event {
   dataTransfer: DataTransfer;
   preventDefault: () => void;
@@ -485,13 +564,15 @@ async function fetchAppointments() {
 
     const fetchedData = response.data.map((bookedService) => ({
       id: bookedService.id,
-      title: bookedService.service_title,
-      details: "Time to pitch my idea to the company",
+      service_id: bookedService.service_id,
+      service_title: bookedService.service_title,
+      service_duration: bookedService.service_duration,
+      service_price: bookedService.service_price,
+      comments: bookedService.comments,
       date: selectedDate.value,
       time: bookedService.booking_time.slice(11, 16),
-      duration: bookedService.service_duration,
+      expected_end_time: bookedService.expected_end_time.slice(11, 16),
       customer_name: bookedService.customer_name,
-      price: bookedService.service_price,
       staff_id: bookedService.staff_id,
       staff_name: bookedService.staff_name,
       bgcolor: "teal",
@@ -513,13 +594,11 @@ async function fetchAppointments() {
     console.error("Error fetching schedules:", error);
   }
 }
-
 function getEventsByStaff(date: string, staffId: number): Event[] {
   return (
     eventsMap.value[date]?.filter((event) => event.staff_id === staffId) || []
   );
 }
-
 function badgeClasses(event: Event, type: string) {
   const isHeader = type === "header";
   return {
@@ -752,16 +831,16 @@ async function fetchServiceOptions() {
     const response = await api.get("/api/services");
     serviceOptions.value = response.data.map((service: any) => ({
       id: service.id,
-      name: service.title,
+      name: service.title + " (" + service.duration + " min)",
     }));
   } catch (error) {
     console.error("Error fetching services:", error);
   }
 }
 
-async function fetchAvailableBookingTime() {
+async function fetchAvailableBookingTime(date: string) {
   try {
-    let formattedDate = new Date(selectedDate.value);
+    let formattedDate = new Date(date);
     const day = String(formattedDate.getDate()).padStart(2, "0");
     const month = String(formattedDate.getMonth() + 1).padStart(2, "0");
     const year = formattedDate.getFullYear();
@@ -819,6 +898,27 @@ async function addAppointment() {
     };
     await api.post("/api/appointments", payload);
     addAppointmentDialog.value.visible = false;
+    addAppointmentForm.value = {
+      booking_time: "",
+      booking_date: today(),
+      customer_first_name: "",
+      customer_last_name: "",
+      is_first: false,
+      customer_email: "",
+      customer_phone: "",
+      comments: "",
+      customer_service: [
+        {
+          customer_name: "",
+          service: "",
+          staff: "",
+          comments: "",
+        },
+      ],
+    };
+    available_booking_time.value = [];
+    dragItems.value = [];
+
     fetchAppointments(); // Refresh appointments after adding
   } catch (error) {
     console.error("Error adding appointment:", error);
@@ -826,18 +926,27 @@ async function addAppointment() {
 }
 
 const editEventDialog = ref({ visible: false });
+
 const editEventForm = ref({
   id: 0,
-  title: "",
-  details: "",
   date: "",
   time: "",
-  duration: 0,
-  staff_id: 0,
+  customer_name: "",
+  service: "",
+  staff: 0,
+  comments: "",
 });
 
 function openEditEventDialog(event: Event) {
-  editEventForm.value = { ...event };
+  editEventForm.value = {
+    id: event.id,
+    date: event.date,
+    time: event.time,
+    customer_name: event.customer_name,
+    service: event.service_title,
+    staff: event.staff_name,
+    comments: event.comments,
+  };
   editEventDialog.value.visible = true;
 }
 
@@ -851,6 +960,25 @@ async function saveEditedEvent() {
     console.error("Error saving edited event:", error);
   }
 }
+
+const user_search = ref("");
+const foundUsers = ref<{ id: number; name: string; phone: string }[]>([]);
+
+const selectUserFromSearch = async () => {
+  foundUsers.value = [];
+  try {
+    const response = await api.get("/api/findUserByField", {
+      params: { search: user_search.value },
+    });
+    if (response.data.length > 0) {
+      foundUsers.value = response.data.map((user) => ({
+        ...user,
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -862,14 +990,6 @@ async function saveEditedEvent() {
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
-}
-
-.title {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
 }
 
 .text-white {

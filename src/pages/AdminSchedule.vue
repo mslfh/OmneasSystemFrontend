@@ -56,7 +56,7 @@
             label="Select Staff"
             dense
           />
-          <q-input
+          <!-- <q-input
             v-model="schedule.break_start_time"
             filled
             type="time"
@@ -67,7 +67,7 @@
             filled
             type="time"
             label="Break End Time"
-          />
+          /> -->
           <q-date v-model="schedule.work_date" range label="Work Date Range" />
           <q-separator />
           <q-label  class="q-mt-xl">

@@ -2,10 +2,23 @@
   <div class="q-pa-md">
     <!-- Add search input and dropdown for field selection -->
     <div class="col-8 items-center q-pa-md">
-      <SearchInput
+      <q-input
+        rounded
         v-model="user_search"
-        placeholder="Search Customer"
-      />
+        outlined
+        placeholder="Search User"
+        @update:model-value="findUserByField"
+      >
+        <template v-slot:append>
+          <q-icon v-if="user_search === ''" name="search" />
+          <q-icon
+            v-else
+            name="clear"
+            class="cursor-pointer"
+            @click="user_search = ''"
+          />
+        </template>
+      </q-input>
     </div>
 
     <q-table
@@ -120,7 +133,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { api } from "boot/axios";
-import SearchInput from "src/components/SearchInput.vue";
 
 const users = ref([]);
 const columns = [
@@ -165,6 +177,24 @@ const columns = [
 onMounted(() => {
   fetchUsers();
 });
+const user_search = ref("");
+const findUserByField = async () => {
+  try {
+    const response = await api.get("/api/findUserByField", {
+      params: { search: user_search.value },
+    });
+    if (response.data.length > 0) {
+      users.value = response.data.map((user) => ({
+        ...user,
+        first_name: user.first_name || "N/A",
+        last_name: user.last_name || "N/A",
+        created_at: new Date(user.created_at).toLocaleString(),
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+};
 
 const fetchUsers = async () => {
   try {
@@ -248,7 +278,6 @@ const confirmDelete = async () => {
 const fileInput = ref(null);
 const isLoading = ref(false);
 const isSuccessDialogOpen = ref(false);
-
 
 const triggerFileInput = () => {
   fileInput.value.click();

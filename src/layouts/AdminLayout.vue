@@ -209,7 +209,7 @@ const zoomLeftDrawer = () => {
               <q-icon name="email" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Mail</q-item-label>
+              <q-item-label>Notification</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>

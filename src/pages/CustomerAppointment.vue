@@ -284,7 +284,7 @@ const cancelAppointment = async () => {
       timeout: 3000,
     });
     router.push({
-      path: "/book", // Navigate to the booking page
+      path: "/", // Navigate to the booking page
     });
   } catch (error) {
     console.error("Error cancelling appointment:", error);
