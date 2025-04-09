@@ -200,15 +200,14 @@
                       Start
                     </q-chip>
 
-                    <q-icon
-                    size="20px"
+                    <q-chip
                       v-if="event.status === 'in_progress'"
                       outline
                       color="white"
                       text-color="white"
-                      name="hourglass_top"
+                      icon="hourglass_top"
                     >
-                    </q-icon>
+                    </q-chip>
                     <!-- <q-chip
                       outline
                       color="white"
