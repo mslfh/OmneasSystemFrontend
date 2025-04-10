@@ -204,6 +204,14 @@ const zoomLeftDrawer = () => {
             </q-list>
           </q-expansion-item>
 
+          <q-item to="/admin/setting" active-class="q-item-no-link-highlighting">
+            <q-item-section avatar>
+              <q-icon name="settings" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Setting</q-item-label>
+            </q-item-section>
+          </q-item>
           <!-- <q-item to="/Mail" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="email" />

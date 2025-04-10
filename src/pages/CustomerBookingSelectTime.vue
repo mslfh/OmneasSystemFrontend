@@ -166,7 +166,7 @@
               >
                 <div class="q-pa-md-md q-pa-none-xs">
                   <div class="text-h6 text-grey-8 q-pb-md">
-                    <q-icon size="sm" name="o_alarm" /> Select Time
+                    <q-icon name="o_alarm" /> Select Time
                   </div>
                   <!-- date picker -->
                   <q-input filled v-model="date" mask="date" :rules="['date']">
@@ -199,65 +199,65 @@
                       </q-icon>
                     </template>
                   </q-input>
-
                   <!-- time picker -->
-                  <q-list class="q-mb-lg">
-                    <q-expansion-item
-                      popup
-                      default-opened
-                      icon="brightness_5"
-                      header-class="text-grey-8"
-                      label="Morning"
-                      :caption="morning_time.length?'Available time' :'No available time'"
-                      expand-separator
-                    >
-                      <q-chip
-                        v-for="item in morning_time"
-                         :color="time == item ? 'orange-2' : 'blue-1'"
-                        :key="item"
-                        clickable
-                        :icon="
-                          time == item
-                            ? 'check_circle'
-                            : 'o_fiber_manual_record'
-                        "
-                        @click="
-                          time = item;
-                          refreshStaff();
-                        "
-                        >{{ item }}</q-chip
+                  <div
+                    class="q-mb-xl bg-grey-2 q-pa-sm"
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                    "
+                  >
+                    <div class="time-picker">
+                      <!-- 选择小时 -->
+                      <el-select
+                        v-model="selectedHour"
+                        clearable
+                        placeholder="HH"
+                        style="width: 85px"
+                        @change="handleTimeChange(true)"
                       >
-                    </q-expansion-item>
-                    <q-expansion-item
-                      popup
-                      default-opened
-                      icon="o_brightness_medium"
-                      header-class="text-grey-8 "
-                      label="Afternoon"
-                     :caption="afternoon_time.length?'Available time' :'No available time'"
-                    >
-                    <q-chip
-                        v-for="item in afternoon_time"
-                        :key="item"
-                        clickable
-                        :icon="
-                          time == item
-                            ? 'check_circle'
-                            : 'o_fiber_manual_record'
-                        "
-                        :color="time == item ? 'orange-2' : 'blue-1'"
-                        @click="
-                          time = item;
-                          refreshStaff();
-                        "
-                        >{{ item }}</q-chip
+                        <el-option
+                          v-for="hour in hours"
+                          :key="hour"
+                          :label="
+                            hour > 11
+                              ? hour == 12
+                                ? '12 pm'
+                                : (hour % 12) + ' pm'
+                              : hour + ' am'
+                          "
+                          :value="hour"
+                          :disabled="isHourUnavailable(hour)"
+                        />
+                      </el-select>
+                      ：
+                      <!-- 选择分钟 -->
+                      <el-select
+                        v-model="selectedMinute"
+                        clearable
+                        placeholder="MM"
+                        style="width: 85px"
+                        @change="handleTimeChange(false)"
                       >
-                    </q-expansion-item>
-                  </q-list>
+                        <el-option
+                          v-for="minute in minutes"
+                          :key="minute"
+                          :label="minute"
+                          :value="minute"
+                          :disabled="isMinuteUnavailable(minute)"
+                        />
+                      </el-select>
+                    </div>
+                    <div>
+                      <q-icon name="schedule" size="25px" color="grey-8" />
+                    </div>
+                  </div>
                 </div>
                 <div class="q-pa-md-md q-pa-none-xs q-gutter-md">
+                  <q-separator />
                   <div class="text-h6 text-grey-8 q-pb-xs">
-                    <q-icon size="sm" name="favorite_border" /> Select Therapist
+                    <q-icon name="favorite_border" /> Select Therapist
                   </div>
                   <div v-if="availableStaff.length == 0">
                     <q-chip
@@ -450,6 +450,24 @@
                       </template>
                     </q-input>
                   </div>
+
+                  <!-- travel -->
+                  <div class="col-10" hidden>
+                    <q-select
+                      outlined
+                      bottom-slots
+                      v-model="travel_info"
+                      :options="travel_options"
+                      label=" About Your Travels"
+                      :dense="dense"
+                      :options-dense="denseOpts"
+                    >
+                      <template v-slot:prepend>
+                        <q-icon name="o_place" color="teal" @click.stop />
+                      </template>
+                    </q-select>
+                  </div>
+
                   <div class="col-10"><q-separator /></div>
 
                   <div class="col-10 text-h6 text-grey-7">
@@ -462,6 +480,18 @@
                       v-model="comments"
                       outlined
                       type="textarea"
+                    />
+                  </div>
+
+                  <div class="col-10 q-pa-md" hidden>
+                    <q-item-label class="text-subtitle1">
+                      * Tick the following that best describes what you are
+                      experiencing?
+                    </q-item-label>
+                    <q-option-group
+                      :options="tick_options"
+                      type="checkbox"
+                      v-model="tick_group"
                     />
                   </div>
                 </div>
@@ -737,33 +767,34 @@ import { ElTimePicker, ElDialog } from "element-plus";
 const $q = useQuasar();
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
+// ***Book from service List page
+// import { useProductStore } from "../stores/ProductStore";
+// const productStore = useProductStore();
+// const selectedProduct = productStore.selectedProduct;
+// console.log(selectedProduct);
 const packages = ref([]);
 const ratingModel = ref(4.5);
 
 const selectedService = ref([]);
 
-const step = ref(2);
-
-// Object to track expanded state for each card
-const expandedStates = ref({});
+const step = ref(1);
+const expandedStates = ref({}); // Object to track expanded state for each card
 
 const toggleExpanded = (pkgId) => {
   expandedStates.value[pkgId] = !expandedStates.value[pkgId];
 };
 
-// Default to today's date in Y/m/d format
-const date = ref(new Date().toLocaleDateString("en-CA").replace(/-/g, "/"));
-
+const date = ref(new Date().toLocaleDateString("en-CA").replace(/-/g, "/")); // Default to today's date in Y/m/d format
 const showDate = () => {
   const dateObj = new Date(date.value);
   const options = { weekday: "long", day: "numeric", month: "long" };
   return dateObj.toLocaleDateString("en-US", options);
 };
-
 const getEndTime = () => {
   if (!time.value || !selectedService.value.duration) {
     return "";
   }
+
   const [hours, minutes] = time.value.split(":").map(Number);
   console.log("time", hours, minutes);
   const duration = selectedService.value.duration; // Assuming duration is in minutes
@@ -821,6 +852,7 @@ const dateOptionsFn = (date) => {
   const maxEventDate =
     events.value.length > 0 ? events.value[events.value.length - 1] : null;
 
+
   // Check if the date is within the range of today and three months later
   const isWithinThreeMonths =
     date >= formattedToday && date <= formattedThreeMonthsLater;
@@ -861,9 +893,7 @@ const refreshStaff = async () => {
     availableStaff.value = [];
   }
 };
-const available_booking_time = ref<string[]>([]);
-const morning_time = ref<string[]>([]);
-const afternoon_time = ref<string[]>([]);
+
 const fetchUnavailabelTime = async () => {
   try {
     const response = await axios.get(
@@ -874,58 +904,144 @@ const fetchUnavailabelTime = async () => {
         },
       }
     );
-    const unavailable_booking_time = response.data;
-    console.log("Unavailable booking times:", unavailable_booking_time);
-    const allTimes = [];
-
-    for (let i = 8; i < 18; i++) {
-      allTimes.push(`${i.toString().padStart(2, "0")}:00`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:10`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:20`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:30`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:40`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:50`);
+    if (response.data) {
+      unavailableTime.value = response.data.map((timeRange) => ({
+        start: timeRange.start_time,
+        end: timeRange.end_time,
+      }));
     }
-    // Filter out unavailable times
-    available_booking_time.value = allTimes.filter((time) => {
-      return !unavailable_booking_time.some((slot) => {
-        const start = slot.start_time.slice(0, 5);
-        const end = slot.end_time.slice(0, 5);
-        return time >= start && time < end;
-      });
-    });
-
-    // Split available times into morning and afternoon
-    morning_time.value = available_booking_time.value.filter((time) => {
-      const hour = parseInt(time.split(":")[0]);
-      return hour >= 8 && hour < 12; // Morning times
-    });
-    afternoon_time.value = available_booking_time.value.filter((time) => {
-      const hour = parseInt(time.split(":")[0]);
-      return hour >= 12 && hour < 19; // Afternoon times
-    });
-
+    console.log("Unavailable time:", unavailableTime.value);
     time.value = "";
+    selectedHour.value = "";
+    selectedMinute.value = "";
     refreshStaff();
   } catch (error) {
     console.error("Error fetching unavailable time:", error);
   }
 };
 
+const time = ref("");
+
+const unavailableTime = ref([]);
+
+const selectedHour = ref("");
+const selectedMinute = ref("");
+const showTimePickerDialog = ref(false);
+
 const openingTime = ref({
   start: "08:00",
   end: "19:00",
 });
+const hours = computed(() => {
+  const availableHours = [];
+  const startHour = parseInt(openingTime.value.start.split(":")[0]);
+  const endHour = parseInt(openingTime.value.end.split(":")[0]);
+  for (let i = startHour; i < endHour; i++) {
+    const hour = `${i < 10 ? "0" : ""}${i}`;
+    availableHours.push(hour);
+  }
+  return availableHours;
+});
 
-const time = ref("");
+// 可用的分钟范围：0, 10, 20, 30, 40, 50
+const minutes = [
+  "00",
+  "05",
+  "10",
+  "15",
+  "20",
+  "25",
+  "30",
+  "35",
+  "40",
+  "45",
+  "50",
+  "55",
+];
+
+// 判断选中的小时是否不可用
+const isHourUnavailable = (hour: string) => {
+  const duration = selectedService.value.duration ?? 0;
+  return unavailableTime.value.some((timeRange) => {
+    const startTime = hour + ":00:00";
+    let endHour = parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+    let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+    if (endMinute >= 60) {
+      endMinute -= 60;
+      endHour += 1;
+    }
+    const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+      .toString()
+      .padStart(2, "0")}:00`;
+    const { start, end } = timeRange;
+    return (
+      (startTime >= timeRange.start && startTime < timeRange.end) ||
+      (endTime > timeRange.start && endTime < timeRange.end) ||
+      (startTime <= timeRange.start && endTime > timeRange.end)
+    );
+  });
+};
+
+// 判断选中的分钟是否不可用
+const isMinuteUnavailable = (minute: string) => {
+  const duration = selectedService.value.duration ?? 0;
+  const hour = selectedHour.value;
+  const startTime = hour + ":" + minute + ":00";
+  // Calculate end time based on duration
+  let endHour = parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+  let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+  if (endMinute >= 60) {
+    endMinute -= 60;
+    endHour += 1;
+  }
+  const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+    .toString()
+    .padStart(2, "0")}:00`;
+
+  // Check if the selected time is within any of the unavailable time ranges
+  return unavailableTime.value.some((timeRange) => {
+    return (
+      (startTime >= timeRange.start && startTime < timeRange.end) ||
+      (endTime > timeRange.start && endTime <= timeRange.end) ||
+      (startTime <= timeRange.start && endTime >= timeRange.end)
+    );
+  });
+};
+
+const handleTimeChange = async (isHourChange) => {
+  try {
+    if (isHourChange) {
+      selectedMinute.value = "";
+    }
+    time.value = `${selectedHour.value}:${selectedMinute.value}`;
+    refreshStaff();
+  } catch (error) {
+    console.error("Error fetching available staff:", error);
+  }
+};
+
 const first_time = ref(false);
 const email = ref("");
 const phone = ref("");
 const comments = ref("");
 const travel_info = ref(null);
 const name = ref({});
-const router = useRouter();
+const travel_options = [
+  { label: "11I live in Launceston and feel well today.", value: "option1" },
+  { label: "22I live in Launceston and feel well today.", value: "option2" },
+  { label: "33I live in Launceston and feel well today.", value: "option3" },
+];
+const dense = ref(false);
+const denseOpts = ref(false);
+
 const tick_group = ref([]);
+
+const tick_options = [
+  { label: "Battery too low", value: "bat" },
+  { label: "Friend request", value: "friend", color: "green" },
+  { label: "Picture uploaded", value: "upload", color: "red" },
+];
+const router = useRouter();
 
 const submitAppointment = async () => {
   try {
@@ -956,6 +1072,7 @@ const submitAppointment = async () => {
     );
 
     if (response.status === 201) {
+
       // Reset form fields
       selectedService.value = [];
       showSummaryDialog.value = false;

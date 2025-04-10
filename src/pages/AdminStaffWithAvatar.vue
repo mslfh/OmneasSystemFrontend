@@ -13,6 +13,9 @@
           <div class="text-h6">Add New Staff</div>
         </q-card-section>
         <q-card-section>
+          <q-avatar size="100px" class="q-mb-md">
+            <img v-if="addForm.avatar" :src="addForm.avatar" />
+          </q-avatar>
           <q-btn
             flat
             label="Upload Avatar"
@@ -76,6 +79,11 @@
       :columns="columns"
       row-key="id"
     >
+      <template v-slot:body-cell-profile_photo="props">
+        <q-avatar size="40px" class="q-ml-md">
+          <img :src="props.row.profile_photo_url" />
+        </q-avatar>
+      </template>
       <template v-slot:body-cell-status="props">
         <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
           {{ props.row.status }}
@@ -105,6 +113,9 @@
           <div class="text-h6">Edit Staff</div>
         </q-card-section>
         <q-card-section>
+          <q-avatar size="100px" class="q-mb-md">
+            <img v-if="editForm.avatar" :src="editForm.avatar" />
+          </q-avatar>
           <q-btn
             flat
             label="Upload Avatar"
@@ -186,6 +197,13 @@ import { api } from "boot/axios";
 
 const staff = ref([]);
 const columns = [
+  {
+    name: "profile_photo",
+    required: true,
+    label: "Photo",
+    align: "left",
+    field: "profile_photo_url",
+  },
   { name: "name", required: true, label: "Name", align: "left", field: "name" },
   { name: "position", label: "Position", align: "left", field: "position" },
   { name: "status", label: "Status", align: "left", field: "status" },

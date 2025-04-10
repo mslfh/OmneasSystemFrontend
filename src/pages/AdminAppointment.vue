@@ -63,9 +63,9 @@
           transition-prev="slide-right"
           no-active-date
           :column-count="staffList.length"
-          :interval-minutes="15"
-          :interval-start="32"
-          :interval-count="52"
+          :interval-minutes="10"
+          :interval-start="52"
+          :interval-count="64"
           :interval-height="28"
           @moved="onMoved"
           @click-date="onClickDate"
@@ -341,13 +341,15 @@
         Available Time:
         <q-chip
           v-for="item in available_booking_time"
-          class="bg-teal-1"
           :key="item"
           clickable
           :icon="
             addAppointmentForm.booking_time == item
               ? 'check_circle'
               : 'o_fiber_manual_record'
+          "
+          :color="
+            addAppointmentForm.booking_time == item ? 'orange-3' : 'teal-1'
           "
           @click="addAppointmentForm.booking_time = item"
           >{{ item }}</q-chip
@@ -715,6 +717,13 @@ function onClickDate(data: Timestamp) {
   console.info("onClickDate", data);
 }
 function onClickTime(data: Timestamp) {
+  const clickTime = data.scope.timestamp.time.slice(0, 4);
+  addAppointmentForm.value.booking_time = clickTime+ "0";
+  console.log("onClickTime", addAppointmentForm);
+  showAddAppointmentDialog();
+  //format the time to HH:mm
+  return;
+
   console.info("onClickTime", data);
   //show a dialog to have a break
   $q.dialog({
@@ -729,6 +738,7 @@ function onClickTime(data: Timestamp) {
     .onCancel(() => {
       console.log("Break time canceled");
     });
+
 }
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
@@ -890,7 +900,6 @@ async function fetchAvailableBookingTime(date: string) {
         return time >= start && time < end;
       });
     });
-
     console.log("Available booking times:", available_booking_time.value);
   } catch (error) {
     console.error("Error fetching available booking times:", error);
@@ -915,10 +924,30 @@ function showAddAppointmentDialog() {
 
 async function addAppointment() {
   try {
+    //check
+    if (addAppointmentForm.value.customer_service[0]['service'] === "") {
+      $q.notify({
+        type: "negative",
+        message: "Please select a service",
+        position: "top",
+        timeout: 2000,
+      });
+      return;
+    }
     const payload = {
       ...addAppointmentForm.value,
     };
-    await api.post("/api/appointments", payload);
+    const response = await api.post("/api/appointments", payload);
+
+    if (response.status === 201) {
+      $q.notify({
+        type: "positive",
+        message: "Appointment added successfully",
+        position: "top",
+        timeout: 2000,
+      });
+    }
+
     addAppointmentDialog.value.visible = false;
     addAppointmentForm.value = {
       booking_time: "",
@@ -1008,9 +1037,8 @@ const startAppointment = async (event: Event) => {
   const start_time = new Date();
   const hours = String(start_time.getHours()).padStart(2, "0");
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
-  // const formattedTime = `${hours}:${minutes}`;
+  const formattedTime = `${hours}:${minutes}`;
 
-  const formattedTime = `13:30`;
 
   $q.dialog({
     title: "Start Appointment",

@@ -17,7 +17,7 @@
           <q-card-section horizontal outlined>
             <q-card-section class="col-4 flex flex-center">
               <q-img
-                height="80px"
+                height="90px"
                 class="rounded-borders"
                 src="src/assets/miamassage.png"
               />
@@ -143,12 +143,12 @@
               icon="edit"
               @click="reschedule"
             /> -->
-            <q-btn
+            <!-- <q-btn
               class="q-mt-md"
               color="teal-4"
               label="Cancel"
               @click="cancelAppointment"
-            />
+            /> -->
           </q-card-section>
         </q-card>
       </q-page>

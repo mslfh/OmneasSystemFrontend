@@ -67,9 +67,9 @@
         <q-icon name="check_circle" color="teal-7" /> Therapist
       </q-lable>
       <q-chip color="teal-1" clickable @click="$emit('editTherapist')">
-        <q-avatar v-if="selectedStaff.id" size="30px">
+        <!-- <q-avatar v-if="selectedStaff.id" size="30px">
           <img :src="selectedStaff.profile_photo_url" />
-        </q-avatar>
+        </q-avatar> -->
         {{ selectedStaff.id ? selectedStaff.name : "Any therapist" }}
       </q-chip>
     </q-card-section>
