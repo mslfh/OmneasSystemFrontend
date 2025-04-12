@@ -208,12 +208,16 @@
                       icon="brightness_5"
                       header-class="text-grey-8"
                       label="Morning"
-                      :caption="morning_time.length?'Available time' :'No available time'"
+                      :caption="
+                        morning_time.length
+                          ? 'Available time'
+                          : 'No available time'
+                      "
                       expand-separator
                     >
                       <q-chip
                         v-for="item in morning_time"
-                         :color="time == item ? 'orange-2' : 'blue-1'"
+                        :color="time == item ? 'orange-2' : 'blue-1'"
                         :key="item"
                         clickable
                         :icon="
@@ -234,9 +238,13 @@
                       icon="o_brightness_medium"
                       header-class="text-grey-8 "
                       label="Afternoon"
-                     :caption="afternoon_time.length?'Available time' :'No available time'"
+                      :caption="
+                        afternoon_time.length
+                          ? 'Available time'
+                          : 'No available time'
+                      "
                     >
-                    <q-chip
+                      <q-chip
                         v-for="item in afternoon_time"
                         :key="item"
                         clickable
@@ -802,41 +810,7 @@ onMounted(async () => {
 });
 
 const dateOptionsFn = (date) => {
-  const today = new Date();
-  const threeMonthsLater = new Date(today);
-
-  // Set the max date to three months later
-  threeMonthsLater.setMonth(today.getMonth() + 3);
-
-  const formatDate = (d) =>
-    `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(
-      d.getDate()
-    ).padStart(2, "0")}`;
-
-  const formattedToday = formatDate(today);
-  const formattedThreeMonthsLater = formatDate(threeMonthsLater);
-
-  // Get the min and max dates from the events list
-  const minEventDate = events.value.length > 0 ? events.value[0] : null;
-  const maxEventDate =
-    events.value.length > 0 ? events.value[events.value.length - 1] : null;
-
-  // Check if the date is within the range of today and three months later
-  const isWithinThreeMonths =
-    date >= formattedToday && date <= formattedThreeMonthsLater;
-
-  // If the date is within the events range, restrict to only those in events
-  if (
-    minEventDate &&
-    maxEventDate &&
-    date >= minEventDate &&
-    date <= maxEventDate
-  ) {
-    return events.value.includes(date);
-  }
-
-  // // Allow dates beyond the events range but within three months
-  // return isWithinThreeMonths;
+  return events.value.includes(date);
 };
 
 const refreshStaff = async () => {
@@ -874,18 +848,25 @@ const fetchUnavailabelTime = async () => {
         },
       }
     );
-    const unavailable_booking_time = response.data;
+    const minTime = response.data.start_time;
+    const maxTime = response.data.end_time;
+    const unavailable_booking_time = response.data.unavilable_time;
+    console.log("Min time:", minTime);
+    console.log("Max time:", maxTime);
     console.log("Unavailable booking times:", unavailable_booking_time);
+    // Generate all possible times between minTime and maxTime
     const allTimes = [];
-
-    for (let i = 8; i < 18; i++) {
-      allTimes.push(`${i.toString().padStart(2, "0")}:00`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:10`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:20`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:30`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:40`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:50`);
+    const startTime = new Date(`1970-01-01T${minTime}:00`);
+    const endTime = new Date(`1970-01-01T${maxTime}:00`);
+    const timeIncrement = 10;
+    for (
+      let time = startTime;
+      time <= endTime;
+      time.setMinutes(time.getMinutes() + timeIncrement)
+    ) {
+      allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
     }
+
     // Filter out unavailable times
     available_booking_time.value = allTimes.filter((time) => {
       return !unavailable_booking_time.some((slot) => {

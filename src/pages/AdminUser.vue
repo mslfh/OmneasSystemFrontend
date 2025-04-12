@@ -165,12 +165,6 @@ const columns = [
     align: "left",
     field: "email",
   },
-  {
-    name: "created_at",
-    label: "Created At",
-    align: "left",
-    field: "created_at",
-  },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
@@ -188,7 +182,6 @@ const findUserByField = async () => {
         ...user,
         first_name: user.first_name || "N/A",
         last_name: user.last_name || "N/A",
-        created_at: new Date(user.created_at).toLocaleString(),
       }));
     }
   } catch (error) {
@@ -204,7 +197,6 @@ const fetchUsers = async () => {
         ...user,
         first_name: user.first_name || "N/A",
         last_name: user.last_name || "N/A",
-        created_at: new Date(user.created_at).toLocaleString(),
       }));
     }
   } catch (error) {

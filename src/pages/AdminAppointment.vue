@@ -2,7 +2,7 @@
   <div class="subcontent">
     <q-btn
       class="float-left q-ma-md"
-      label="Add Appointment"
+      label="Add Appointment / Break"
       color="primary"
       @click="showAddAppointmentDialog"
     />
@@ -71,7 +71,6 @@
           @click-date="onClickDate"
           @click-time="onClickTime"
           @click-interval="onClickInterval"
-          @click-head-day="onClickHeadDay"
         >
           <template #head-day="{ scope: { timestamp, columnIndex } }">
             <div
@@ -88,7 +87,11 @@
                 v-if="staffList[columnIndex]"
                 style="text-align: center"
               >
-                <div>{{ staffList[columnIndex].staff_name }}</div>
+                <div @click="takeBreak(staffList[columnIndex])">
+                  {{ staffList[columnIndex].staff_name }}
+                  <!-- <q-icon name="coffee"
+                  /> -->
+                </div>
               </div>
 
               <div class="col-12" style="text-align: center">
@@ -164,14 +167,13 @@
                 :style="
                   badgeStyles(event, 'body', timeStartPos, timeDurationHeight)
                 "
+                @click="openEditEventDialog(event)"
               >
                 <div align="right" class="q-ma-xs">
                   <q-icon
                     name="edit_calendar"
                     size="20px"
                     class="float-right"
-                    @click="openEditEventDialog(event)"
-                    clickable
                   />
                 </div>
                 <div class="q-ma-md">
@@ -189,13 +191,13 @@
                     </q-item-label>
 
                     <q-chip
-                    v-if="event.status === 'pending'"
+                      v-if="event.status === 'pending'"
                       outline
                       color="white"
                       text-color="white"
                       icon="event"
                       clickable
-                      @click="startAppointment(event)"
+                      @click.stop="startAppointment(event)"
                     >
                       Start
                     </q-chip>
@@ -263,113 +265,178 @@
 
   <!-- Add Appointment Dialog -->
   <q-dialog v-model="addAppointmentDialog.visible">
-    <q-card style="min-width: 450px">
-      <q-card-section>
-        <div class="text-h6">Add Appointment</div>
-      </q-card-section>
-      <q-card-section>
-        <q-input
-          rounded
-          v-model="user_search"
-          outlined
-          placeholder="Find User by Name, Phone, or Email"
-          @keyup.enter="selectUserFromSearch"
-        >
-          <template v-slot:append>
-            <q-icon v-if="user_search === ''" name="search" />
-            <q-icon
-              v-else
-              name="clear"
-              class="cursor-pointer"
-              @click="user_search = ''"
+    <q-card style="min-width: 1000px">
+      <div class="row">
+        <!--Events -->
+        <div class="col-2">
+          <q-card-section>
+            <q-btn
+              dense
+              outline
+              style="color: goldenrod"
+              class="q-ma-md"
+              label="Add Appointment"
             />
-          </template>
-        </q-input>
+            <q-btn
+              dense
+              outline
+              style="color: teal"
+              class="q-ma-md"
+              label="Take a break"
+              @click="showTakeBreakDialog"
+            />
+          </q-card-section>
+        </div>
+        <div class="col-4">
+          <div>
+            <q-select
+              v-model="addAppointmentForm.customer_service[0].staff"
+              :options="practitionerOptions"
+              label="Practitioner"
+              option-value="id"
+              option-label="name"
+              clearable
+            />
+            <q-select
+              v-model="addAppointmentForm.customer_service[0].service"
+              :options="serviceOptions"
+              label="* Service"
+              option-value="id"
+              option-label="name"
+              clearable
+            />
+            <q-input
+              v-model="addAppointmentForm.booking_date"
+              label="Select Date"
+              mask="####-##-##"
+            >
+              <template v-slot:prepend>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy
+                    cover
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-date
+                      v-model="addAppointmentForm.booking_date"
+                      mask="YYYY-MM-DD"
+                      @update:model-value="
+                        fetchAvailableBookingTime(
+                          addAppointmentForm.booking_date
+                        )
+                      "
+                    >
+                      <div class="row items-center justify-end">
+                        <q-btn
+                          v-close-popup
+                          label="Close"
+                          color="primary"
+                          flat
+                        />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+            <q-label> Available Time:</q-label>
+            <q-scroll-area style="height: 300px">
+              <q-chip
+                v-for="item in available_booking_time"
+                :key="item"
+                clickable
+                :icon="
+                  addAppointmentForm.booking_time == item
+                    ? 'check_circle'
+                    : 'o_fiber_manual_record'
+                "
+                :color="
+                  addAppointmentForm.booking_time == item
+                    ? 'orange-3'
+                    : 'teal-1'
+                "
+                @click="addAppointmentForm.booking_time = item"
+                >{{ item }}</q-chip
+              >
+            </q-scroll-area>
+          </div>
+        </div>
+        <div class="col-6">
+          <q-card-section>
+            <q-input
+              rounded
+              v-model="user_search"
+              outlined
+              placeholder="Find User by Name, Phone, or Email"
+              @keyup.enter="selectUserFromSearch"
+            >
+              <template v-slot:append>
+                <q-icon v-if="user_search === ''" name="search" />
+                <q-icon
+                  v-else
+                  name="clear"
+                  class="cursor-pointer"
+                  @click="user_search = ''"
+                />
+              </template>
+            </q-input>
+            <q-item-label
+              v-if="foundUsers.length == 0 && user_search !== ''"
+              class="text-caption"
+              >No data found</q-item-label
+            >
+            <q-scroll-area v-if="user_search !== ''" style="height: 100px">
+              <q-list>
+                <q-item
+                  v-for="user in foundUsers"
+                  :key="user.id"
+                  clickable
+                  @click="
+                    addAppointmentForm.customer_service[0].customer_name =
+                      user.name;
+                    addAppointmentForm.customer_first_name = user.first_name;
+                    addAppointmentForm.customer_last_name = user.last_name;
+                    addAppointmentForm.customer_email = user.email;
+                    addAppointmentForm.customer_phone = user.phone;
+                  "
+                >
+                  <q-item-section>
+                    <q-item-label>{{ user.name }}</q-item-label>
+                    <q-item-label caption>{{ user.phone }}</q-item-label>
+                    <q-item-label caption>{{ user.email }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-scroll-area>
+            <q-input
+              v-model="addAppointmentForm.customer_service[0].customer_name"
+              label="Customer Name"
+            />
+            <q-input
+              v-model="addAppointmentForm.customer_first_name"
+              label="First Name"
+            />
+            <q-input
+              v-model="addAppointmentForm.customer_last_name"
+              label="Last Name"
+            />
+            <q-input
+              v-model="addAppointmentForm.customer_email"
+              label="Email"
+            />
+            <q-input
+              v-model="addAppointmentForm.customer_phone"
+              label="Phone"
+            />
+            <q-input v-model="addAppointmentForm.comments" label="Comments" />
+            <q-input
+              v-model="addAppointmentForm.customer_service[0].comments"
+              label="Service Comments"
+            />
+          </q-card-section>
+        </div>
+      </div>
 
-        <q-list v-if="user_search !== ''">
-          <q-item-label v-if="foundUsers.length == 0" class="text-caption"
-            >No data found</q-item-label
-          >
-          <q-item
-            v-for="user in foundUsers"
-            :key="user.id"
-            clickable
-            @click="
-              addAppointmentForm.customer_service[0].customer_name = user.name;
-              addAppointmentForm.customer_first_name = user.first_name;
-              addAppointmentForm.customer_last_name = user.last_name;
-              addAppointmentForm.customer_email = user.email;
-              addAppointmentForm.customer_phone = user.phone;
-            "
-          >
-            <q-item-section>
-              <q-item-label>{{ user.name }}</q-item-label>
-              <q-item-label caption>{{ user.phone }}</q-item-label>
-              <q-item-label caption>{{ user.email }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-
-        <q-input
-          v-model="addAppointmentForm.customer_service[0].customer_name"
-          label="Customer Name"
-        />
-        <q-select
-          v-model="addAppointmentForm.customer_service[0].staff"
-          :options="practitionerOptions"
-          label="Practitioner"
-          option-value="id"
-          option-label="name"
-          clearable
-        />
-        <q-select
-          v-model="addAppointmentForm.customer_service[0].service"
-          :options="serviceOptions"
-          label="Service"
-          option-value="id"
-          option-label="name"
-          clearable
-        />
-        Date:
-        <q-input
-          v-model="addAppointmentForm.booking_date"
-          filled
-          type="date"
-          label="Date"
-          @change="fetchAvailableBookingTime(addAppointmentForm.booking_date)"
-        />
-        Available Time:
-        <q-chip
-          v-for="item in available_booking_time"
-          :key="item"
-          clickable
-          :icon="
-            addAppointmentForm.booking_time == item
-              ? 'check_circle'
-              : 'o_fiber_manual_record'
-          "
-          :color="
-            addAppointmentForm.booking_time == item ? 'orange-3' : 'teal-1'
-          "
-          @click="addAppointmentForm.booking_time = item"
-          >{{ item }}</q-chip
-        >
-        <q-input
-          v-model="addAppointmentForm.customer_first_name"
-          label="First Name"
-        />
-        <q-input
-          v-model="addAppointmentForm.customer_last_name"
-          label="Last Name"
-        />
-        <q-input v-model="addAppointmentForm.customer_email" label="Email" />
-        <q-input v-model="addAppointmentForm.customer_phone" label="Phone" />
-        <q-input v-model="addAppointmentForm.comments" label="Comments" />
-        <q-input
-          v-model="addAppointmentForm.customer_service[0].comments"
-          label="Service Comments"
-        />
-      </q-card-section>
       <q-card-actions align="right">
         <q-btn
           flat
@@ -378,6 +445,53 @@
           @click="addAppointmentDialog.visible = false"
         />
         <q-btn flat label="Add" color="positive" @click="addAppointment" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- Take a Break Dialog -->
+  <q-dialog v-model="takeBreakDialog.visible" seamless position="bottom">
+    <q-card>
+      <q-linear-progress :value="1.0" color="pink" />
+      <q-card-section>
+        <div class="text-h6">Take a Break</div>
+        <q-radio
+          v-model="takeBreakDialog.selectedDuration"
+          val="10"
+          label="10 minutes"
+        />
+        <q-radio
+          v-model="takeBreakDialog.selectedDuration"
+          val="15"
+          label="15 minutes"
+        />
+        <q-radio
+          v-model="takeBreakDialog.selectedDuration"
+          val="20"
+          label="20 minutes"
+        />
+        <q-input
+          v-model="takeBreakDialog.customDuration"
+          label="Custom Duration (minutes)"
+          type="number"
+          outlined
+          dense
+          @input="takeBreakDialog.selectedDuration = null"
+        />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="takeBreakDialog.visible = false"
+        />
+        <q-btn
+          flat
+          label="Confirm"
+          color="positive"
+          @click="confirmTakeBreak"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -419,7 +533,7 @@
           v-model="editEventForm.service"
           :options="serviceOptions"
           use-input
-          label="Service"
+          label="* Service"
           option-value="id"
           option-label="name"
           clearable
@@ -598,7 +712,7 @@ async function fetchAppointments() {
       customer_name: bookedService.customer_name,
       staff_id: bookedService.staff_id,
       staff_name: bookedService.staff_name,
-      bgcolor: bookedService.status === "in_progress" ? "teal-14":"teal" ,
+      bgcolor: bookedService.status === "in_progress" ? "teal-14" : "teal",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,
     }));
@@ -699,6 +813,7 @@ function onToday() {
 function onPrev() {
   if (calendar.value) {
     calendar.value.prev();
+    console.log("calendar.value.prev()", calendar.value.getCurrentDate());
   }
 }
 function onNext() {
@@ -706,45 +821,31 @@ function onNext() {
     calendar.value.next();
   }
 }
-
 function onMoved(data: Timestamp) {
   console.info("onMoved", data);
   selectedDate.value = data.date;
+  addAppointmentForm.value.booking_date = data.date;
   fetchAppointments();
 }
 
 function onClickDate(data: Timestamp) {
   console.info("onClickDate", data);
 }
+
+const clickStaffId = ref(0);
 function onClickTime(data: Timestamp) {
+  const staff = staffList.value[data.scope.columnIndex];
+  clickStaffId.value = staff.staff_id;
   const clickTime = data.scope.timestamp.time.slice(0, 4);
-  addAppointmentForm.value.booking_time = clickTime+ "0";
-  console.log("onClickTime", addAppointmentForm);
+  addAppointmentForm.value.customer_service[0].staff = staff.staff_name;
+
+  addAppointmentForm.value.booking_date = selectedDate.value;
+  addAppointmentForm.value.booking_time = clickTime + "0";
+  fetchAvailableBookingTime(selectedDate.value);
   showAddAppointmentDialog();
-  //format the time to HH:mm
-  return;
-
-  console.info("onClickTime", data);
-  //show a dialog to have a break
-  $q.dialog({
-    title: "Break Time",
-    message: "Do you want to take a break?",
-    cancel: true,
-    persistent: true,
-  })
-    .onOk(() => {
-      console.log("Break time confirmed");
-    })
-    .onCancel(() => {
-      console.log("Break time canceled");
-    });
-
 }
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
-}
-function onClickHeadDay(data: Timestamp) {
-  console.info("onClickHeadDay", data);
 }
 
 function onDragStart(e: DragEvent, item: DragItem) {
@@ -838,7 +939,7 @@ function onWeekdayClass({ scope }) {
 const addAppointmentDialog = ref({ visible: false });
 const addAppointmentForm = ref({
   booking_time: "",
-  booking_date: today(),
+  booking_date: selectedDate.value,
   customer_first_name: "",
   customer_last_name: "",
   is_first: false,
@@ -854,9 +955,14 @@ const addAppointmentForm = ref({
     },
   ],
 });
+const clickTakeBreak = ref(false);
 
 const serviceOptions = ref<{ id: number; name: string }[]>([]);
 const practitionerOptions = ref<{ id: number; name: string }[]>([]);
+
+function showAddAppointmentDialog() {
+  addAppointmentDialog.value.visible = true;
+}
 
 async function fetchServiceOptions() {
   try {
@@ -881,16 +987,22 @@ async function fetchAvailableBookingTime(date: string) {
         date: `${year}/${month}/${day}`,
       },
     });
-    const unavailable_booking_time = response.data;
+
+    const minTime = response.data.start_time;
+    const maxTime = response.data.end_time;
+    const unavailable_booking_time = response.data.unavilable_time;
     console.log("Unavailable booking times:", unavailable_booking_time);
+
     const allTimes = [];
-    for (let i = 8; i < 18; i++) {
-      allTimes.push(`${i.toString().padStart(2, "0")}:00`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:10`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:20`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:30`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:40`);
-      allTimes.push(`${i.toString().padStart(2, "0")}:50`);
+    const startTime = new Date(`1970-01-01T${minTime}:00`);
+    const endTime = new Date(`1970-01-01T${maxTime}:00`);
+    const timeIncrement = 10;
+    for (
+      let time = startTime;
+      time <= endTime;
+      time.setMinutes(time.getMinutes() + timeIncrement)
+    ) {
+      allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
     }
     // Filter out unavailable times
     available_booking_time.value = allTimes.filter((time) => {
@@ -918,14 +1030,9 @@ async function fetchPractitionerOptions() {
   }
 }
 
-function showAddAppointmentDialog() {
-  addAppointmentDialog.value.visible = true;
-}
-
 async function addAppointment() {
   try {
-    //check
-    if (addAppointmentForm.value.customer_service[0]['service'] === "") {
+    if (addAppointmentForm.value.customer_service[0]["service"] === "") {
       $q.notify({
         type: "negative",
         message: "Please select a service",
@@ -934,6 +1041,16 @@ async function addAppointment() {
       });
       return;
     }
+
+    if (!addAppointmentForm.value.customer_service[0]["staff"]["id"]) {
+      addAppointmentForm.value.customer_service[0]["staff"] =
+        staffList.value.filter(
+          (staff) =>
+            staff.staff_name ===
+            addAppointmentForm.value.customer_service[0]["staff"]
+        )[0];
+    }
+
     const payload = {
       ...addAppointmentForm.value,
     };
@@ -951,7 +1068,7 @@ async function addAppointment() {
     addAppointmentDialog.value.visible = false;
     addAppointmentForm.value = {
       booking_time: "",
-      booking_date: today(),
+      booking_date: selectedDate.value,
       customer_first_name: "",
       customer_last_name: "",
       is_first: false,
@@ -974,6 +1091,91 @@ async function addAppointment() {
   } catch (error) {
     console.error("Error adding appointment:", error);
   }
+}
+
+function takeBreak(staff: { staff_id: number; staff_name: string }) {
+  // Show dialog of taking a break
+}
+
+const takeBreakDialog = ref({
+  visible: false,
+  selectedDuration: null as number | null,
+  customDuration: "",
+});
+
+function showTakeBreakDialog() {
+  addAppointmentDialog.value.visible = false;
+  takeBreakDialog.value.visible = true;
+}
+
+function confirmTakeBreak() {
+  const duration =
+    takeBreakDialog.value.selectedDuration ||
+    parseInt(takeBreakDialog.value.customDuration, 10);
+
+  if (!duration || duration <= 0) {
+    $q.notify({
+      type: "negative",
+      message: "Please select or enter a valid break duration",
+      position: "top",
+      timeout: 2000,
+    });
+    return;
+  }
+
+  if (!addAppointmentForm.value.booking_time) {
+    $q.notify({
+      type: "negative",
+      message: "Please select a starting time for the break",
+      position: "top",
+      timeout: 2000,
+    });
+    return;
+  }
+
+  const startTime = addAppointmentForm.value.booking_time;
+  let [startHour, startMinute] = startTime.split(":").map(Number);
+  let minutes = Number(startMinute) + Number(duration);
+  if (Number(minutes) > 60) {
+    startHour += 1;
+    minutes = minutes % 60;
+  }
+  console.log("startMinute", startMinute);
+  const endTime = `${String(startHour).padStart(2, "0")}:${String(
+    minutes
+  ).padStart(2, "0")}`;
+
+  const breakEvent = {
+    id: Date.now(), // Temporary unique ID
+    staff_id: clickStaffId.value,
+    staff_name: addAppointmentForm.value.customer_service[0].staff,
+    date: addAppointmentForm.value.booking_date,
+    time: startTime,
+    expected_end_time: endTime,
+    service_id: null,
+    service_title: "Break",
+    service_duration: duration,
+    service_price: 0,
+    customer_name: addAppointmentForm.value.customer_service[0].staff,
+    comments: "Scheduled break",
+    bgcolor: "grey-5",
+    status: "break",
+    appointment_id: null,
+  };
+  console.log(addAppointmentForm.value.customer_service[0]);
+  console.log("breakEvent", breakEvent);
+  console.log("events.value", events.value);
+
+  events.value.push(breakEvent);
+
+  $q.notify({
+    type: "positive",
+    message: `Break scheduled from ${startTime} to ${endTime}`,
+    position: "top",
+    timeout: 2000,
+  });
+
+  takeBreakDialog.value.visible = false;
 }
 
 const editEventDialog = ref({ visible: false });
@@ -1039,7 +1241,6 @@ const startAppointment = async (event: Event) => {
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
   const formattedTime = `${hours}:${minutes}`;
 
-
   $q.dialog({
     title: "Start Appointment",
     message:
@@ -1054,7 +1255,7 @@ const startAppointment = async (event: Event) => {
           time: formattedTime,
           status: "in_progress",
         };
-       api.put(`/api/appointments/${event.appointment_id}`, payload);
+        api.put(`/api/appointments/${event.appointment_id}`, payload);
         fetchAppointments(); // Refresh appointments after finishing
       } catch (error) {
         console.error("Error finishing appointment:", error);

@@ -42,7 +42,7 @@
     </q-calendar-month>
 
     <q-dialog v-model="scheduleDialog">
-      <q-card style="max-width: 1000px; width: 100%">
+      <q-card style="min-width: 1000px;">
         <q-card-section>
           <div class="text-h6">Set Staff Schedule</div>
         </q-card-section>
@@ -306,7 +306,6 @@
             :options="[
               { label: 'Active', value: 'active' },
               { label: 'Inactive', value: 'inactive' },
-              { label: 'Off', value: 'off' },
             ]"
             inline
           />

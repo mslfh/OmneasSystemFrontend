@@ -13,22 +13,10 @@
           <div class="text-h6">Add New Staff</div>
         </q-card-section>
         <q-card-section>
-          <q-btn
-            flat
-            label="Upload Avatar"
-            color="primary"
-            @click="triggerFileInput('add')"
-          />
-          <q-file
-            ref="addFileInput"
-            label="Upload Avatar"
-            accept="image/*"
-            style="display: none"
-            @update:model-value="(file) => handleFileChange(file, 'add')"
-          />
-
-          <q-input v-model="addForm.name" label="Name" />
+          <q-input v-model="addForm.name" label="* Name" />
           <q-input v-model="addForm.position" label="Position" />
+          <q-input v-model="addForm.phone" label="* Phone" />
+          <q-input v-model="addForm.email" label="Email" type="email" />
           <q-select
             v-model="addForm.status"
             label="Status"
@@ -36,24 +24,14 @@
             emit-value
             map-options
           />
+          <!-- <q-checkbox
+            v-model="addForm.has_certificate"
+            label="Has Certificate"
+          /> -->
           <q-input
             v-model="addForm.description"
             label="Description"
             type="textarea"
-          />
-          <q-input v-model="addForm.tag" label="Tag" />
-          <!-- <q-input v-model="addForm.level" label="Level" type="number" /> -->
-          <!-- <q-input v-model="addForm.sort" label="Sort" type="number" /> -->
-          <q-checkbox
-            v-model="addForm.has_certificate"
-            label="Has Certificate"
-          />
-          <q-input v-model="addForm.email" label="Email" type="email" />
-          <q-input v-model="addForm.phone" label="Phone" />
-          <q-input
-            v-model="addForm.password"
-            label="Password"
-            type="password"
           />
         </q-card-section>
         <q-card-actions align="right">
@@ -76,13 +54,27 @@
       :columns="columns"
       row-key="id"
     >
-      <template v-slot:body-cell-status="props">
-        <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
-          {{ props.row.status }}
-        </q-badge>
-      </template>
-      <template v-slot:body-cell-actions="props">
-        <q-btn
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td key="name" :props="props">
+          {{ props.row.name }}
+        </q-td>
+        <q-td key="position" :props="props">
+          {{ props.row.position }}
+        </q-td>
+        <q-td key="phone" :props="props">
+          {{ props.row.phone }}
+        </q-td>
+        <q-td key="email" :props="props">
+          {{ props.row.email }}
+        </q-td>
+        <q-td key="status" :props="props">
+          <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
+            {{ props.row.status }}
+          </q-badge>
+        </q-td>
+        <q-td key="actions" :props="props">
+          <q-btn
           flat
           round
           icon="edit"
@@ -96,7 +88,9 @@
           color="red"
           @click="deleteStaff(props.row)"
         />
-      </template>
+          </q-td>
+        </q-tr >
+    </template>
     </q-table>
 
     <q-dialog v-model="isEditDialogOpen">
@@ -105,22 +99,13 @@
           <div class="text-h6">Edit Staff</div>
         </q-card-section>
         <q-card-section>
-          <q-btn
-            flat
-            label="Upload Avatar"
-            color="primary"
-            @click="triggerFileInput('edit')"
-          />
-          <q-file
-            ref="editFileInput"
-            label="Upload Avatar"
-            accept="image/*"
-            style="display: none"
-            @update:model-value="(file) => handleFileChange(file, 'edit')"
-          />
-
           <q-input v-model="editForm.name" label="Name" />
-          <q-input filled v-model="editForm.email" label="Email" type="email" readonly />
+          <q-input
+            filled
+            v-model="editForm.email"
+            label="Email"
+            type="email"
+          />
           <q-input v-model="editForm.position" label="Position" />
           <q-select
             v-model="editForm.status"
@@ -134,15 +119,7 @@
             label="Description"
             type="textarea"
           />
-          <q-input v-model="editForm.tag" label="Tag" />
-          <!-- <q-input v-model="editForm.level" label="Level" type="number" /> -->
-          <!-- <q-input v-model="editForm.sort" label="Sort" type="number" /> -->
-          <q-checkbox
-            v-model="editForm.has_certificate"
-            label="Has Certificate"
-          />
           <q-input v-model="editForm.phone" label="Phone" />
-
         </q-card-section>
         <q-card-actions align="right">
           <q-btn
@@ -188,8 +165,10 @@ const staff = ref([]);
 const columns = [
   { name: "name", required: true, label: "Name", align: "left", field: "name" },
   { name: "position", label: "Position", align: "left", field: "position" },
-  { name: "status", label: "Status", align: "left", field: "status" },
-  { name: "actions", label: "Actions", align: "center" },
+  { name: "phone", label: "Phone", align: "left", field: "phone" },
+  { name: "email", label: "Email", align: "left", field: "email" },
+  { name: "status", label: "Status", align: "left", field: "status", style: "width: 150px" },
+  { name: "actions", label: "Actions", align: "center", style: "width: 120px" },
 ];
 
 onMounted(() => {
@@ -202,6 +181,7 @@ const fetchStaff = async () => {
     if (response.data.length > 0) {
       staff.value = response.data;
     }
+    console.log("Staff data fetched successfully:", staff.value);
   } catch (error) {
     console.error("Error fetching staff:", error);
   }
@@ -213,15 +193,10 @@ const addForm = ref({
   position: "",
   status: "active",
   description: "",
-  tag: "",
-  // level: 1,
-  // sort: 1,
-  has_certificate: false,
+  // has_certificate: false,
   email: "",
   phone: "",
   password: "",
-  avatar: null,
-  avatarFile: null,
 });
 
 const addFileInput = ref(null);
@@ -231,63 +206,24 @@ const openAddStaffDialog = () => {
   isAddDialogOpen.value = true;
 };
 
-const handleFileChange = (file, formType) => {
-  const form = formType === "add" ? addForm : editForm;
-  form.value.avatarFile = file;
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      form.value.avatar = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  } else {
-    form.value.avatar = null;
-  }
-};
-
-const triggerFileInput = (formType) => {
-  const fileInput =
-    formType === "add" ? addFileInput.value : editFileInput.value;
-  if (fileInput) {
-    fileInput.pickFiles();
-  }
-};
-
 const addStaff = async () => {
   try {
-    const formData = new FormData();
-    Object.keys(addForm.value).forEach((key) => {
-      if (key !== "avatarFile") {
-        formData.append(key, addForm.value[key]);
-      }
-    });
-    if (addForm.value.avatarFile) {
-      formData.append("avatar", addForm.value.avatarFile);
-    }
-    console.log("Form data:", formData);
-
-    const response = await api.post("/api/staff", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    console.log("Add response:", response.data);
-
+    const payload = {
+      ...addForm.value,
+    };
+    payload.password = addForm.value.phone;
+    const response = await api.post("/api/staff", payload);
     staff.value.push(response.data);
     isAddDialogOpen.value = false;
-
     addForm.value = {
       name: "",
       position: "",
-      status: "",
+      status: "active",
       description: "",
-      tag: "",
-      // level: null,
-      // sort: null,
-      has_certificate: false,
+      // has_certificate: false,
       email: "",
       phone: "",
       password: "",
-      avatar: null,
-      avatarFile: null,
     };
   } catch (error) {
     console.error("Error adding staff:", error);
@@ -295,49 +231,33 @@ const addStaff = async () => {
 };
 
 const isEditDialogOpen = ref(false);
+
 const editForm = ref({
   id: null,
   name: "",
   position: "",
   status: "",
   description: "",
-  tag: "",
-  // level: null,
-  // sort: null,
-  has_certificate: false,
+  // has_certificate: false,
   email: "",
   phone: "",
-  avatar: null,
-  avatarFile: null,
+  password: "",
 });
 
 const editStaff = (row) => {
   editForm.value = { ...row };
-  editForm.value.avatar = row.profile_photo_url; // Set the avatar URL
+  editForm.value.password = row.phone; // Set the password to the phone number
   isEditDialogOpen.value = true;
 };
 
 const updateStaff = async () => {
   try {
-    const formData = new FormData();
-    formData.append("_method", "PUT");
-    Object.keys(editForm.value).forEach((key) => {
-      if (key !== "avatarFile" && key !== "id" && key !== "avatar") {
-        formData.append(key, editForm.value[key]);
-      }
-    });
-    if (editForm.value.avatarFile) {
-      formData.append("avatar", editForm.value.avatarFile);
-    }
-    await api.post(`/api/staff/${editForm.value.id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const payload = {
+      ...editForm.value,
+    };
+    payload.password = editForm.value.phone;
+    await api.put(`/api/staff/${editForm.value.id}`, payload);
 
-    // Update the staff list with the edited staff
-    const index = staff.value.findIndex((s) => s.id === editForm.value.id);
-    if (index !== -1) {
-      staff.value[index] = { ...editForm.value };
-    }
     fetchStaff(); // Refresh the staff list
     // Reset the edit form
     editForm.value = {
@@ -346,14 +266,10 @@ const updateStaff = async () => {
       position: "",
       status: "",
       description: "",
-      tag: "",
-      // level: null,
-      // sort: null,
-      has_certificate: false,
+      // has_certificate: false,
       email: "",
       phone: "",
-      avatar: null,
-      avatarFile: null,
+      password: "",
     };
     isEditDialogOpen.value = false; // Close the dialog
   } catch (error) {
