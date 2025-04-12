@@ -4,7 +4,13 @@
       class="float-left q-ma-md"
       label="Add Appointment / Break"
       color="primary"
-      @click="showAddAppointmentDialog"
+      @click="
+        addAppointmentForm.booking_date = selectedDate;
+        addAppointmentForm.booking_time = '';
+        addAppointmentForm.customer_service[0].staff = '';
+        addAppointmentForm.customer_service[0].service = '';
+        showAddAppointmentDialog();
+      "
     />
     <div class="text-h6 text-center">
       {{ currentMonth }}
@@ -271,6 +277,13 @@
         <div class="col-2">
           <q-card-section>
             <q-btn
+              icon="alarm"
+              dense
+              flat
+              style="color: goldenrod"
+              :label="addAppointmentForm.booking_time"
+            />
+            <q-btn
               dense
               outline
               style="color: goldenrod"
@@ -278,6 +291,7 @@
               label="Add Appointment"
             />
             <q-btn
+              v-if="addAppointmentForm.booking_time !== ''"
               dense
               outline
               style="color: teal"
@@ -304,6 +318,9 @@
               option-value="id"
               option-label="name"
               clearable
+              @update:model-value="
+                fetchAvailableBookingTime(addAppointmentForm.booking_date)
+              "
             />
             <q-input
               v-model="addAppointmentForm.booking_date"
@@ -454,37 +471,46 @@
     <q-card>
       <q-linear-progress :value="1.0" color="pink" />
       <q-card-section>
-        <div class="text-h6">Take a Break</div>
+        <div class="text-h6">
+          Take a Break - {{ addAppointmentForm.booking_time }}
+        </div>
         <q-radio
           v-model="takeBreakDialog.selectedDuration"
           val="10"
           label="10 minutes"
-        />
-        <q-radio
-          v-model="takeBreakDialog.selectedDuration"
-          val="15"
-          label="15 minutes"
+          @update:model-value="assumeBreakEvent(10)"
         />
         <q-radio
           v-model="takeBreakDialog.selectedDuration"
           val="20"
           label="20 minutes"
+          @update:model-value="assumeBreakEvent(20)"
         />
-        <q-input
+        <q-radio
+          v-model="takeBreakDialog.selectedDuration"
+          val="30"
+          label="30 minutes"
+          @update:model-value="assumeBreakEvent(30)"
+        />
+        <!-- <q-input
           v-model="takeBreakDialog.customDuration"
           label="Custom Duration (minutes)"
           type="number"
           outlined
           dense
-          @input="takeBreakDialog.selectedDuration = null"
-        />
+          @input="takeBreakDialog.selectedDuration = null;
+          assumeBreakEvent(takeBreakDialog.customDuration)"
+        /> -->
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
           flat
           label="Cancel"
           color="negative"
-          @click="takeBreakDialog.visible = false"
+          @click="
+            assumeBreakEvent(0);
+            takeBreakDialog.visible = false;
+          "
         />
         <q-btn
           flat
@@ -532,7 +558,6 @@
         <q-select
           v-model="editEventForm.service"
           :options="serviceOptions"
-          use-input
           label="* Service"
           option-value="id"
           option-label="name"
@@ -593,6 +618,7 @@ import NoWorkResult_ from "postcss/lib/no-work-result";
 const $q = useQuasar();
 interface Event {
   id: number;
+  duration: number;
   staff_id: number;
   staff_name: string;
   date: string;
@@ -618,7 +644,6 @@ onMounted(() => {
   fetchAppointments();
   fetchServiceOptions();
   fetchPractitionerOptions();
-  fetchAvailableBookingTime(selectedDate.value);
 });
 
 const events = ref<Event[]>([]);
@@ -712,7 +737,12 @@ async function fetchAppointments() {
       customer_name: bookedService.customer_name,
       staff_id: bookedService.staff_id,
       staff_name: bookedService.staff_name,
-      bgcolor: bookedService.status === "in_progress" ? "teal-14" : "teal",
+      bgcolor:
+        bookedService.status === "break"
+          ? "grey"
+          : bookedService.status === "in_progress"
+          ? "teal-14"
+          : "teal",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,
     }));
@@ -754,12 +784,14 @@ function badgeStyles(
   timeStartPos?: (_time: string) => number,
   timeDurationHeight?: (_minutes: number) => number
 ) {
+  console.log("event", event);
   const s: { [key: string]: string } = {};
   if (timeStartPos && timeDurationHeight) {
     s.top = timeStartPos(event.time) + "px";
-    s.height = timeDurationHeight(event.duration) + "px";
+    s.height = timeDurationHeight(Number(event.service_duration || 0)) + "px"; // Ensure service_duration is a number
   }
   s["align-items"] = "flex-start";
+  console.log("badgeStyles", s);
   return s;
 }
 
@@ -833,14 +865,14 @@ function onClickDate(data: Timestamp) {
 }
 
 const clickStaffId = ref(0);
+const clickTime = ref("");
 function onClickTime(data: Timestamp) {
   const staff = staffList.value[data.scope.columnIndex];
   clickStaffId.value = staff.staff_id;
-  const clickTime = data.scope.timestamp.time.slice(0, 4);
+  clickTime.value = data.scope.timestamp.time.slice(0, 4);
   addAppointmentForm.value.customer_service[0].staff = staff.staff_name;
-
   addAppointmentForm.value.booking_date = selectedDate.value;
-  addAppointmentForm.value.booking_time = clickTime + "0";
+  addAppointmentForm.value.booking_time = clickTime.value + "0";
   fetchAvailableBookingTime(selectedDate.value);
   showAddAppointmentDialog();
 }
@@ -955,6 +987,7 @@ const addAppointmentForm = ref({
     },
   ],
 });
+
 const clickTakeBreak = ref(false);
 
 const serviceOptions = ref<{ id: number; name: string }[]>([]);
@@ -970,6 +1003,7 @@ async function fetchServiceOptions() {
     serviceOptions.value = response.data.map((service: any) => ({
       id: service.id,
       name: service.title + " (" + service.duration + " min)",
+      duration: service.duration,
     }));
   } catch (error) {
     console.error("Error fetching services:", error);
@@ -1004,12 +1038,35 @@ async function fetchAvailableBookingTime(date: string) {
     ) {
       allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
     }
+    // Check the time  duration
+    const duration = addAppointmentForm.value.customer_service[0].service
+      ? serviceOptions.value.filter(
+          (service) =>
+            service.id ===
+            addAppointmentForm.value.customer_service[0].service.id
+        )[0].duration
+      : 0;
     // Filter out unavailable times
     available_booking_time.value = allTimes.filter((time) => {
-      return !unavailable_booking_time.some((slot) => {
-        const start = slot.start_time.slice(0, 5);
-        const end = slot.end_time.slice(0, 5);
-        return time >= start && time < end;
+      return !unavailable_booking_time.some((timeRange) => {
+        const startTime = time;
+        let endHour =
+          parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+        let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+        if (endMinute >= 60) {
+          endMinute -= 60;
+          endHour += 1;
+        }
+        const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+          .toString()
+          .padStart(2, "0")}`;
+
+        return (
+          (startTime >= timeRange.start_time &&
+            startTime < timeRange.end_time) ||
+          (endTime > timeRange.start_time && endTime < timeRange.end_time) ||
+          (startTime <= timeRange.start_time && endTime > timeRange.end_time)
+        );
       });
     });
     console.log("Available booking times:", available_booking_time.value);
@@ -1108,11 +1165,57 @@ function showTakeBreakDialog() {
   takeBreakDialog.value.visible = true;
 }
 
-function confirmTakeBreak() {
+const assumeEvent = ref<Event>({
+  id: 0,
+  staff_id: 0,
+  staff_name: "",
+  date: "",
+  time: "",
+  expected_end_time: "",
+  service_id: null,
+  service_title: "Break",
+  service_duration: 0,
+  service_price: 0,
+  customer_name: "",
+  comments: "Scheduled break",
+  bgcolor: "grey-5",
+  status: "break",
+  appointment_id: null,
+});
+
+function assumeBreakEvent(duration: number) {
+  if (assumeEvent.value.id !== 0) {
+    events.value.splice(events.value.indexOf(assumeEvent.value), 1);
+  }
+  if (duration === 0) {
+    return;
+  }
+  const startTime = addAppointmentForm.value.booking_time;
+  let [startHour, startMinute] = startTime.split(":").map(Number);
+  let minutes = Number(startMinute) + Number(duration);
+  if (Number(minutes) >= 60) {
+    startHour += 1;
+    minutes = minutes % 60;
+  }
+  console.log("startMinute", startMinute);
+  const endTime = `${String(startHour).padStart(2, "0")}:${String(
+    minutes
+  ).padStart(2, "0")}`;
+  assumeEvent.value.id = Date.now(); // Temporary unique ID
+  assumeEvent.value.staff_id = clickStaffId.value;
+  assumeEvent.value.staff_name =
+  addAppointmentForm.value.customer_service[0].staff;
+  assumeEvent.value.date = addAppointmentForm.value.booking_date;
+  assumeEvent.value.time = startTime;
+  assumeEvent.value.expected_end_time = endTime;
+  assumeEvent.value.service_duration = duration;
+  events.value.push(assumeEvent.value);
+}
+
+async function confirmTakeBreak() {
   const duration =
     takeBreakDialog.value.selectedDuration ||
     parseInt(takeBreakDialog.value.customDuration, 10);
-
   if (!duration || duration <= 0) {
     $q.notify({
       type: "negative",
@@ -1123,59 +1226,24 @@ function confirmTakeBreak() {
     return;
   }
 
-  if (!addAppointmentForm.value.booking_time) {
-    $q.notify({
-      type: "negative",
-      message: "Please select a starting time for the break",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-
-  const startTime = addAppointmentForm.value.booking_time;
-  let [startHour, startMinute] = startTime.split(":").map(Number);
-  let minutes = Number(startMinute) + Number(duration);
-  if (Number(minutes) > 60) {
-    startHour += 1;
-    minutes = minutes % 60;
-  }
-  console.log("startMinute", startMinute);
-  const endTime = `${String(startHour).padStart(2, "0")}:${String(
-    minutes
-  ).padStart(2, "0")}`;
-
-  const breakEvent = {
-    id: Date.now(), // Temporary unique ID
-    staff_id: clickStaffId.value,
-    staff_name: addAppointmentForm.value.customer_service[0].staff,
-    date: addAppointmentForm.value.booking_date,
-    time: startTime,
-    expected_end_time: endTime,
-    service_id: null,
-    service_title: "Break",
-    service_duration: duration,
-    service_price: 0,
-    customer_name: addAppointmentForm.value.customer_service[0].staff,
-    comments: "Scheduled break",
-    bgcolor: "grey-5",
-    status: "break",
-    appointment_id: null,
+  const payload = {
+    ...assumeEvent.value,
   };
-  console.log(addAppointmentForm.value.customer_service[0]);
-  console.log("breakEvent", breakEvent);
-  console.log("events.value", events.value);
-
-  events.value.push(breakEvent);
-
-  $q.notify({
+  const response = await api.post("/api/takeBreakAppointment", payload);
+  if (response.status === 201) {
+    $q.notify({
     type: "positive",
-    message: `Break scheduled from ${startTime} to ${endTime}`,
+    message: `Break scheduled successfully`,
     position: "top",
     timeout: 2000,
   });
+  }
+  //reset the q-radio
+  takeBreakDialog.value.selectedDuration = null;
 
   takeBreakDialog.value.visible = false;
+  assumeEvent.value.id = 0; // Reset the ID
+  fetchAppointments(); // Refresh appointments after taking a break
 }
 
 const editEventDialog = ref({ visible: false });

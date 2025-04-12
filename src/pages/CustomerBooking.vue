@@ -143,6 +143,7 @@
                                   () => {
                                     done1 = true;
                                     step = 2;
+                                    fetchUnavailabelTime();
                                     selectedService = service;
                                   }
                                 "
@@ -802,7 +803,6 @@ onMounted(async () => {
         events.value.push(element.date);
       });
     }
-    fetchUnavailabelTime();
     refreshStaff();
   } catch (error) {
     console.error("Error fetching packages:", error);
@@ -851,9 +851,6 @@ const fetchUnavailabelTime = async () => {
     const minTime = response.data.start_time;
     const maxTime = response.data.end_time;
     const unavailable_booking_time = response.data.unavilable_time;
-    console.log("Min time:", minTime);
-    console.log("Max time:", maxTime);
-    console.log("Unavailable booking times:", unavailable_booking_time);
     // Generate all possible times between minTime and maxTime
     const allTimes = [];
     const startTime = new Date(`1970-01-01T${minTime}:00`);
@@ -866,15 +863,37 @@ const fetchUnavailabelTime = async () => {
     ) {
       allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
     }
+    // Check the time  duration
+    const duration = selectedService.value.duration ?? 0;
 
     // Filter out unavailable times
     available_booking_time.value = allTimes.filter((time) => {
-      return !unavailable_booking_time.some((slot) => {
-        const start = slot.start_time.slice(0, 5);
-        const end = slot.end_time.slice(0, 5);
-        return time >= start && time < end;
+      return !unavailable_booking_time.some((timeRange) => {
+        console.log("timeRange", timeRange);
+        const startTime = time;
+        let endHour =
+          parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+        let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+        if (endMinute >= 60) {
+          endMinute -= 60;
+          endHour += 1;
+        }
+        const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+          .toString()
+          .padStart(2, "0")}`;
+
+        console.log("startTime", startTime);
+        console.log("endTime", endTime);
+        return (
+          (startTime >= timeRange.start_time && startTime < timeRange.end_time) ||
+          (endTime > timeRange.start_time && endTime < timeRange.end_time) ||
+          (startTime <= timeRange.start_time && endTime > timeRange.end_time)
+        );
       });
     });
+
+
+    console.log("Available booking times:", available_booking_time.value);
 
     // Split available times into morning and afternoon
     morning_time.value = available_booking_time.value.filter((time) => {
