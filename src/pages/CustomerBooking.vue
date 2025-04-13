@@ -284,10 +284,11 @@
                       clickable
                       @click="
                         () => {
-                          selectedStaff.id = '';
+                          selectedStaff.id = 0;
+                          fetchUnavailabelTime();
                         }
                       "
-                      :color="selectedStaff.id === '' ? 'orange-2' : 'blue-1'"
+                      :color="selectedStaff.id === 0 ? 'orange-2' : 'blue-1'"
                       icon="chevron_right"
                     >
                       Any therapist
@@ -304,9 +305,8 @@
                         () => {
                           selectedStaff.id = staff.id;
                           selectedStaff.name = staff.name;
-                          selectedStaff.profile_photo_url =
-                            staff.profile_photo_url;
                           selectedStaff.position = staff.position;
+                          fetchUnavailabelTime();
                         }
                       "
                     >
@@ -786,7 +786,7 @@ const getEndTime = () => {
 const availableStaff = ref([]);
 const events = ref([]);
 const selectedStaff = ref({
-  id: "",
+  id: 0,
   name: "",
   profile_photo_url: "",
   position: "",
@@ -838,16 +838,19 @@ const refreshStaff = async () => {
 const available_booking_time = ref<string[]>([]);
 const morning_time = ref<string[]>([]);
 const afternoon_time = ref<string[]>([]);
+
 const fetchUnavailabelTime = async () => {
   try {
-    const response = await axios.get(
-      VITE_API_URL + "/api/get-unavailable-time-from-date",
-      {
-        params: {
-          date: date.value,
-        },
-      }
-    );
+    let url =  VITE_API_URL + "/api/get-unavailable-time-from-date";
+    if (selectedStaff.value.id !== 0) {
+      url =  VITE_API_URL + "/api/get-unavailable-time-from-staff";
+    }
+    const response = await axios.get(url, {
+      params: {
+        date: date.value,
+        staff_id: selectedStaff.value.id,
+      },
+    });
     const minTime = response.data.start_time;
     const maxTime = response.data.end_time;
     const unavailable_booking_time = response.data.unavilable_time;
@@ -899,8 +902,6 @@ const fetchUnavailabelTime = async () => {
       const hour = parseInt(time.split(":")[0]);
       return hour >= 12 && hour < 20; // Afternoon times
     });
-
-    time.value = "";
     refreshStaff();
   } catch (error) {
     console.error("Error fetching unavailable time:", error);
