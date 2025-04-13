@@ -276,13 +276,10 @@
         <!--Events -->
         <div class="col-2">
           <q-card-section>
-            <q-btn
-              icon="alarm"
-              dense
-              flat
-              style="color: goldenrod"
-              :label="addAppointmentForm.booking_time"
-            />
+            <q-label style="color: goldenrod" class="text-h5 text-weight-bold">
+              <q-icon name="alarm" size="md" />
+              {{ addAppointmentForm.booking_time }}
+            </q-label>
             <q-btn
               dense
               outline
@@ -291,7 +288,10 @@
               label="Add Appointment"
             />
             <q-btn
-              v-if="addAppointmentForm.booking_time !== ''"
+              v-if="
+                addAppointmentForm.booking_time !== '' &&
+                addAppointmentForm.customer_service[0].service == ''
+              "
               dense
               outline
               style="color: teal"
@@ -303,14 +303,23 @@
         </div>
         <div class="col-4">
           <div>
-            <q-select
-              v-model="addAppointmentForm.customer_service[0].staff"
-              :options="practitionerOptions"
-              label="Practitioner"
-              option-value="id"
-              option-label="name"
-              clearable
-            />
+            <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
+            <q-chip
+              v-for="staff in staffOptions"
+              :key="staff.id"
+              clickable
+              :color="selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'"
+              @click="
+                () => {
+                  selectedStaff.id = staff.id;
+                  selectedStaff.name = staff.name;
+                  fetchAvailableBookingTime(addAppointmentForm.booking_date);
+                }
+              "
+            >
+              {{ staff.name }}
+            </q-chip>
+
             <q-select
               v-model="addAppointmentForm.customer_service[0].service"
               :options="serviceOptions"
@@ -453,7 +462,6 @@
           </q-card-section>
         </div>
       </div>
-
       <q-card-actions align="right">
         <q-btn
           flat
@@ -465,7 +473,6 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
-
   <!-- Take a Break Dialog -->
   <q-dialog v-model="takeBreakDialog.visible" seamless position="bottom">
     <q-card>
@@ -492,15 +499,17 @@
           label="30 minutes"
           @update:model-value="assumeBreakEvent(30)"
         />
-        <!-- <q-input
+        <q-input
           v-model="takeBreakDialog.customDuration"
           label="Custom Duration (minutes)"
           type="number"
           outlined
           dense
-          @input="takeBreakDialog.selectedDuration = null;
-          assumeBreakEvent(takeBreakDialog.customDuration)"
-        /> -->
+          @change="
+            takeBreakDialog.selectedDuration = null;
+            assumeBreakEvent(takeBreakDialog.customDuration);
+          "
+        />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
@@ -524,57 +533,171 @@
 
   <!-- Edit Event Dialog -->
   <q-dialog v-model="editEventDialog.visible">
-    <q-card style="min-width: 450px">
-      <q-card-section>
+    <q-card style="min-width: 850px">
+      <q-card-section horizontal class="q-ma-sm">
         <div class="text-h6">Edit Event</div>
-      </q-card-section>
-      <q-card-section>
-        <q-input
-          v-model="editEventForm.date"
-          filled
-          type="date"
-          label="Date"
-          @change="fetchAvailableBookingTime(editEventForm.date)"
+        <q-space />
+        <q-btn
+          flat
+          style="color: red"
+          icon="delete"
+          @click="deleteAppointment()"
         />
+      </q-card-section>
+      <div class="row q-ma-md">
+        <!--Events -->
+        <div class="col-4">
+          <div>
+            <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
+            <q-chip
+              v-for="staff in staffOptions"
+              :key="staff.id"
+              clickable
+              :color="selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'"
+              @click="
+                () => {
+                  selectedStaff.id = staff.id;
+                  selectedStaff.name = staff.name;
+                  fetchAvailableBookingTime(editEventForm.booking_date);
+                }
+              "
+            >
+              {{ staff.name }}
+            </q-chip>
 
-        <div class="q-mb-sm text-weight-bold">
-          Time:
-          <q-chip class="bg-amber-4" icon="check_circle">
-            {{ editEventForm.time }}
-          </q-chip>
+            <q-select
+              v-model="editEventForm.service"
+              :options="serviceOptions"
+              label="* Service"
+              option-value="id"
+              option-label="name"
+              clearable
+              @update:model-value="
+                fetchAvailableBookingTime(editEventForm.booking_date)
+              "
+            />
+            <q-input
+              v-model="editEventForm.booking_date"
+              label="Select Date"
+              mask="####-##-##"
+            >
+              <template v-slot:prepend>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy
+                    cover
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-date
+                      v-model="editEventForm.booking_date"
+                      mask="YYYY-MM-DD"
+                      @update:model-value="
+                        fetchAvailableBookingTime(editEventForm.booking_date)
+                      "
+                    >
+                      <div class="row items-center justify-end">
+                        <q-btn
+                          v-close-popup
+                          label="Close"
+                          color="primary"
+                          flat
+                        />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+            <div class="q-mb-sm text-weight-bold">
+              Time:
+              <q-chip class="bg-amber-4" icon="check_circle">
+                {{ editEventForm.booking_time }}
+              </q-chip>
+            </div>
+            <q-scroll-area style="height: 300px">
+              <q-chip
+                v-for="item in available_booking_time"
+                :key="item"
+                clickable
+                :icon="
+                  editEventForm.booking_time == item
+                    ? 'check_circle'
+                    : 'o_fiber_manual_record'
+                "
+                :color="
+                  editEventForm.booking_time == item ? 'orange-3' : 'teal-1'
+                "
+                @click="editEventForm.booking_time = item"
+                >{{ item }}</q-chip
+              >
+            </q-scroll-area>
+          </div>
         </div>
+        <div class="col-6">
+          <q-card-section>
+            <q-input
+              rounded
+              v-model="user_search"
+              outlined
+              placeholder="Find User by Name, Phone, or Email"
+              @keyup.enter="selectUserFromSearch"
+            >
+              <template v-slot:append>
+                <q-icon v-if="user_search === ''" name="search" />
+                <q-icon
+                  v-else
+                  name="clear"
+                  class="cursor-pointer"
+                  @click="user_search = ''"
+                />
+              </template>
+            </q-input>
+            <q-item-label
+              v-if="foundUsers.length == 0 && user_search !== ''"
+              class="text-caption"
+              >No data found</q-item-label
+            >
+            <q-scroll-area v-if="user_search !== ''" style="height: 100px">
+              <q-list>
+                <q-item
+                  v-for="user in foundUsers"
+                  :key="user.id"
+                  clickable
+                  @click="
+                    editEventForm.customer_name = user.name;
+                    editEventForm.customer_first_name = user.first_name;
+                    editEventForm.customer_last_name = user.last_name;
+                    editEventForm.customer_email = user.email;
+                    editEventForm.customer_phone = user.phone;
+                  "
+                >
+                  <q-item-section>
+                    <q-item-label>{{ user.name }}</q-item-label>
+                    <q-item-label caption>{{ user.phone }}</q-item-label>
+                    <q-item-label caption>{{ user.email }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-scroll-area>
+            <q-input
+              v-model="editEventForm.customer_name"
+              label="Customer Name"
+            />
+            <q-input
+              v-model="editEventForm.customer_first_name"
+              label="First Name"
+            />
+            <q-input
+              v-model="editEventForm.customer_last_name"
+              label="Last Name"
+            />
+            <q-input v-model="editEventForm.customer_email" label="Email" />
+            <q-input v-model="editEventForm.customer_phone" label="Phone" />
+            <q-input v-model="editEventForm.comments" label="Comments" />
+          </q-card-section>
+        </div>
+      </div>
 
-        <q-chip
-          v-for="item in available_booking_time"
-          v-model:model-value="editEventForm.time"
-          class="bg-teal-1"
-          :key="item"
-          clickable
-          icon="o_fiber_manual_record"
-          @click="editEventForm.time = item"
-          >{{ item }}</q-chip
-        >
-        <q-input v-model="editEventForm.customer_name" label="Customer Name" />
-        <q-select
-          v-model="editEventForm.service"
-          :options="serviceOptions"
-          label="* Service"
-          option-value="id"
-          option-label="name"
-          clearable
-        />
-        <q-select
-          v-model="editEventForm.staff"
-          :options="practitionerOptions"
-          label="Practitioner"
-          option-value="id"
-          option-label="name"
-          clearable
-        />
-        <q-lable class="text-caption">Comments:</q-lable>
-
-        <q-input v-model="editEventForm.comments" filled type="textarea" />
-      </q-card-section>
       <q-card-actions align="right">
         <q-btn
           flat
@@ -639,11 +762,16 @@ const calendar = ref<QCalendarDay>();
 const selectedDate = ref(today());
 const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
 const available_booking_time = ref<string[]>([]);
+const serviceOptions = ref<{ id: number; name: string; duration: Number }[]>(
+  []
+);
+const staffOptions = ref<{ id: number; name: string }[]>([]);
 
 onMounted(() => {
   fetchAppointments();
   fetchServiceOptions();
-  fetchPractitionerOptions();
+  fetchStaffList();
+  fetchAvailableBookingTime(selectedDate.value);
 });
 
 const events = ref<Event[]>([]);
@@ -691,6 +819,7 @@ const currentMonth = computed(() => {
     day: "numeric",
   });
 });
+
 // convert the events into a map of lists keyed by date
 const eventsMap = computed(() => {
   const map: { [key: string]: Event[] } = {};
@@ -715,6 +844,22 @@ const eventsMap = computed(() => {
   });
   return map;
 });
+
+async function fetchStaffList() {
+  const staffResponse = await api.get("/api/staff");
+  staffList.value = staffResponse.data.map((staff: any) => ({
+    staff_id: staff.id,
+    staff_name: staff.name,
+  }));
+  staffOptions.value = staffResponse.data.map((staff: any) => ({
+    id: staff.id,
+    name: staff.name,
+  }));
+  staffOptions.value.unshift({
+    id: 0,
+    name: "Any therapist ",
+  });
+}
 
 async function fetchAppointments() {
   try {
@@ -745,23 +890,113 @@ async function fetchAppointments() {
           : "teal",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,
+      customer_first_name: bookedService.customer_first_name,
+      customer_last_name: bookedService.customer_last_name,
+      customer_phone: bookedService.customer_phone,
+      customer_email: bookedService.customer_email,
     }));
 
     events.value = fetchedData.filter((event) => event.staff_id !== 0);
     dragItems.value = fetchedData.filter((event) => event.staff_id === 0);
-
-    const staffResponse = await api.get("/api/staff");
-    staffResponse.data.forEach((staff) => {
-      const staffId = staff.id;
-      const staffName = staff.name;
-      if (!staffList.value.some((s) => s.staff_id === staffId)) {
-        staffList.value.push({ staff_id: staffId, staff_name: staffName });
-      }
-    });
   } catch (error) {
     console.error("Error fetching schedules:", error);
   }
 }
+
+async function fetchServiceOptions() {
+  try {
+    const response = await api.get("/api/services");
+    serviceOptions.value = response.data.map((service: any) => ({
+      id: service.id,
+      name: service.title + " (" + service.duration + " min)",
+      duration: service.duration,
+    }));
+  } catch (error) {
+    console.error("Error fetching services:", error);
+  }
+}
+
+async function fetchAvailableBookingTime(date: string) {
+  try {
+    let formattedDate = new Date(date);
+    const day = String(formattedDate.getDate()).padStart(2, "0");
+    const month = String(formattedDate.getMonth() + 1).padStart(2, "0");
+    const year = formattedDate.getFullYear();
+
+    let url = "/api/get-unavailable-time-from-date";
+    if (selectedStaff.value.id !== 0) {
+      url = "/api/get-unavailable-time-from-staff";
+    }
+    const response = await api.get(url, {
+      params: {
+        date: `${year}/${month}/${day}`,
+        staff_id: selectedStaff.value.id,
+      },
+    });
+    const minTime = response.data.start_time;
+    const maxTime = response.data.end_time;
+    const unavailable_booking_time = response.data.unavilable_time;
+
+    console.log("Unavailable booking times:", unavailable_booking_time);
+
+    const allTimes = [];
+    const startTime = new Date(`1970-01-01T${minTime}:00`);
+    const endTime = new Date(`1970-01-01T${maxTime}:00`);
+    const timeIncrement = 10;
+    for (
+      let time = startTime;
+      time <= endTime;
+      time.setMinutes(time.getMinutes() + timeIncrement)
+    ) {
+      allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
+    }
+    // Check the time  duration
+    let duration = addAppointmentForm.value.customer_service[0].service
+      ? serviceOptions.value.filter(
+          (service) =>
+            service.id ===
+            addAppointmentForm.value.customer_service[0].service.id
+        )[0].duration
+      : 0;
+    if (duration === 0 && editEventDialog.value.visible) {
+      duration = editEventForm.value.service.duration;
+    }
+    // Filter out unavailable times
+    available_booking_time.value = allTimes.filter((time) => {
+      return !unavailable_booking_time.some((timeRange) => {
+        const startTime = time;
+        let endHour =
+          parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+        let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+        if (endMinute >= 60) {
+          endMinute -= 60;
+          endHour += 1;
+        }
+        const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
+          .toString()
+          .padStart(2, "0")}`;
+
+        return (
+          (startTime >= timeRange.start_time &&
+            startTime < timeRange.end_time) ||
+          (endTime > timeRange.start_time && endTime < timeRange.end_time) ||
+          (startTime <= timeRange.start_time && endTime > timeRange.end_time) ||
+          endTime > maxTime
+        );
+      });
+    });
+    console.log("Available booking times:", available_booking_time.value);
+  } catch (error) {
+    console.log("Error fetching available booking times:", error);
+    available_booking_time.value = [];
+    $q.notify({
+      type: "negative",
+      message: "No available booking time for the selected date.",
+    });
+    return;
+  }
+}
+
 function getEventsByStaff(date: string, staffId: number): Event[] {
   return (
     eventsMap.value[date]?.filter((event) => event.staff_id === staffId) || []
@@ -864,15 +1099,20 @@ function onClickDate(data: Timestamp) {
   console.info("onClickDate", data);
 }
 
-const clickStaffId = ref(0);
-const clickTime = ref("");
+const selectedStaff = ref({
+  id: 0,
+  name: "Any therapist",
+});
+const selectedTime = ref("");
+
 function onClickTime(data: Timestamp) {
   const staff = staffList.value[data.scope.columnIndex];
-  clickStaffId.value = staff.staff_id;
-  clickTime.value = data.scope.timestamp.time.slice(0, 4);
-  addAppointmentForm.value.customer_service[0].staff = staff.staff_name;
+  selectedStaff.value.id = staff.staff_id;
+  selectedStaff.value.name = staff.staff_name;
+
+  selectedTime.value = data.scope.timestamp.time.slice(0, 4);
   addAppointmentForm.value.booking_date = selectedDate.value;
-  addAppointmentForm.value.booking_time = clickTime.value + "0";
+  addAppointmentForm.value.booking_time = selectedTime.value + "0";
   fetchAvailableBookingTime(selectedDate.value);
   showAddAppointmentDialog();
 }
@@ -969,6 +1209,7 @@ function onWeekdayClass({ scope }) {
 }
 
 const addAppointmentDialog = ref({ visible: false });
+
 const addAppointmentForm = ref({
   booking_time: "",
   booking_date: selectedDate.value,
@@ -990,101 +1231,9 @@ const addAppointmentForm = ref({
 
 const clickTakeBreak = ref(false);
 
-const serviceOptions = ref<{ id: number; name: string }[]>([]);
-const practitionerOptions = ref<{ id: number; name: string }[]>([]);
-
 function showAddAppointmentDialog() {
+  fetchAvailableBookingTime(selectedDate.value);
   addAppointmentDialog.value.visible = true;
-}
-
-async function fetchServiceOptions() {
-  try {
-    const response = await api.get("/api/services");
-    serviceOptions.value = response.data.map((service: any) => ({
-      id: service.id,
-      name: service.title + " (" + service.duration + " min)",
-      duration: service.duration,
-    }));
-  } catch (error) {
-    console.error("Error fetching services:", error);
-  }
-}
-
-async function fetchAvailableBookingTime(date: string) {
-  try {
-    let formattedDate = new Date(date);
-    const day = String(formattedDate.getDate()).padStart(2, "0");
-    const month = String(formattedDate.getMonth() + 1).padStart(2, "0");
-    const year = formattedDate.getFullYear();
-    const response = await api.get("/api/get-unavailable-time-from-date", {
-      params: {
-        date: `${year}/${month}/${day}`,
-      },
-    });
-
-    const minTime = response.data.start_time;
-    const maxTime = response.data.end_time;
-    const unavailable_booking_time = response.data.unavilable_time;
-    console.log("Unavailable booking times:", unavailable_booking_time);
-
-    const allTimes = [];
-    const startTime = new Date(`1970-01-01T${minTime}:00`);
-    const endTime = new Date(`1970-01-01T${maxTime}:00`);
-    const timeIncrement = 10;
-    for (
-      let time = startTime;
-      time <= endTime;
-      time.setMinutes(time.getMinutes() + timeIncrement)
-    ) {
-      allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
-    }
-    // Check the time  duration
-    const duration = addAppointmentForm.value.customer_service[0].service
-      ? serviceOptions.value.filter(
-          (service) =>
-            service.id ===
-            addAppointmentForm.value.customer_service[0].service.id
-        )[0].duration
-      : 0;
-    // Filter out unavailable times
-    available_booking_time.value = allTimes.filter((time) => {
-      return !unavailable_booking_time.some((timeRange) => {
-        const startTime = time;
-        let endHour =
-          parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
-        let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
-        if (endMinute >= 60) {
-          endMinute -= 60;
-          endHour += 1;
-        }
-        const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
-          .toString()
-          .padStart(2, "0")}`;
-
-        return (
-          (startTime >= timeRange.start_time &&
-            startTime < timeRange.end_time) ||
-          (endTime > timeRange.start_time && endTime < timeRange.end_time) ||
-          (startTime <= timeRange.start_time && endTime > timeRange.end_time)
-        );
-      });
-    });
-    console.log("Available booking times:", available_booking_time.value);
-  } catch (error) {
-    console.error("Error fetching available booking times:", error);
-  }
-}
-
-async function fetchPractitionerOptions() {
-  try {
-    const response = await api.get("/api/staff");
-    practitionerOptions.value = response.data.map((staff: any) => ({
-      id: staff.id,
-      name: staff.name,
-    }));
-  } catch (error) {
-    console.error("Error fetching practitioners:", error);
-  }
 }
 
 async function addAppointment() {
@@ -1098,15 +1247,32 @@ async function addAppointment() {
       });
       return;
     }
-
-    if (!addAppointmentForm.value.customer_service[0]["staff"]["id"]) {
-      addAppointmentForm.value.customer_service[0]["staff"] =
-        staffList.value.filter(
-          (staff) =>
-            staff.staff_name ===
-            addAppointmentForm.value.customer_service[0]["staff"]
-        )[0];
+    // Check if booking time is in the available booking time list
+    if (
+      !available_booking_time.value.includes(
+        addAppointmentForm.value.booking_time
+      )
+    ) {
+      $q.notify({
+        type: "negative",
+        message: "Select available booking time!",
+        position: "top",
+        timeout: 2000,
+      });
+      return;
     }
+
+    if (addAppointmentForm.value.customer_service[0]["customer_name"] === "") {
+      $q.notify({
+        type: "negative",
+        message: "Customer Name Can not be empty!",
+        position: "top",
+        timeout: 2000,
+      });
+      return;
+    }
+
+    addAppointmentForm.value.customer_service[0]["staff"] = selectedStaff.value;
 
     const payload = {
       ...addAppointmentForm.value,
@@ -1202,9 +1368,10 @@ function assumeBreakEvent(duration: number) {
     minutes
   ).padStart(2, "0")}`;
   assumeEvent.value.id = Date.now(); // Temporary unique ID
-  assumeEvent.value.staff_id = clickStaffId.value;
-  assumeEvent.value.staff_name =
-  addAppointmentForm.value.customer_service[0].staff;
+  assumeEvent.value.staff_id = selectedStaff.value.id;
+  assumeEvent.value.staff_name = selectedStaff.value.name;
+  assumeEvent.value.customer_name = selectedStaff.value.name;
+
   assumeEvent.value.date = addAppointmentForm.value.booking_date;
   assumeEvent.value.time = startTime;
   assumeEvent.value.expected_end_time = endTime;
@@ -1232,11 +1399,11 @@ async function confirmTakeBreak() {
   const response = await api.post("/api/takeBreakAppointment", payload);
   if (response.status === 201) {
     $q.notify({
-    type: "positive",
-    message: `Break scheduled successfully`,
-    position: "top",
-    timeout: 2000,
-  });
+      type: "positive",
+      message: `Break scheduled successfully`,
+      position: "top",
+      timeout: 2000,
+    });
   }
   //reset the q-radio
   takeBreakDialog.value.selectedDuration = null;
@@ -1250,32 +1417,69 @@ const editEventDialog = ref({ visible: false });
 
 const editEventForm = ref({
   id: 0,
-  date: "",
-  time: "",
+  booking_date: "",
+  booking_time: "",
   customer_name: "",
-  service: "",
-  staff: 0,
+  service: {},
+  staff: {},
   comments: "",
+  customer_first_name: "",
+  customer_last_name: "",
+  customer_phone: "",
+  customer_email: "",
 });
 
 function openEditEventDialog(event: Event) {
+  selectedStaff.value.id = event.staff_id;
+  selectedStaff.value.name = event.staff_name;
   editEventForm.value = {
-    id: event.id,
-    date: event.date,
-    time: event.time,
+    id: event.appointment_id,
+    booking_date: event.date,
+    booking_time: event.time,
     customer_name: event.customer_name,
-    service: event.service_title,
-    staff: event.staff_name,
+    service: {
+      id: event.service_id,
+      name: event.service_title,
+      duration: event.service_duration,
+    },
+    staff: {
+      id: event.staff_id,
+      name: event.staff_name,
+    },
     comments: event.comments,
+    customer_first_name: event.customer_first_name,
+    customer_last_name: event.customer_last_name,
+    customer_phone: event.customer_phone,
+    customer_email: event.customer_email,
   };
   editEventDialog.value.visible = true;
+  fetchAvailableBookingTime(event.date);
 }
 
 async function saveEditedEvent() {
   try {
+    editEventForm.value.staff = selectedStaff.value;
     const payload = { ...editEventForm.value };
-    await api.put(`/api/service-appointments/${payload.id}`, payload);
+    await api.put(`/api/appointments/${payload.id}`, payload);
     editEventDialog.value.visible = false;
+    editEventForm.value = {
+      id: 0,
+      booking_date: "",
+      booking_time: "",
+      customer_name: "",
+      service: "",
+      staff: {},
+      comments: "",
+      customer_first_name: "",
+      customer_last_name: "",
+      customer_phone: "",
+      customer_email: "",
+    };
+    selectedStaff.value = {
+      id: 0,
+      name: "Any therapist",
+    };
+
     fetchAppointments(); // Refresh appointments after editing
   } catch (error) {
     console.error("Error saving edited event:", error);
@@ -1358,6 +1562,45 @@ const finishAppointment = async (event: Event) => {
     console.error("Error finishing appointment:", error);
   }
 };
+
+async function deleteAppointment() {
+  try {
+    // Show confirmation dialog
+    $q.dialog({
+      title: "Delete Appointment",
+      message: "Are you sure you want to delete this appointment?",
+      cancel: true,
+      persistent: true,
+    })
+      .onOk(() => {
+        const response = api.delete(
+          `/api/appointments/${editEventForm.value.id}`
+        );
+        if (response.status === 200) {
+          $q.notify({
+            type: "positive",
+            message: "Appointment deleted successfully",
+            position: "top",
+            timeout: 2000,
+          });
+        }
+        editEventDialog.value.visible = false;
+        fetchAppointments();
+      })
+      .onCancel(() => {
+        console.log("Delete appointment canceled");
+      });
+
+  } catch (error) {
+    console.error("Error deleting appointment:", error);
+    $q.notify({
+      type: "negative",
+      message: "Failed to delete the appointment. Please try again.",
+      position: "top",
+      timeout: 2000,
+    });
+  }
+}
 </script>
 
 <style lang="scss" scoped>
