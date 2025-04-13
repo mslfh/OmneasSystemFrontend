@@ -2,7 +2,7 @@
   "name": "massagefrontend",
   "version": "0.0.1",
   "description": "An online massage booking and manage system using Quasar(Vue)",
-  "productName": "EasyMassage",
+  "productName": "Mia's Massage",
   "author": "Fuhai Li <55822442+mslfh@users.noreply.github.com>",
   "type": "module",
   "private": true,

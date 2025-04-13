@@ -2,8 +2,8 @@
   <div class="subcontent">
     <q-btn
       class="float-left q-ma-md"
-      label="Add Appointment / Break"
-      color="primary"
+      label="Add Appointment"
+      color="blue-8"
       @click="
         addAppointmentForm.booking_date = selectedDate;
         addAppointmentForm.booking_time = '';
@@ -45,7 +45,7 @@
               <q-card-section class="q-pt-none q-pb-none">
                 Name: {{ item.customer_name }}
               </q-card-section>
-              <q-card-section class="q-pt-none text-caption">
+              <q-card-section class="q-pt-none q-pb-none text-caption">
                 * {{ item.service_title }}
               </q-card-section>
             </q-card>
@@ -53,7 +53,7 @@
         </ul>
       </div>
 
-      <div class="col-9" style="display: flex; height: 600px">
+      <div class="col-9" style="display: flex; height: 700px">
         <q-calendar-day
           ref="calendar"
           v-model="selectedDate"
@@ -70,9 +70,9 @@
           no-active-date
           :column-count="staffList.length"
           :interval-minutes="10"
-          :interval-start="52"
-          :interval-count="64"
-          :interval-height="28"
+          :interval-start="46"
+          :interval-count="78"
+          :interval-height="34"
           @moved="onMoved"
           @click-date="onClickDate"
           @click-time="onClickTime"
@@ -168,7 +168,9 @@
             >
               <div
                 v-if="event.time !== undefined"
-                class="my-event"
+                class="my-event shadow-2"
+                :draggable="true"
+                @dragstart="onDragStart($event, event)"
                 :class="badgeClasses(event, 'body')"
                 :style="
                   badgeStyles(event, 'body', timeStartPos, timeDurationHeight)
@@ -177,7 +179,7 @@
               >
                 <div align="right" class="q-ma-xs">
                   <q-icon
-                    name="edit_calendar"
+                    name="drag_indicator"
                     size="20px"
                     class="float-right"
                   />
@@ -195,7 +197,6 @@
                       {{ event.service_title }} |
                       {{ event.service_duration }} min
                     </q-item-label>
-
                     <q-chip
                       v-if="event.status === 'pending'"
                       outline
@@ -216,6 +217,7 @@
                       icon="hourglass_top"
                     >
                     </q-chip>
+
                     <!-- <q-chip
                       outline
                       color="white"
@@ -227,15 +229,19 @@
                       Done
                     </q-chip> -->
                   </q-list>
-                  <q-tooltip>{{
-                    event.time +
-                    " - " +
-                    event.service_title +
-                    " | " +
-                    event.service_duration +
-                    " min"
-                  }}</q-tooltip>
+                  <q-label v-if="event.service_duration > 30">
+                    Comments:
+                    {{ event.comments }}
+                  </q-label>
                 </div>
+                <q-tooltip>{{
+                  event.time +
+                  " - " +
+                  event.service_title +
+                  " | " +
+                  event.service_duration +
+                  " min"
+                }}</q-tooltip>
               </div>
             </template>
           </template>
@@ -365,8 +371,15 @@
                 </q-icon>
               </template>
             </q-input>
-            <q-label> Available Time:</q-label>
-            <q-scroll-area style="height: 300px">
+            <q-label class="text-subtitle2 text-grey-9"> Booking Time</q-label>
+            <q-input
+              dense
+              v-model="addAppointmentForm.booking_time"
+              outlined
+              type="time"
+            />
+            <q-separator class="q-my-md" />
+            <q-scroll-area style="height: 250px">
               <q-chip
                 v-for="item in available_booking_time"
                 :key="item"
@@ -454,10 +467,19 @@
               v-model="addAppointmentForm.customer_phone"
               label="Phone"
             />
-            <q-input v-model="addAppointmentForm.comments" label="Comments" />
             <q-input
               v-model="addAppointmentForm.customer_service[0].comments"
               label="Service Comments"
+            />
+            <q-input v-model="addAppointmentForm.comments" label="Comments" />
+            <q-label class="text-subtitle1 text-grey-8 text-weight-bold"
+              >Save Customer</q-label
+            >
+            <q-toggle
+              v-model="addAppointmentForm.is_first"
+              checked-icon="check"
+              color="deep-orange"
+              unchecked-icon="clear"
             />
           </q-card-section>
         </div>
@@ -609,12 +631,18 @@
               </template>
             </q-input>
             <div class="q-mb-sm text-weight-bold">
-              Time:
-              <q-chip class="bg-amber-4" icon="check_circle">
-                {{ editEventForm.booking_time }}
-              </q-chip>
+              <q-label class="text-subtitle2 text-grey-9">
+                Booking Time:</q-label
+              >
+              <q-input
+                dense
+                v-model="editEventForm.booking_time"
+                outlined
+                type="time"
+              />
+              <q-separator class="q-my-md" />
             </div>
-            <q-scroll-area style="height: 300px">
+            <q-scroll-area style="height: 200px">
               <q-chip
                 v-for="item in available_booking_time"
                 :key="item"
@@ -771,7 +799,6 @@ onMounted(() => {
   fetchAppointments();
   fetchServiceOptions();
   fetchStaffList();
-  fetchAvailableBookingTime(selectedDate.value);
 });
 
 const events = ref<Event[]>([]);
@@ -814,6 +841,7 @@ function showConfirmDialog(staffName: string): Promise<boolean> {
 const currentMonth = computed(() => {
   const date = new Date(selectedDate.value);
   return date.toLocaleString("default", {
+    weekday: "short",
     month: "long",
     year: "numeric",
     day: "numeric",
@@ -886,8 +914,8 @@ async function fetchAppointments() {
         bookedService.status === "break"
           ? "grey"
           : bookedService.status === "in_progress"
-          ? "teal-14"
-          : "teal",
+          ? "teal-3"
+          : "teal-5",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,
       customer_first_name: bookedService.customer_first_name,
@@ -964,7 +992,7 @@ async function fetchAvailableBookingTime(date: string) {
     // Filter out unavailable times
     available_booking_time.value = allTimes.filter((time) => {
       return !unavailable_booking_time.some((timeRange) => {
-        const startTime = time;
+        const startTime = time + ":00";
         let endHour =
           parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
         let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
@@ -972,25 +1000,33 @@ async function fetchAvailableBookingTime(date: string) {
           endMinute -= 60;
           endHour += 1;
         }
-        const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
-          .toString()
-          .padStart(2, "0")}`;
+        const endTime =
+          `${endHour.toString().padStart(2, "0")}:${endMinute
+            .toString()
+            .padStart(2, "0")}` + ":00";
 
         return (
           (startTime >= timeRange.start_time &&
             startTime < timeRange.end_time) ||
-          (endTime > timeRange.start_time && endTime < timeRange.end_time) ||
-          (startTime <= timeRange.start_time && endTime > timeRange.end_time) ||
-          endTime > maxTime
+          (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
+          (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
+          endTime > maxTime + ":00"
         );
       });
     });
-    console.log("Available booking times:", available_booking_time.value);
+    if (available_booking_time.value.length === 0) {
+      $q.notify({
+        type: "warning",
+        color: "orange-4",
+        message: "No available booking time found.",
+      });
+    }
   } catch (error) {
     console.log("Error fetching available booking times:", error);
     available_booking_time.value = [];
     $q.notify({
       type: "negative",
+
       message: "No available booking time for the selected date.",
     });
     return;
@@ -1116,6 +1152,7 @@ function onClickTime(data: Timestamp) {
   fetchAvailableBookingTime(selectedDate.value);
   showAddAppointmentDialog();
 }
+
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
 }
@@ -1161,21 +1198,20 @@ async function onDrop(
   type: string,
   { scope }: DropScope
 ): Promise<boolean> {
-  console.info("onDrop", type, scope);
   const itemID = parseInt(e.dataTransfer.getData("ID"), 10);
   const item = dragItems.value.filter((item) => item.id === itemID);
-  const event = item[0] ? { ...item[0] } : { ...defaultEvent };
-
+  let event = item[0] ? { ...item[0] } : { ...defaultEvent };
+  if (item.length === 0) {
+    event = events.value.filter((item) => item.id === itemID)[0];
+  }
   const columnIndex = scope.columnIndex;
   if (staffList.value[columnIndex]) {
     const staffName = staffList.value[columnIndex].staff_name;
-
     // Use q-dialog for confirmation
     const confirmDrop = await showConfirmDialog(staffName);
     if (!confirmDrop) {
       return false; // Cancel the drop action if the user declines
     }
-
     event.staff_id = staffList.value[columnIndex].staff_id;
     event.staff_name = staffName;
   }
@@ -1189,7 +1225,9 @@ async function onDrop(
     console.error("Error updating appointments:", error);
     return false;
   }
-  events.value.push(event);
+  if (item.length != 0) {
+    events.value.push(event);
+  }
   dragItems.value = dragItems.value.filter((item) => item.id !== itemID);
   console.log("events.value", events.value);
   return false;
@@ -1248,14 +1286,10 @@ async function addAppointment() {
       return;
     }
     // Check if booking time is in the available booking time list
-    if (
-      !available_booking_time.value.includes(
-        addAppointmentForm.value.booking_time
-      )
-    ) {
+    if (!addAppointmentForm.value.booking_time) {
       $q.notify({
         type: "negative",
-        message: "Select available booking time!",
+        message: "Booking time can not be empty!",
         position: "top",
         timeout: 2000,
       });
@@ -1271,7 +1305,18 @@ async function addAppointment() {
       });
       return;
     }
-
+    if (
+      addAppointmentForm.value.is_first &&
+      addAppointmentForm.value.customer_phone === ""
+    ) {
+      $q.notify({
+        type: "negative",
+        message: "Phone Number can not be empty when saving!",
+        position: "top",
+        timeout: 2000,
+      });
+      return;
+    }
     addAppointmentForm.value.customer_service[0]["staff"] = selectedStaff.value;
 
     const payload = {
@@ -1314,10 +1359,6 @@ async function addAppointment() {
   } catch (error) {
     console.error("Error adding appointment:", error);
   }
-}
-
-function takeBreak(staff: { staff_id: number; staff_name: string }) {
-  // Show dialog of taking a break
 }
 
 const takeBreakDialog = ref({
@@ -1524,7 +1565,8 @@ const startAppointment = async (event: Event) => {
       try {
         const payload = {
           id: event.appointment_id,
-          time: formattedTime,
+          booking_time: formattedTime,
+          booking_date: event.date,
           status: "in_progress",
         };
         api.put(`/api/appointments/${event.appointment_id}`, payload);
@@ -1590,7 +1632,6 @@ async function deleteAppointment() {
       .onCancel(() => {
         console.log("Delete appointment canceled");
       });
-
   } catch (error) {
     console.error("Error deleting appointment:", error);
     $q.notify({
@@ -1605,9 +1646,9 @@ async function deleteAppointment() {
 
 <style lang="scss" scoped>
 .my-event {
+  border-radius: 14px;
   position: absolute;
   font-size: 12px;
-  justify-content: center;
   margin: 0 1px;
   text-overflow: ellipsis;
   overflow: hidden;

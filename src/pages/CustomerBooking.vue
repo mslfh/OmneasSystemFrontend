@@ -869,8 +869,7 @@ const fetchUnavailabelTime = async () => {
     // Filter out unavailable times
     available_booking_time.value = allTimes.filter((time) => {
       return !unavailable_booking_time.some((timeRange) => {
-        console.log("timeRange", timeRange);
-        const startTime = time;
+        const startTime = time+':00';
         let endHour =
           parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
         let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
@@ -880,21 +879,17 @@ const fetchUnavailabelTime = async () => {
         }
         const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
           .toString()
-          .padStart(2, "0")}`;
+          .padStart(2, "0")}`+':00';
 
-        console.log("startTime", startTime);
-        console.log("endTime", endTime);
         return (
           (startTime >= timeRange.start_time && startTime < timeRange.end_time) ||
-          (endTime > timeRange.start_time && endTime < timeRange.end_time) ||
-          (startTime <= timeRange.start_time && endTime > timeRange.end_time)
+          (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
+          (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
+          (endTime > maxTime+':00')
         );
       });
     });
-
-
     console.log("Available booking times:", available_booking_time.value);
-
     // Split available times into morning and afternoon
     morning_time.value = available_booking_time.value.filter((time) => {
       const hour = parseInt(time.split(":")[0]);
@@ -902,7 +897,7 @@ const fetchUnavailabelTime = async () => {
     });
     afternoon_time.value = available_booking_time.value.filter((time) => {
       const hour = parseInt(time.split(":")[0]);
-      return hour >= 12 && hour < 19; // Afternoon times
+      return hour >= 12 && hour < 20; // Afternoon times
     });
 
     time.value = "";
@@ -911,11 +906,6 @@ const fetchUnavailabelTime = async () => {
     console.error("Error fetching unavailable time:", error);
   }
 };
-
-const openingTime = ref({
-  start: "08:00",
-  end: "19:00",
-});
 
 const time = ref("");
 const first_time = ref(false);
