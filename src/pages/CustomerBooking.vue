@@ -170,7 +170,7 @@
                     <q-icon size="sm" name="o_alarm" /> Select Time
                   </div>
                   <!-- date picker -->
-                  <q-input filled v-model="date" mask="date" :rules="['date']">
+                  <q-input readonly filled v-model="date" mask="date" :rules="['date']">
                     <template v-slot:append>
                       <q-icon name="event" class="cursor-pointer">
                         <q-popup-proxy
@@ -183,8 +183,8 @@
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
                             @update:model-value="
-                            refreshStaff();
-                            fetchAvailabelTime()"
+                              refreshStaff();
+                            "
                             :events="events"
                             event-color="teal"
                             :options="dateOptionsFn"
@@ -225,6 +225,7 @@
                         @click="
                           () => {
                             selectedStaff.id = 0;
+                            selectedStaff.name = 'Any Therapist';
                             fetchAvailabelTime();
                           }
                         "
@@ -247,6 +248,7 @@
                             selectedStaff.name = staff.name;
                             selectedStaff.position = staff.position;
                             fetchAvailabelTime();
+                            time = '';
                           }
                         "
                       >
@@ -325,16 +327,17 @@
                     rounded
                     @click="
                       () => {
-                        if (availableStaff.length == 0 || !time || !date) {
+                        if (availableStaff.length == 0 || !time || !date ) {
                           $q.notify({
-                            message: 'No therapist available at this time.',
+                            message: 'Please select an available time.',
                             color: 'red-4',
                             icon: 'error',
                             position: 'top',
                             timeout: 3000,
                           });
                           return;
-                        } else {
+                        }
+                        else {
                           done2 = true;
                           step = 3;
                         }
@@ -831,6 +834,7 @@ const refreshStaff = async () => {
   );
   if (response.data.length > 0) {
     availableStaff.value = response.data;
+    fetchAvailabelTime();
   } else {
     availableStaff.value = [];
   }
@@ -851,7 +855,7 @@ const fetchAvailabelTime = async () => {
     let maxTime = "";
     if (selectedStaff.value.id == 0) {
       for (let i = 0; i < availableStaff.value.length; i++) {
-          response = await axios.get(
+        response = await axios.get(
           VITE_API_URL + "/api/get-unavailable-time-from-staff",
           {
             params: {
@@ -860,14 +864,17 @@ const fetchAvailabelTime = async () => {
             },
           }
         );
-         unavailable_booking_time =  response.data.unavilable_time
-         minTime = response.data.start_time;
-         maxTime = response.data.end_time	;
+        unavailable_booking_time = response.data.unavilable_time;
+        minTime = response.data.start_time;
+        maxTime = response.data.end_time;
         available_booking_time = available_booking_time.concat(
           getAvailableBookingTime(unavailable_booking_time, minTime, maxTime)
         );
         //remove duplicate time
         available_booking_time = [...new Set(available_booking_time)];
+        available_booking_time.sort((a, b) => {
+          return a.localeCompare(b);
+        });
       }
     } else {
       response = await axios.get(
@@ -882,7 +889,11 @@ const fetchAvailabelTime = async () => {
       unavailable_booking_time = response.data.unavilable_time;
       minTime = response.data.start_time;
       maxTime = response.data.end_time;
-      available_booking_time = getAvailableBookingTime(unavailable_booking_time, minTime, maxTime);
+      available_booking_time = getAvailableBookingTime(
+        unavailable_booking_time,
+        minTime,
+        maxTime
+      );
     }
     morning_time.value = available_booking_time.filter((time) => {
       const hour = parseInt(time.split(":")[0]);
@@ -942,7 +953,6 @@ const getAvailableBookingTime = (
     });
   });
   return available_booking_time;
-
 };
 
 const time = ref("");

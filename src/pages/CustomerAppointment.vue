@@ -208,6 +208,9 @@ onMounted(async () => {
       price: service.service_price,
       duration: service.service_duration,
     };
+    if(response.data.status == "unassigned"){
+      service.staff_id = 0;
+    }
     selectedStaff.value = {
       id: service.staff_id,
       name: service.staff_name || "Any therapist",

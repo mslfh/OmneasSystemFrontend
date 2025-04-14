@@ -27,7 +27,7 @@
     <q-card-section class="col-10">
       <div class="text-subtitle1">
         <q-icon q-pt-xs name="check_circle" color="teal-7" />
-        {{ selectedService.title }}
+        {{ selectedService.title }} | {{ selectedService.duration }} min
         <q-icon
           color="teal-7"
           name="border_color"

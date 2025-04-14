@@ -15,6 +15,17 @@
     <div class="text-h6 text-center">
       {{ currentMonth }}
     </div>
+    <div class="float-right text-grey-8 text-weight-bold">
+      <q-badge
+        color="teal-5"
+      ></q-badge>
+      Assigned
+      <q-space></q-space>
+      <q-badge
+        color="orange-5"
+      ></q-badge>
+      Unassigned
+    </div>
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
 
     <div class="row">
@@ -27,7 +38,7 @@
               {{ dragItems.length }}
             </q-badge>
           </q-btn>
-          Unassigned
+          Waitting List
         </div>
         <ul class="column">
           <li
@@ -584,7 +595,7 @@
                 }
               "
             >
-              {{ staff.name }}
+              {{ staff.id == 0 ? '* Waitting List' : staff.name }}
             </q-chip>
 
             <q-select
@@ -918,6 +929,8 @@ async function fetchAppointments() {
           ? "grey"
           : bookedService.status === "in_progress"
           ? "teal-3"
+          : bookedService.status === "unassigned"
+          ? "orange-4"
           : "teal-5",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,
@@ -926,7 +939,6 @@ async function fetchAppointments() {
       customer_phone: bookedService.customer_phone,
       customer_email: bookedService.customer_email,
     }));
-
     events.value = fetchedData.filter((event) => event.staff_id !== 0);
     dragItems.value = fetchedData.filter((event) => event.staff_id === 0);
   } catch (error) {
@@ -964,6 +976,10 @@ async function fetchAvailableBookingTime(date: string) {
         staff_id: selectedStaff.value.id,
       },
     });
+    if (response.data.no_schedule) {
+      available_booking_time.value = [];
+      return;
+    }
     const minTime = response.data.start_time;
     const maxTime = response.data.end_time;
     const unavailable_booking_time = response.data.unavilable_time;
