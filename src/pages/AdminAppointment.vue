@@ -799,6 +799,9 @@ onMounted(() => {
   fetchAppointments();
   fetchServiceOptions();
   fetchStaffList();
+  setInterval(() => {
+    fetchAppointments();
+  }, 60000); // 60 seconds
 });
 
 const events = ref<Event[]>([]);
