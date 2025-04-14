@@ -182,7 +182,9 @@
                           <q-date
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
-                            @update:model-value="fetchAvailabelTime"
+                            @update:model-value="
+                            refreshStaff();
+                            fetchAvailabelTime()"
                             :events="events"
                             event-color="teal"
                             :options="dateOptionsFn"
