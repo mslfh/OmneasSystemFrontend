@@ -15,16 +15,21 @@
     <div class="text-h6 text-center">
       {{ currentMonth }}
     </div>
-    <div class="float-right text-grey-8 text-weight-bold">
+    <div class="float-right text-grey-8 text-weight-bold ">
       <q-badge
         color="teal-5"
       ></q-badge>
       Assigned
-      <q-space></q-space>
+      <q-space />
       <q-badge
         color="orange-5"
       ></q-badge>
       Unassigned
+      <q-space />
+      <q-badge
+        color="teal-2"
+      ></q-badge>
+      Progressing
     </div>
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
 
@@ -209,7 +214,7 @@
                       {{ event.service_duration }} min
                     </q-item-label>
                     <q-chip
-                      v-if="event.status === 'pending'"
+                      v-if="event.status === 'pending' || event.status === 'unassigned'"
                       outline
                       color="white"
                       text-color="white"
@@ -930,7 +935,7 @@ async function fetchAppointments() {
           : bookedService.status === "in_progress"
           ? "teal-3"
           : bookedService.status === "unassigned"
-          ? "orange-4"
+          ? "orange-12"
           : "teal-5",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,
@@ -1672,5 +1677,8 @@ async function deleteAppointment() {
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
+}
+.unassigned {
+  background-color: #ffa95d !important
 }
 </style>
