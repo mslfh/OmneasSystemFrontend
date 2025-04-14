@@ -143,7 +143,7 @@
                                   () => {
                                     done1 = true;
                                     step = 2;
-                                    fetchUnavailabelTime();
+                                    fetchAvailabelTime();
                                     selectedService = service;
                                   }
                                 "
@@ -182,7 +182,7 @@
                           <q-date
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
-                            @update:model-value="fetchUnavailabelTime"
+                            @update:model-value="fetchAvailabelTime"
                             :events="events"
                             event-color="teal"
                             :options="dateOptionsFn"
@@ -201,6 +201,60 @@
                     </template>
                   </q-input>
 
+                  <div class="q-pa-md-md q-pa-none-xs q-gutter-md">
+                    <div class="text-h6 text-grey-8 q-pb-xs">
+                      <q-icon size="sm" name="favorite_border" /> Select
+                      Therapist
+                    </div>
+                    <div v-if="availableStaff.length == 0">
+                      <q-chip
+                        class="q-mb-xm"
+                        color="deep-orange-2"
+                        icon="hourglass_bottom"
+                        label="No therapist available at this time."
+                      />
+                    </div>
+                    <div
+                      v-if="availableStaff.length != 0"
+                      class="row q-pa-md-md q-pa-none-xs"
+                    >
+                      <q-chip
+                        clickable
+                        @click="
+                          () => {
+                            selectedStaff.id = 0;
+                            fetchAvailabelTime();
+                          }
+                        "
+                        :color="selectedStaff.id === 0 ? 'orange-2' : 'blue-1'"
+                        icon="chevron_right"
+                      >
+                        Any therapist
+                      </q-chip>
+                      <q-separator vertical />
+                      <q-chip
+                        v-for="staff in availableStaff"
+                        :key="staff.id"
+                        clickable
+                        :color="
+                          selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'
+                        "
+                        @click="
+                          () => {
+                            selectedStaff.id = staff.id;
+                            selectedStaff.name = staff.name;
+                            selectedStaff.position = staff.position;
+                            fetchAvailabelTime();
+                          }
+                        "
+                      >
+                        <!-- <q-avatar>
+                        <img :src="staff.profile_photo_url" />
+                      </q-avatar> -->
+                        {{ staff.name }}
+                      </q-chip>
+                    </div>
+                  </div>
                   <!-- time picker -->
                   <q-list class="q-mb-lg">
                     <q-expansion-item
@@ -263,59 +317,6 @@
                       >
                     </q-expansion-item>
                   </q-list>
-                </div>
-                <div class="q-pa-md-md q-pa-none-xs q-gutter-md">
-                  <div class="text-h6 text-grey-8 q-pb-xs">
-                    <q-icon size="sm" name="favorite_border" /> Select Therapist
-                  </div>
-                  <div v-if="availableStaff.length == 0">
-                    <q-chip
-                      class="q-mb-xm"
-                      color="deep-orange-2"
-                      icon="hourglass_bottom"
-                      label="No therapist available at this time."
-                    />
-                  </div>
-                  <div
-                    v-if="availableStaff.length != 0"
-                    class="row q-pa-md-md q-pa-none-xs"
-                  >
-                    <q-chip
-                      clickable
-                      @click="
-                        () => {
-                          selectedStaff.id = 0;
-                          fetchUnavailabelTime();
-                        }
-                      "
-                      :color="selectedStaff.id === 0 ? 'orange-2' : 'blue-1'"
-                      icon="chevron_right"
-                    >
-                      Any therapist
-                    </q-chip>
-                    <q-separator vertical />
-                    <q-chip
-                      v-for="staff in availableStaff"
-                      :key="staff.id"
-                      clickable
-                      :color="
-                        selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'
-                      "
-                      @click="
-                        () => {
-                          selectedStaff.id = staff.id;
-                          selectedStaff.name = staff.name;
-                          selectedStaff.position = staff.position;
-                          fetchUnavailabelTime();
-                        }
-                      "
-                    >
-                      <!-- <q-avatar>
-                        <img :src="staff.profile_photo_url" />
-                      </q-avatar> -->
-                      {{ staff.name }}
-                    </q-chip>
-                  </div>
                 </div>
                 <q-stepper-navigation>
                   <q-btn
@@ -814,18 +815,15 @@ const dateOptionsFn = (date) => {
 };
 
 const refreshStaff = async () => {
-  console.log(time.value);
-  if (!time.value || !date.value) {
+  if (!date.value) {
     availableStaff.value = [];
     return;
   }
-
   const response = await axios.get(
     VITE_API_URL + "/api/get-available-staff-from-scheduletime",
     {
       params: {
         date: date.value,
-        time: time.value,
       },
     }
   );
@@ -835,77 +833,114 @@ const refreshStaff = async () => {
     availableStaff.value = [];
   }
 };
-const available_booking_time = ref<string[]>([]);
+
 const morning_time = ref<string[]>([]);
 const afternoon_time = ref<string[]>([]);
 
-const fetchUnavailabelTime = async () => {
+const fetchAvailabelTime = async () => {
   try {
-    let url =  VITE_API_URL + "/api/get-unavailable-time-from-date";
-    if (selectedStaff.value.id !== 0) {
-      url =  VITE_API_URL + "/api/get-unavailable-time-from-staff";
+    if (!date.value) {
+      return;
     }
-    const response = await axios.get(url, {
-      params: {
-        date: date.value,
-        staff_id: selectedStaff.value.id,
-      },
-    });
-    const minTime = response.data.start_time;
-    const maxTime = response.data.end_time;
-    const unavailable_booking_time = response.data.unavilable_time;
-    // Generate all possible times between minTime and maxTime
-    const allTimes = [];
-    const startTime = new Date(`1970-01-01T${minTime}:00`);
-    const endTime = new Date(`1970-01-01T${maxTime}:00`);
-    const timeIncrement = 10;
-    for (
-      let time = startTime;
-      time <= endTime;
-      time.setMinutes(time.getMinutes() + timeIncrement)
-    ) {
-      allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
-    }
-    // Check the time  duration
-    const duration = selectedService.value.duration ?? 0;
-
-    // Filter out unavailable times
-    available_booking_time.value = allTimes.filter((time) => {
-      return !unavailable_booking_time.some((timeRange) => {
-        const startTime = time+':00';
-        let endHour =
-          parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
-        let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
-        if (endMinute >= 60) {
-          endMinute -= 60;
-          endHour += 1;
-        }
-        const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute
-          .toString()
-          .padStart(2, "0")}`+':00';
-
-        return (
-          (startTime >= timeRange.start_time && startTime < timeRange.end_time) ||
-          (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
-          (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
-          (endTime > maxTime+':00')
+    let available_booking_time = [];
+    let response = null;
+    let unavailable_booking_time = [];
+    let minTime = "";
+    let maxTime = "";
+    if (selectedStaff.value.id == 0) {
+      for (let i = 0; i < availableStaff.value.length; i++) {
+          response = await axios.get(
+          VITE_API_URL + "/api/get-unavailable-time-from-staff",
+          {
+            params: {
+              date: date.value,
+              staff_id: availableStaff.value[i].id,
+            },
+          }
         );
-      });
-    });
-    console.log("Available booking times:", available_booking_time.value);
-    // Split available times into morning and afternoon
-    morning_time.value = available_booking_time.value.filter((time) => {
+         unavailable_booking_time =  response.data.unavilable_time
+         minTime = response.data.start_time;
+         maxTime = response.data.end_time	;
+        available_booking_time = available_booking_time.concat(
+          getAvailableBookingTime(unavailable_booking_time, minTime, maxTime)
+        );
+        //remove duplicate time
+        available_booking_time = [...new Set(available_booking_time)];
+      }
+    } else {
+      response = await axios.get(
+        VITE_API_URL + "/api/get-unavailable-time-from-staff",
+        {
+          params: {
+            date: date.value,
+            staff_id: selectedStaff.value.id,
+          },
+        }
+      );
+      unavailable_booking_time = response.data.unavilable_time;
+      minTime = response.data.start_time;
+      maxTime = response.data.end_time;
+      available_booking_time = getAvailableBookingTime(unavailable_booking_time, minTime, maxTime);
+    }
+    morning_time.value = available_booking_time.filter((time) => {
       const hour = parseInt(time.split(":")[0]);
-      return hour >= 8 && hour < 12; // Morning times
+      return hour >= 8 && hour < 12;
     });
-    afternoon_time.value = available_booking_time.value.filter((time) => {
+    afternoon_time.value = available_booking_time.filter((time) => {
       const hour = parseInt(time.split(":")[0]);
-      return hour >= 12 && hour < 20; // Afternoon times
+      return hour >= 12 && hour < 20;
     });
-    refreshStaff();
   } catch (error) {
     console.error("Error fetching unavailable time:", error);
   }
+};
+
+const getAvailableBookingTime = (
+  unavailable_booking_time,
+  minTime,
+  maxTime
+) => {
+  // Generate all possible times between minTime and maxTime
+  const allTimes = [];
+  const startTime = new Date(`1970-01-01T${minTime}:00`);
+  const endTime = new Date(`1970-01-01T${maxTime}:00`);
+  const timeIncrement = 10;
+  for (
+    let time = startTime;
+    time <= endTime;
+    time.setMinutes(time.getMinutes() + timeIncrement)
+  ) {
+    allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
+  }
+  // Check the time  duration
+  const duration = selectedService.value.duration ?? 0;
+
+  // Filter out unavailable times
+  const available_booking_time = allTimes.filter((time) => {
+    return !unavailable_booking_time.some((timeRange) => {
+      const startTime = time + ":00";
+      let endHour =
+        parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
+      let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+      if (endMinute >= 60) {
+        endMinute -= 60;
+        endHour += 1;
+      }
+      const endTime =
+        `${endHour.toString().padStart(2, "0")}:${endMinute
+          .toString()
+          .padStart(2, "0")}` + ":00";
+
+      return (
+        (startTime >= timeRange.start_time && startTime < timeRange.end_time) ||
+        (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
+        (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
+        endTime > maxTime + ":00"
+      );
+    });
+  });
+  return available_booking_time;
+
 };
 
 const time = ref("");
