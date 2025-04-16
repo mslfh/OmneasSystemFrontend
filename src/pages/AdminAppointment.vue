@@ -1,5 +1,5 @@
 <template>
-  <div class="subcontent">
+  <div>
     <q-btn
       class="float-left q-ma-md"
       label="Add Appointment"
@@ -12,25 +12,21 @@
         showAddAppointmentDialog();
       "
     />
+    <div class="float-right text-grey-8 text-weight-bold q-ma-md">
+      <q-badge color="teal-5"></q-badge>
+      Assigned
+      <q-space />
+      <q-badge color="deep-orange-3"></q-badge>
+      Unassigned
+      <q-space />
+      <q-badge color="teal-2"></q-badge>
+      Progressing
+    </div>
+
     <div class="text-h6 text-center">
       {{ currentMonth }}
     </div>
-    <div class="float-right text-grey-8 text-weight-bold ">
-      <q-badge
-        color="teal-5"
-      ></q-badge>
-      Assigned
-      <q-space />
-      <q-badge
-        color="deep-orange-3"
-      ></q-badge>
-      Unassigned
-      <q-space />
-      <q-badge
-        color="teal-2"
-      ></q-badge>
-      Progressing
-    </div>
+
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
 
     <div class="row">
@@ -69,7 +65,7 @@
         </ul>
       </div>
 
-      <div class="col-9" style="display: flex; height: 700px">
+      <div class="col-9" style="display: flex; height: 85vh">
         <q-calendar-day
           ref="calendar"
           v-model="selectedDate"
@@ -88,7 +84,7 @@
           :interval-minutes="10"
           :interval-start="46"
           :interval-count="78"
-          :interval-height="34"
+          :interval-height="28"
           @moved="onMoved"
           @click-date="onClickDate"
           @click-time="onClickTime"
@@ -111,8 +107,6 @@
               >
                 <div @click="takeBreak(staffList[columnIndex])">
                   {{ staffList[columnIndex].staff_name }}
-                  <!-- <q-icon name="coffee"
-                  /> -->
                 </div>
               </div>
 
@@ -193,16 +187,31 @@
                 "
                 @click="openEditEventDialog(event)"
               >
-                <div align="right" class="q-ma-xs">
+                <div align="right" class="q-ma-sm">
                   <q-icon
                     name="drag_indicator"
                     size="20px"
                     class="float-right"
                   />
                 </div>
-                <div class="q-ma-md">
+                <div
+                  class="q-ml-md q-mt-xs flex items-center"
+                  style="height: 75%"
+                >
                   <q-list>
-                    <q-item-label class="text-subtitle2">
+                    <q-item-label
+                      :class="
+                        event.service_duration > 45
+                          ? 'text-subtitle2 text-weight-bold'
+                          : 'text-subtitle3 text-weight-bold'
+                      "
+                    >
+                      <q-icon
+                        v-if="event.status === 'in_progress'"
+                        color="white"
+                        name="hourglass_top"
+                      >
+                      </q-icon>
                       Name: {{ event.customer_name }}
                     </q-item-label>
                     <q-item-label class="text-caption">
@@ -211,10 +220,16 @@
                     </q-item-label>
                     <q-item-label class="text-subtitle">
                       {{ event.service_title }} |
-                      {{ event.service_duration }} min
+                      {{ event.service_duration }} Min - ${{
+                        event.service_price + ".00"
+                      }}
                     </q-item-label>
                     <q-chip
-                      v-if="event.status === 'pending' || event.status === 'unassigned'"
+                      size="10px"
+                      v-if="
+                        event.status === 'pending' ||
+                        event.status === 'unassigned'
+                      "
                       outline
                       color="white"
                       text-color="white"
@@ -224,31 +239,27 @@
                     >
                       Start
                     </q-chip>
-
                     <q-chip
-                      v-if="event.status === 'in_progress'"
+                      size="10px"
+                      v-show=false
+                      v-if="
+                        event.status === 'in_progress' ||
+                        event.status === 'pending'
+                      "
                       outline
-                      color="white"
-                      text-color="white"
-                      icon="hourglass_top"
-                    >
-                    </q-chip>
-
-                    <!-- <q-chip
-                      outline
-                      color="white"
-                      text-color="white"
-                      icon="check_circle_outline"
+                      text-color="deep-orange-1"
+                      icon="o_verified"
                       clickable
-                      @click="finishAppointment(event)"
+                      @click.stop="finishAppointment(event)"
                     >
                       Done
-                    </q-chip> -->
+                    </q-chip>
+
+                    <q-item-label v-if="event.service_duration > 30">
+                      Comments:
+                      {{ event.comments }}
+                    </q-item-label>
                   </q-list>
-                  <q-label v-if="event.service_duration > 30">
-                    Comments:
-                    {{ event.comments }}
-                  </q-label>
                 </div>
                 <q-tooltip>{{
                   event.time +
@@ -266,6 +277,7 @@
     </div>
   </div>
 
+  <!-- Drag Appointment Dialog -->
   <q-dialog v-model="confirmDialog.visible">
     <q-card>
       <q-card-section>
@@ -511,6 +523,7 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
   <!-- Take a Break Dialog -->
   <q-dialog v-model="takeBreakDialog.visible" seamless position="bottom">
     <q-card>
@@ -600,7 +613,7 @@
                 }
               "
             >
-              {{ staff.id == 0 ? '* Waitting List' : staff.name }}
+              {{ staff.id == 0 ? "* Waitting List" : staff.name }}
             </q-chip>
 
             <q-select
@@ -741,7 +754,6 @@
           </q-card-section>
         </div>
       </div>
-
       <q-card-actions align="right">
         <q-btn
           flat
@@ -750,6 +762,126 @@
           @click="editEventDialog.visible = false"
         />
         <q-btn flat label="Save" color="positive" @click="saveEditedEvent" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- Finish Appointment Dialog -->
+  <q-dialog v-model="finishAppointmentDialog.visible">
+    <q-card style="min-width: 750px">
+      <q-card-section horizontal class="q-ma-sm">
+        <div class="text-h6">Confirm</div>
+      </q-card-section>
+      <div class="row q-ma-md">
+        <!--Events -->
+        <div class="col-5 q-pa-xs">
+          <div class="text-subtitle2 text-grey-8">
+            <q-chip color="blue-2">
+              {{ finishAppointmentDialog.event.staff_name }}
+            </q-chip>
+          </div>
+          <q-input
+            dense
+            v-model="finishAppointmentDialog.event.service_title"
+            readonly
+          />
+          <div class="q-mb-sm text-weight-bold">
+            <q-label class="text-subtitle2 text-grey-9"> Booking Date</q-label>
+            <q-input
+              dense
+              v-model="finishAppointmentDialog.event.date"
+              outlined
+              type="date"
+            />
+          </div>
+          <div class="q-mb-sm text-weight-bold">
+            <q-label class="text-subtitle2 text-grey-9"> Booking Time:</q-label>
+            <q-input
+              dense
+              v-model="finishAppointmentDialog.event.time"
+              outlined
+              type="time"
+            />
+            <q-separator class="q-my-md" />
+          </div>
+          <q-input
+            dense
+            v-model="finishAppointmentDialog.event.time"
+            outlined
+            type="time"
+            label="Start Time"
+          />
+          <q-input
+            dense
+            v-model="finishAppointmentDialog.event.time"
+            outlined
+            type="time"
+            label=" End Time"
+          />
+        </div>
+        <div class="col-1 flex justify-center">
+          <q-separator vertical class="q-my-md" style="height: 90%" />
+        </div>
+        <div class="col-5">
+          <q-card-section
+            horizontal
+            class="q-pa-sm bg-grey-3 text-grey-7"
+            style="border-radius: 8px"
+          >
+            <div>Service Price:</div>
+            <q-space />
+            <q-span>$ {{ finishAppointmentDialog.event.service_price }}</q-span>
+          </q-card-section>
+          <q-card-section horizontal class="text-weight-bold text-grey-7">
+            <q-radio
+              v-for="method in paymentMethods"
+              v-model="finishAppointmentDialog.paymentMethod"
+              keep-color
+              checked-icon="task_alt"
+              :unchecked-icon="method.icon"
+              :val="method.value"
+              :label="method.label"
+              :color="method.color"
+            />
+          </q-card-section>
+          <q-card-section class="q-pa-sm text-grey-7">
+            <q-input
+              v-model="finishAppointmentDialog.amount"
+              label="Payment Amount"
+              type="number"
+              outlined
+              dense
+            >
+              <template v-slot:prepend>
+                <q-icon name="attach_money" />
+              </template>
+            </q-input>
+          </q-card-section>
+          <q-card-section class="q-pa-sm text-grey-7">
+            Payment Note
+            <q-input
+              v-model="finishAppointmentDialog.note"
+              type="textarea"
+              outlined
+              dense
+            >
+            </q-input>
+          </q-card-section>
+        </div>
+      </div>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="finishAppointmentDialog.visible = false"
+        />
+        <q-btn
+          flat
+          label="Confirm"
+          color="positive"
+          @click="confirmFinishAppointment"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -778,9 +910,6 @@ import {
   QCardActions,
   QBtn,
 } from "quasar";
-import { comment } from "postcss";
-import { id } from "element-plus/es/locales.mjs";
-import NoWorkResult_ from "postcss/lib/no-work-result";
 
 const $q = useQuasar();
 interface Event {
@@ -933,7 +1062,7 @@ async function fetchAppointments() {
         bookedService.status === "break"
           ? "blue-grey-3"
           : bookedService.status === "in_progress"
-          ? "teal-3"
+          ? "light-teal"
           : bookedService.status === "unassigned"
           ? "peach"
           : "teal-5",
@@ -1140,7 +1269,6 @@ function onToday() {
 function onPrev() {
   if (calendar.value) {
     calendar.value.prev();
-    console.log("calendar.value.prev()", calendar.value.getCurrentDate());
   }
 }
 function onNext() {
@@ -1153,10 +1281,6 @@ function onMoved(data: Timestamp) {
   selectedDate.value = data.date;
   addAppointmentForm.value.booking_date = data.date;
   fetchAppointments();
-}
-
-function onClickDate(data: Timestamp) {
-  console.info("onClickDate", data);
 }
 
 const selectedStaff = ref({
@@ -1255,19 +1379,6 @@ async function onDrop(
   dragItems.value = dragItems.value.filter((item) => item.id !== itemID);
   console.log("events.value", events.value);
   return false;
-}
-
-function onIntervalClass({ scope }) {
-  return {
-    droppable: scope.droppable === true,
-  };
-}
-
-/// @ts-expect-error ignore
-function onWeekdayClass({ scope }) {
-  return {
-    droppable: scope.droppable === true,
-  };
 }
 
 const addAppointmentDialog = ref({ visible: false });
@@ -1577,6 +1688,7 @@ const startAppointment = async (event: Event) => {
   const hours = String(start_time.getHours()).padStart(2, "0");
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
   const formattedTime = `${hours}:${minutes}`;
+  // const formattedTime = `09:00`;
 
   $q.dialog({
     title: "Start Appointment",
@@ -1602,31 +1714,86 @@ const startAppointment = async (event: Event) => {
     .onCancel(() => {});
 };
 
-const finishAppointment = async (event: Event) => {
-  // Show confirmation dialog before finishing the appointment
-  $q.dialog({
-    title: "Finish Appointment",
-    message: "Do you want to finish this appointment?",
-    cancel: true,
-    persistent: true,
-  })
-    .onOk(() => {
-      console.log("Break time confirmed");
-    })
-    .onCancel(() => {
-      console.log("Break time canceled");
+const finishAppointmentDialog = ref({
+  visible: false,
+  event: {} as Event,
+  paymentMethod: null as string | null,
+  paymentAmount: null as number | null,
+});
+
+const paymentMethods = ref([
+  { label: "Cash", value: "cash", color: "teal", icon: "payments" },
+  {
+    label: "Card",
+    value: "credit_card",
+    color: "teal",
+    icon: "credit_card",
+  },
+  {
+    label: "Mobile",
+    value: "mobile_payment",
+    color: "teal",
+    icon: "phone_iphone",
+  },
+  {
+    label: "None",
+    value: "no_payment",
+    color: "deep-orange  ",
+    icon: "money_off",
+  },
+]);
+
+function openFinishAppointmentDialog(event: Event) {
+  console.log("openFinishAppointmentDialog", event);
+  finishAppointmentDialog.value.event = event;
+  finishAppointmentDialog.value.paymentMethod = null;
+  finishAppointmentDialog.value.paymentAmount = null;
+  finishAppointmentDialog.value.visible = true;
+}
+
+async function confirmFinishAppointment() {
+  if (
+    !finishAppointmentDialog.value.paymentMethod ||
+    !finishAppointmentDialog.value.paymentAmount
+  ) {
+    $q.notify({
+      type: "negative",
+      message: "Please select a payment method and enter the payment amount.",
+      position: "top",
+      timeout: 2000,
     });
+    return;
+  }
 
   try {
     const payload = {
-      id: event.id,
+      id: finishAppointmentDialog.value.event.id,
       status: "finished",
+      payment_method: finishAppointmentDialog.value.paymentMethod,
+      payment_amount: finishAppointmentDialog.value.paymentAmount,
     };
-    await api.put(`/api/service-appointments/${event.id}`, payload);
+    await api.put(`/api/service-appointments/${payload.id}`, payload);
+    $q.notify({
+      type: "positive",
+      message: "Appointment finished successfully",
+      position: "top",
+      timeout: 2000,
+    });
+    finishAppointmentDialog.value.visible = false;
     fetchAppointments(); // Refresh appointments after finishing
   } catch (error) {
     console.error("Error finishing appointment:", error);
+    $q.notify({
+      type: "negative",
+      message: "Failed to finish the appointment. Please try again.",
+      position: "top",
+      timeout: 2000,
+    });
   }
+}
+
+const finishAppointment = async (event: Event) => {
+  openFinishAppointmentDialog(event);
 };
 
 async function deleteAppointment() {
@@ -1679,6 +1846,6 @@ async function deleteAppointment() {
   cursor: pointer;
 }
 .unassigned {
-  background-color: #ffa95d !important
+  background-color: #ffa95d !important;
 }
 </style>

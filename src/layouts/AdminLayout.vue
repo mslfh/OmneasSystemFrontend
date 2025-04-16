@@ -67,6 +67,7 @@ const zoomLeftDrawer = () => {
       elevated
       class="bg-white shadow_custom q-mx-lg q-mt-md q-py-sm"
       style="right: 8px; border-radius: 4px"
+      v-if="!$q.fullscreen.isActive"
     >
       <q-toolbar>
         <q-btn
@@ -78,7 +79,7 @@ const zoomLeftDrawer = () => {
           aria-label="Menu"
           color="grey-8"
         />
-        <q-toolbar-title> Quasar App </q-toolbar-title>
+        <q-toolbar-title>  </q-toolbar-title>
         <q-space />
         <div class="q-gutter-sm row items-center no-wrap">
           <q-btn
@@ -128,7 +129,7 @@ const zoomLeftDrawer = () => {
     <q-drawer
       v-model="leftDrawerOpen"
       show-if-above
-      :width="zoomDrawer ? 70 : 290"
+      :width="zoomDrawer ? 70 : 270"
       bordered
       class="bg-white text-grey-8 items-center"
     >
@@ -174,7 +175,6 @@ const zoomLeftDrawer = () => {
               <q-item-label>Staff</q-item-label>
             </q-item-section>
           </q-item>
-
           <q-item to="/admin/user" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="supervisor_account" />
@@ -220,6 +220,7 @@ const zoomLeftDrawer = () => {
               <q-item-label>Notification</q-item-label>
             </q-item-section>
           </q-item> -->
+
         </q-list>
       </q-scroll-area>
       <div class="absolute-top" style="height: 80px; padding-left: 10px">
