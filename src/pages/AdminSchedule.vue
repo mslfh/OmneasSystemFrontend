@@ -366,7 +366,7 @@ const eventsMap = computed(() => {
 
 const eventColors = computed(() => {
   const colorMap = {};
-  const colors = ["teal-6", "blue-6", "orange-6", "prown-6"];
+  const colors = ["teal-5", "blue-5", "cyan-5", "purple-3"];
   let colorIndex = 0;
 
   events.value.forEach((event) => {

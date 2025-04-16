@@ -22,7 +22,7 @@
       Assigned
       <q-space />
       <q-badge
-        color="orange-5"
+        color="deep-orange-3"
       ></q-badge>
       Unassigned
       <q-space />
@@ -931,11 +931,11 @@ async function fetchAppointments() {
       staff_name: bookedService.staff_name,
       bgcolor:
         bookedService.status === "break"
-          ? "grey"
+          ? "blue-grey-3"
           : bookedService.status === "in_progress"
           ? "teal-3"
           : bookedService.status === "unassigned"
-          ? "orange-12"
+          ? "peach"
           : "teal-5",
       status: bookedService.status,
       appointment_id: bookedService.appointment_id,

@@ -143,8 +143,8 @@
                                   () => {
                                     done1 = true;
                                     step = 2;
-                                    fetchAvailabelTime();
                                     selectedService = service;
+                                    fetchAvailabelTime();
                                   }
                                 "
                               />
@@ -170,7 +170,13 @@
                     <q-icon size="sm" name="o_alarm" /> Select Time
                   </div>
                   <!-- date picker -->
-                  <q-input readonly filled v-model="date" mask="date" :rules="['date']">
+                  <q-input
+                    readonly
+                    filled
+                    v-model="date"
+                    mask="date"
+                    :rules="['date']"
+                  >
                     <template v-slot:append>
                       <q-icon name="event" class="cursor-pointer">
                         <q-popup-proxy
@@ -184,6 +190,7 @@
                             :landscape="$q.screen.gt.xs"
                             @update:model-value="
                               refreshStaff();
+                              fetchAvailabelTime();
                             "
                             :events="events"
                             event-color="teal"
@@ -284,10 +291,7 @@
                             ? 'check_circle'
                             : 'o_fiber_manual_record'
                         "
-                        @click="
-                          time = item;
-                          refreshStaff();
-                        "
+                        @click="time = item"
                         >{{ item }}</q-chip
                       >
                     </q-expansion-item>
@@ -313,10 +317,7 @@
                             : 'o_fiber_manual_record'
                         "
                         :color="time == item ? 'orange-2' : 'blue-1'"
-                        @click="
-                          time = item;
-                          refreshStaff();
-                        "
+                        @click="time = item"
                         >{{ item }}</q-chip
                       >
                     </q-expansion-item>
@@ -327,7 +328,7 @@
                     rounded
                     @click="
                       () => {
-                        if (availableStaff.length == 0 || !time || !date ) {
+                        if (availableStaff.length == 0 || !time || !date) {
                           $q.notify({
                             message: 'Please select an available time.',
                             color: 'red-4',
@@ -336,8 +337,7 @@
                             timeout: 3000,
                           });
                           return;
-                        }
-                        else {
+                        } else {
                           done2 = true;
                           step = 3;
                         }
@@ -834,7 +834,6 @@ const refreshStaff = async () => {
   );
   if (response.data.length > 0) {
     availableStaff.value = response.data;
-    fetchAvailabelTime();
   } else {
     availableStaff.value = [];
   }
@@ -927,30 +926,38 @@ const getAvailableBookingTime = (
   }
   // Check the time  duration
   const duration = selectedService.value.duration ?? 0;
+  if (duration == 0) {
+    return [];
+  }
 
   // Filter out unavailable times
   const available_booking_time = allTimes.filter((time) => {
-    return !unavailable_booking_time.some((timeRange) => {
-      const startTime = time + ":00";
-      let endHour =
-        parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
-      let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
-      if (endMinute >= 60) {
-        endMinute -= 60;
-        endHour += 1;
-      }
-      const endTime =
-        `${endHour.toString().padStart(2, "0")}:${endMinute
-          .toString()
-          .padStart(2, "0")}` + ":00";
+    const startTime = time + ":00";
+    let endHour = parseInt(startTime.split(":")[0]) + Math.floor(duration / 60);
+    let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
+    if (endMinute >= 60) {
+      endMinute -= 60;
+      endHour += 1;
+    }
+    const endTime =
+      `${endHour.toString().padStart(2, "0")}:${endMinute
+        .toString()
+        .padStart(2, "0")}` + ":00";
 
-      return (
-        (startTime >= timeRange.start_time && startTime < timeRange.end_time) ||
-        (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
-        (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
-        endTime > maxTime + ":00"
-      );
-    });
+    if (unavailable_booking_time.length == 0) {
+      return  endTime <= (maxTime + ":00");
+    }
+    else {
+      return !unavailable_booking_time.some((timeRange) => {
+        return (
+          (startTime >= timeRange.start_time &&
+            startTime < timeRange.end_time) ||
+          (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
+          (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
+          endTime > (maxTime + ":00")
+        );
+      });
+    }
   });
   return available_booking_time;
 };

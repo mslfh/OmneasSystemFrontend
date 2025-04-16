@@ -1,8 +1,8 @@
 {
   "name": "massagefrontend",
   "version": "0.0.1",
-  "description": "An online massage booking and manage system using Quasar(Vue)",
-  "productName": "Mia's Massage",
+  "description": "Relax and heal with professional massage therapy in Launceston. Book online with Mia's Massage for stress relief and wellness.",
+  "productName": "Mia's Massage Therapy Launceston",
   "author": "Fuhai Li <55822442+mslfh@users.noreply.github.com>",
   "type": "module",
   "private": true,
