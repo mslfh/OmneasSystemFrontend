@@ -12,7 +12,7 @@
         showAddAppointmentDialog();
       "
     />
-    <div class="float-right text-grey-8 text-weight-bold q-ma-md">
+    <div class="float-right text-grey-7 text-weight-bold q-ma-md">
       <q-badge color="teal-5"></q-badge>
       Assigned
       <q-space />
@@ -21,6 +21,12 @@
       <q-space />
       <q-badge color="teal-2"></q-badge>
       Progressing
+      <q-space />
+      <q-badge color="brown-3"></q-badge>
+      Completed
+      <q-space />
+      <q-icon color="teal-4" name="loyalty"> </q-icon>
+      By Customer
     </div>
 
     <div class="text-h6 text-center">
@@ -105,8 +111,20 @@
                 v-if="staffList[columnIndex]"
                 style="text-align: center"
               >
-                <div @click="takeBreak(staffList[columnIndex])">
+                <div @click="scrollToNow()">
                   {{ staffList[columnIndex].staff_name }}
+                  <div
+                    v-for="schedule in staffList[columnIndex].schedule"
+                    class="text-caption text-grey-7"
+                  >
+                    {{ schedule.start_time }} - {{ schedule.end_time }}
+                  </div>
+                  <q-tooltip>{{
+                    getEventsByStaff(
+                      timestamp.date,
+                      staffList[columnIndex]?.staff_id
+                    ).length
+                  }}</q-tooltip>
                 </div>
               </div>
 
@@ -179,7 +197,7 @@
               <div
                 v-if="event.time !== undefined"
                 class="my-event shadow-2"
-                :draggable="true"
+                :draggable="event.status !== 'finished'"
                 @dragstart="onDragStart($event, event)"
                 :class="badgeClasses(event, 'body')"
                 :style="
@@ -189,7 +207,7 @@
               >
                 <div align="right" class="q-ma-sm">
                   <q-icon
-                    name="drag_indicator"
+                    :name="event.status != 'finished'?'drag_indicator':'o_check_circle'"
                     size="20px"
                     class="float-right"
                   />
@@ -213,6 +231,8 @@
                       >
                       </q-icon>
                       Name: {{ event.customer_name }}
+                      <q-icon size="13px" v-if="!event.tag && event.status != 'break'" color="white" name="loyalty">
+                      </q-icon>
                     </q-item-label>
                     <q-item-label class="text-caption">
                       Time: {{ event.time }} -
@@ -220,9 +240,8 @@
                     </q-item-label>
                     <q-item-label class="text-subtitle">
                       {{ event.service_title }} |
-                      {{ event.service_duration }} Min - ${{
-                        event.service_price + ".00"
-                      }}
+                      {{ event.service_duration }} Min
+                      {{ event.service_price? '- $'+event.service_price : '' }}
                     </q-item-label>
                     <q-chip
                       size="10px"
@@ -241,7 +260,6 @@
                     </q-chip>
                     <q-chip
                       size="10px"
-                      v-show=false
                       v-if="
                         event.status === 'in_progress' ||
                         event.status === 'pending'
@@ -768,13 +786,13 @@
 
   <!-- Finish Appointment Dialog -->
   <q-dialog v-model="finishAppointmentDialog.visible">
-    <q-card style="min-width: 750px">
+    <q-card style="min-width: 650px">
       <q-card-section horizontal class="q-ma-sm">
-        <div class="text-h6">Confirm</div>
+        <div class="text-h6">Appointment Details</div>
       </q-card-section>
       <div class="row q-ma-md">
         <!--Events -->
-        <div class="col-5 q-pa-xs">
+        <div class="col-4 q-pa-xs">
           <div class="text-subtitle2 text-grey-8">
             <q-chip color="blue-2">
               {{ finishAppointmentDialog.event.staff_name }}
@@ -782,71 +800,75 @@
           </div>
           <q-input
             dense
+            v-model="finishAppointmentDialog.event.customer_name"
+            readonly
+            label="Customer Name"
+          />
+          <q-input
+            dense
             v-model="finishAppointmentDialog.event.service_title"
+            label="Service"
             readonly
           />
           <div class="q-mb-sm text-weight-bold">
-            <q-label class="text-subtitle2 text-grey-9"> Booking Date</q-label>
             <q-input
-              dense
-              v-model="finishAppointmentDialog.event.date"
-              outlined
-              type="date"
-            />
+            v-model="finishAppointmentDialog.event.time"
+            dense
+            readonly
+            label="Booking Time"
+          />
           </div>
-          <div class="q-mb-sm text-weight-bold">
-            <q-label class="text-subtitle2 text-grey-9"> Booking Time:</q-label>
-            <q-input
-              dense
-              v-model="finishAppointmentDialog.event.time"
-              outlined
-              type="time"
-            />
             <q-separator class="q-my-md" />
-          </div>
           <q-input
             dense
-            v-model="finishAppointmentDialog.event.time"
-            outlined
+            v-model="finishAppointmentDialog.actual_start_time"
+            filled
             type="time"
-            label="Start Time"
-          />
+            label="Started At"
+          >
+          <template v-slot:prepend>
+          <q-icon size="xs" name="hourglass_top" />
+        </template>
+          </q-input>
           <q-input
             dense
-            v-model="finishAppointmentDialog.event.time"
-            outlined
+            v-model="finishAppointmentDialog.actual_end_time"
+            filled
             type="time"
-            label=" End Time"
-          />
+            label="Ended At"
+            >
+          <template v-slot:prepend>
+          <q-icon size="xs" name="hourglass_bottom" />
+        </template>
+          </q-input>
         </div>
         <div class="col-1 flex justify-center">
           <q-separator vertical class="q-my-md" style="height: 90%" />
         </div>
-        <div class="col-5">
+        <div class="col-7">
           <q-card-section
             horizontal
-            class="q-pa-sm bg-grey-3 text-grey-7"
+            class="q-pa-sm bg-grey-3 text-grey-7 text-weight-bold"
             style="border-radius: 8px"
           >
-            <div>Service Price:</div>
+            <div>Total Price:</div>
             <q-space />
             <q-span>$ {{ finishAppointmentDialog.event.service_price }}</q-span>
           </q-card-section>
+          <div class="text-weight-bold text-grey-9 q-mt-md">Payment Method</div>
           <q-card-section horizontal class="text-weight-bold text-grey-7">
             <q-radio
               v-for="method in paymentMethods"
               v-model="finishAppointmentDialog.paymentMethod"
               keep-color
-              checked-icon="task_alt"
               :unchecked-icon="method.icon"
               :val="method.value"
               :label="method.label"
-              :color="method.color"
             />
           </q-card-section>
           <q-card-section class="q-pa-sm text-grey-7">
             <q-input
-              v-model="finishAppointmentDialog.amount"
+              v-model="finishAppointmentDialog.paymentAmount"
               label="Payment Amount"
               type="number"
               outlined
@@ -929,6 +951,9 @@ interface Event {
   bgcolor: string;
   status: string;
   appointment_id: number;
+  tag: string;
+  actual_start_time: string;
+  actual_end_time: string;
 }
 
 const calendar = ref<QCalendarDay>();
@@ -946,7 +971,7 @@ onMounted(() => {
   fetchStaffList();
   setInterval(() => {
     fetchAppointments();
-  }, 60000); // 60 seconds
+  }, 60000);
 });
 
 const events = ref<Event[]>([]);
@@ -1022,10 +1047,15 @@ const eventsMap = computed(() => {
 });
 
 async function fetchStaffList() {
-  const staffResponse = await api.get("/api/staff");
+  const staffResponse = await api.get("/api/get-staff-schedule-from-date", {
+    params: {
+      date: selectedDate.value,
+    },
+  });
   staffList.value = staffResponse.data.map((staff: any) => ({
     staff_id: staff.id,
     staff_name: staff.name,
+    schedule: staff.schedules,
   }));
   staffOptions.value = staffResponse.data.map((staff: any) => ({
     id: staff.id,
@@ -1065,13 +1095,17 @@ async function fetchAppointments() {
           ? "light-teal"
           : bookedService.status === "unassigned"
           ? "peach"
+          : bookedService.status === "finished"
+          ? "brown-4"
           : "teal-5",
       status: bookedService.status,
+      tag: bookedService.tag,
       appointment_id: bookedService.appointment_id,
       customer_first_name: bookedService.customer_first_name,
       customer_last_name: bookedService.customer_last_name,
       customer_phone: bookedService.customer_phone,
       customer_email: bookedService.customer_email,
+      actual_start_time: bookedService.actual_start_time?.slice(11, 16),
     }));
     events.value = fetchedData.filter((event) => event.staff_id !== 0);
     dragItems.value = fetchedData.filter((event) => event.staff_id === 0);
@@ -1392,6 +1426,7 @@ const addAppointmentForm = ref({
   customer_email: "",
   customer_phone: "",
   comments: "",
+  tag: ["staff_created"],
   customer_service: [
     {
       customer_name: "",
@@ -1478,6 +1513,7 @@ async function addAppointment() {
       customer_email: "",
       customer_phone: "",
       comments: "",
+      tag: ["staff_created"],
       customer_service: [
         {
           customer_name: "",
@@ -1655,8 +1691,8 @@ async function saveEditedEvent() {
       id: 0,
       name: "Any therapist",
     };
-
-    fetchAppointments(); // Refresh appointments after editing
+    // Refresh appointments after editing
+    fetchAppointments();
   } catch (error) {
     console.error("Error saving edited event:", error);
   }
@@ -1687,13 +1723,13 @@ const startAppointment = async (event: Event) => {
   const start_time = new Date();
   const hours = String(start_time.getHours()).padStart(2, "0");
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
-  const formattedTime = `${hours}:${minutes}`;
-  // const formattedTime = `09:00`;
+  // const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
+  const formattedTime = `${selectedDate.value} 11:00`;
 
   $q.dialog({
     title: "Start Appointment",
     message:
-      "Do you want to start this appointment? it will be " + formattedTime,
+      "Do you want to start this appointment? it will be " + formattedTime.slice(11),
     cancel: true,
     persistent: true,
   })
@@ -1701,8 +1737,7 @@ const startAppointment = async (event: Event) => {
       try {
         const payload = {
           id: event.appointment_id,
-          booking_time: formattedTime,
-          booking_date: event.date,
+          actual_start_time: formattedTime,
           status: "in_progress",
         };
         api.put(`/api/appointments/${event.appointment_id}`, payload);
@@ -1719,35 +1754,44 @@ const finishAppointmentDialog = ref({
   event: {} as Event,
   paymentMethod: null as string | null,
   paymentAmount: null as number | null,
+  start_time: "",
+  end_time: "",
+  note: "",
 });
 
 const paymentMethods = ref([
-  { label: "Cash", value: "cash", color: "teal", icon: "payments" },
+  { label: "Cash", value: "cash", icon: "payments" },
   {
     label: "Card",
     value: "credit_card",
-    color: "teal",
     icon: "credit_card",
   },
   {
-    label: "Mobile",
-    value: "mobile_payment",
-    color: "teal",
-    icon: "phone_iphone",
+    label: "Voucher",
+    value: "voucher",
+    icon: "request_page",
   },
   {
-    label: "None",
-    value: "no_payment",
-    color: "deep-orange  ",
+    label: "Unpaid",
+    value: "unpaid",
     icon: "money_off",
   },
 ]);
 
 function openFinishAppointmentDialog(event: Event) {
-  console.log("openFinishAppointmentDialog", event);
+  const start_time = new Date();
+  const hours = String(start_time.getHours()).padStart(2, "0");
+  const minutes = String(start_time.getMinutes()).padStart(2, "0");
+  const formattedTime = `${hours}:${minutes}`;
   finishAppointmentDialog.value.event = event;
-  finishAppointmentDialog.value.paymentMethod = null;
-  finishAppointmentDialog.value.paymentAmount = null;
+  if (event.actual_start_time) {
+    finishAppointmentDialog.value.actual_start_time = event.actual_start_time;
+  } else {
+    finishAppointmentDialog.value.actual_start_time = event.time;
+  }
+  finishAppointmentDialog.value.actual_end_time = formattedTime;
+  finishAppointmentDialog.value.paymentMethod = "credit_card";
+  finishAppointmentDialog.value.paymentAmount = event.service_price;
   finishAppointmentDialog.value.visible = true;
 }
 
@@ -1764,18 +1808,34 @@ async function confirmFinishAppointment() {
     });
     return;
   }
-
+  //check if the selected date is not today
+  if(selectedDate.value != today()){
+    $q.notify({
+      type: "negative",
+      message: "You can only finish the appointment on today.",
+      position: "top",
+      timeout: 2000,
+    });
+    return;
+  }
   try {
+    const status = finishAppointmentDialog.value.paymentMethod === "unpaid" ? "unpaid" : "paid";
     const payload = {
-      id: finishAppointmentDialog.value.event.id,
-      status: "finished",
+      appointment_id: finishAppointmentDialog.value.event.appointment_id,
+      status: status,
+      total_amount: finishAppointmentDialog.value.event.service_price,
+      actual_start_time:selectedDate.value+' '+finishAppointmentDialog.value.actual_start_time,
+      actual_end_time: selectedDate.value+' '+finishAppointmentDialog.value.actual_end_time,
+      payment_note: finishAppointmentDialog.value.note,
       payment_method: finishAppointmentDialog.value.paymentMethod,
-      payment_amount: finishAppointmentDialog.value.paymentAmount,
+      paid_amount: finishAppointmentDialog.value.paymentAmount,
+      operator_id: finishAppointmentDialog.value.event.staff_id,
+      operator_name: finishAppointmentDialog.value.event.staff_name
     };
-    await api.put(`/api/service-appointments/${payload.id}`, payload);
+    await api.post(`/api/orders`, payload);
     $q.notify({
       type: "positive",
-      message: "Appointment finished successfully",
+      message: "Appointment Comfirmed Successfully",
       position: "top",
       timeout: 2000,
     });
@@ -1831,6 +1891,16 @@ async function deleteAppointment() {
       position: "top",
       timeout: 2000,
     });
+  }
+}
+
+function scrollToNow() {
+  if (calendar.value) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const currentTime = `${hours}:${minutes}`;
+    calendar.value.scrollToTime(currentTime, 350);
   }
 }
 </script>
