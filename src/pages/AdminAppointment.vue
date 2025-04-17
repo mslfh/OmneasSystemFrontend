@@ -261,8 +261,8 @@
                     <q-chip
                       size="10px"
                       v-if="
-                        event.status === 'in_progress' ||
-                        event.status === 'pending'
+                        event.status != 'break' &&
+                        event.status != 'finished'
                       "
                       outline
                       text-color="deep-orange-1"
@@ -1723,8 +1723,7 @@ const startAppointment = async (event: Event) => {
   const start_time = new Date();
   const hours = String(start_time.getHours()).padStart(2, "0");
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
-  // const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
-  const formattedTime = `${selectedDate.value} 11:00`;
+  const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
 
   $q.dialog({
     title: "Start Appointment",
