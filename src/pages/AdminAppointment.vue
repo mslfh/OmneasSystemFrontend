@@ -88,8 +88,8 @@
           no-active-date
           :column-count="staffList.length"
           :interval-minutes="10"
-          :interval-start="46"
-          :interval-count="78"
+          :interval-start="50"
+          :interval-count="74"
           :interval-height="28"
           @moved="onMoved"
           @click-date="onClickDate"
@@ -1821,8 +1821,7 @@ const startAppointment = async (event: Event) => {
   const start_time = new Date();
   const hours = String(start_time.getHours()).padStart(2, "0");
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
-  // const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
-  const formattedTime = `${selectedDate.value} 09:00`;
+  const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
 
   $q.dialog({
     title: "Start Appointment",
