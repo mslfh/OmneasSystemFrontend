@@ -36,6 +36,8 @@ const routes = [
       { path: 'schedule', component: () => import('pages/AdminSchedule.vue') },
       { path: 'appointment', component: () => import('pages/AdminAppointment.vue') },
       { path: 'setting', component: () => import('pages/AdminSetting.vue') },
+      { path: 'order', component: () => import('pages/AdminOrder.vue') },
+      { path: 'history', component: () => import('pages/AdminHistory.vue') },
     ]
   },
   // Always leave this as last one,

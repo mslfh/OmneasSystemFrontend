@@ -19,14 +19,14 @@
       <q-badge color="deep-orange-3"></q-badge>
       Unassigned
       <q-space />
-      <q-badge color="teal-2"></q-badge>
+      <q-icon color="teal-4" name="hourglass_top"> </q-icon>
       Progressing
       <q-space />
-      <q-badge color="brown-3"></q-badge>
+      <q-icon color="teal-4" name="check_circle"> </q-icon>
       Completed
       <q-space />
       <q-icon color="teal-4" name="loyalty"> </q-icon>
-      By Customer
+      Online Booking
     </div>
 
     <div class="text-h6 text-center">
@@ -207,7 +207,13 @@
               >
                 <div align="right" class="q-ma-sm">
                   <q-icon
-                    :name="event.status != 'finished'?'drag_indicator':'o_check_circle'"
+                    :name="
+                      event.status != 'finished' && event.status != 'in_progress'
+                        ? 'drag_indicator'
+                        : event.status == 'finished'
+                        ? 'o_check_circle'
+                        :'hourglass_top'
+                    "
                     size="20px"
                     class="float-right"
                   />
@@ -224,14 +230,13 @@
                           : 'text-subtitle3 text-weight-bold'
                       "
                     >
-                      <q-icon
-                        v-if="event.status === 'in_progress'"
-                        color="white"
-                        name="hourglass_top"
-                      >
-                      </q-icon>
                       Name: {{ event.customer_name }}
-                      <q-icon size="13px" v-if="!event.tag && event.status != 'break'" color="white" name="loyalty">
+                      <q-icon
+                        size="13px"
+                        v-if="!event.tag && event.status != 'break'"
+                        color="white"
+                        name="loyalty"
+                      >
                       </q-icon>
                     </q-item-label>
                     <q-item-label class="text-caption">
@@ -241,7 +246,9 @@
                     <q-item-label class="text-subtitle">
                       {{ event.service_title }} |
                       {{ event.service_duration }} Min
-                      {{ event.service_price? '- $'+event.service_price : '' }}
+                      {{
+                        event.service_price ? "- $" + event.service_price : ""
+                      }}
                     </q-item-label>
                     <q-chip
                       size="10px"
@@ -249,6 +256,7 @@
                         event.status === 'pending' ||
                         event.status === 'unassigned'
                       "
+                      class="shadow-up-1"
                       outline
                       color="white"
                       text-color="white"
@@ -261,9 +269,9 @@
                     <q-chip
                       size="10px"
                       v-if="
-                        event.status != 'break' &&
-                        event.status != 'finished'
+                        event.status != 'break' && event.status != 'finished'
                       "
+                      class="shadow-up-2"
                       outline
                       text-color="deep-orange-1"
                       icon="o_verified"
@@ -272,11 +280,6 @@
                     >
                       Done
                     </q-chip>
-
-                    <q-item-label v-if="event.service_duration > 30">
-                      Comments:
-                      {{ event.comments }}
-                    </q-item-label>
                   </q-list>
                 </div>
                 <q-tooltip>{{
@@ -353,7 +356,7 @@
             />
           </q-card-section>
         </div>
-        <div class="col-4">
+        <div class="col-4 q-pr-md">
           <div>
             <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
             <q-chip
@@ -446,9 +449,15 @@
             </q-scroll-area>
           </div>
         </div>
-        <div class="col-6">
-          <q-card-section>
+        <div class="col-5">
+          <q-tabs v-model="addAppointmentDialog.tab" class="text-blue-8">
+            <q-tab name="customer" icon="person_add" label="Client" />
+            <q-tab name="history" icon="schedule" label="History" />
+          </q-tabs>
+          <q-separator />
+          <q-card-section v-if="addAppointmentDialog.tab === 'customer'">
             <q-input
+              dense
               rounded
               v-model="user_search"
               outlined
@@ -483,6 +492,7 @@
                     addAppointmentForm.customer_last_name = user.last_name;
                     addAppointmentForm.customer_email = user.email;
                     addAppointmentForm.customer_phone = user.phone;
+                    user_search = '';
                   "
                 >
                   <q-item-section>
@@ -517,7 +527,6 @@
               v-model="addAppointmentForm.customer_service[0].comments"
               label="Service Comments"
             />
-            <q-input v-model="addAppointmentForm.comments" label="Comments" />
             <q-label class="text-subtitle1 text-grey-8 text-weight-bold"
               >Save Customer</q-label
             >
@@ -527,6 +536,92 @@
               color="deep-orange"
               unchecked-icon="clear"
             />
+          </q-card-section>
+
+          <q-card-section v-if="addAppointmentDialog.tab === 'history'">
+            <q-input
+              dense
+              rounded
+              v-model="user_search"
+              outlined
+              placeholder="Find History by Name, Phone, or Email"
+              @keyup.enter="selectUserFromSearch"
+            >
+              <template v-slot:append>
+                <q-icon v-if="user_search === ''" name="search" />
+                <q-icon
+                  v-else
+                  name="clear"
+                  class="cursor-pointer"
+                  @click="user_search = ''"
+                />
+              </template>
+            </q-input>
+            <q-item-label
+              v-if="foundUsers.length == 0 && user_search !== ''"
+              class="text-caption"
+              >No data found</q-item-label
+            >
+            <q-scroll-area v-if="user_search !== ''" style="height: 100px">
+              <q-list>
+                <q-item
+                  v-for="user in foundUsers"
+                  :key="user.id"
+                  clickable
+                  @click="
+                    addAppointmentForm.customer_service[0].customer_name =
+                      user.name;
+                    addAppointmentForm.customer_first_name = user.first_name;
+                    addAppointmentForm.customer_last_name = user.last_name;
+                    addAppointmentForm.customer_email = user.email;
+                    addAppointmentForm.customer_phone = user.phone;
+                    user_search = '';
+                    fetchCustomerHistory(user.id);
+                  "
+                >
+                  <q-item-section>
+                    <q-item-label>{{ user.name }}</q-item-label>
+                    <q-item-label caption>{{ user.phone }}</q-item-label>
+                    <q-item-label caption>{{ user.email }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-scroll-area>
+
+            <q-scroll-area class="q-pa-md" style="height: 420px">
+              <q-timeline
+                class="q-pa-none"
+                color="secondary"
+                v-if="customerHistory.length > 0"
+              >
+                <q-timeline-entry
+                  v-for="event in customerHistory"
+                  :key="event.id"
+                >
+                  <div class="text-grey-8">
+                    <div>
+                      {{
+                        event.services[0].service_title +
+                        " | " +
+                        event.services[0].service_duration +
+                        " Min"
+                      }}
+                    </div>
+                    <div>{{ event.status }}</div>
+                    <div>{{ event.services[0].customer_name }}</div>
+                    <div>{{ event.services[0].staff_name }}</div>
+                  </div>
+                  <template v-slot:subtitle>
+                    <div class="row q-pa-none">
+                      <q-lable class="col-9">{{
+                        event.booking_time.slice(0, 16)
+                      }}</q-lable>
+                      <!-- <q-lable class="col-3 text-grey-8"> 2 days ago </q-lable> -->
+                    </div>
+                  </template>
+                </q-timeline-entry>
+              </q-timeline>
+            </q-scroll-area>
           </q-card-section>
         </div>
       </div>
@@ -708,6 +803,9 @@
             </q-scroll-area>
           </div>
         </div>
+        <div class="col-1 flex justify-center">
+          <q-separator vertical class="q-my-md" style="height: 90%" />
+        </div>
         <div class="col-6">
           <q-card-section>
             <q-input
@@ -812,13 +910,13 @@
           />
           <div class="q-mb-sm text-weight-bold">
             <q-input
-            v-model="finishAppointmentDialog.event.time"
-            dense
-            readonly
-            label="Booking Time"
-          />
+              v-model="finishAppointmentDialog.event.time"
+              dense
+              readonly
+              label="Booking Time"
+            />
           </div>
-            <q-separator class="q-my-md" />
+          <q-separator class="q-my-md" />
           <q-input
             dense
             v-model="finishAppointmentDialog.actual_start_time"
@@ -826,9 +924,9 @@
             type="time"
             label="Started At"
           >
-          <template v-slot:prepend>
-          <q-icon size="xs" name="hourglass_top" />
-        </template>
+            <template v-slot:prepend>
+              <q-icon size="xs" name="hourglass_top" />
+            </template>
           </q-input>
           <q-input
             dense
@@ -836,10 +934,10 @@
             filled
             type="time"
             label="Ended At"
-            >
-          <template v-slot:prepend>
-          <q-icon size="xs" name="hourglass_bottom" />
-        </template>
+          >
+            <template v-slot:prepend>
+              <q-icon size="xs" name="hourglass_bottom" />
+            </template>
           </q-input>
         </div>
         <div class="col-1 flex justify-center">
@@ -1096,7 +1194,7 @@ async function fetchAppointments() {
           : bookedService.status === "unassigned"
           ? "peach"
           : bookedService.status === "finished"
-          ? "brown-4"
+          ? "light-teal"
           : "teal-5",
       status: bookedService.status,
       tag: bookedService.tag,
@@ -1415,7 +1513,7 @@ async function onDrop(
   return false;
 }
 
-const addAppointmentDialog = ref({ visible: false });
+const addAppointmentDialog = ref({ visible: false, tab: "customer" });
 
 const addAppointmentForm = ref({
   booking_time: "",
@@ -1723,12 +1821,14 @@ const startAppointment = async (event: Event) => {
   const start_time = new Date();
   const hours = String(start_time.getHours()).padStart(2, "0");
   const minutes = String(start_time.getMinutes()).padStart(2, "0");
-  const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
+  // const formattedTime = `${selectedDate.value} ${hours}:${minutes}`;
+  const formattedTime = `${selectedDate.value} 09:00`;
 
   $q.dialog({
     title: "Start Appointment",
     message:
-      "Do you want to start this appointment? it will be " + formattedTime.slice(11),
+      "Do you want to start this appointment? it will be " +
+      formattedTime.slice(11),
     cancel: true,
     persistent: true,
   })
@@ -1808,7 +1908,7 @@ async function confirmFinishAppointment() {
     return;
   }
   //check if the selected date is not today
-  if(selectedDate.value != today()){
+  if (selectedDate.value != today()) {
     $q.notify({
       type: "negative",
       message: "You can only finish the appointment on today.",
@@ -1818,18 +1918,27 @@ async function confirmFinishAppointment() {
     return;
   }
   try {
-    const status = finishAppointmentDialog.value.paymentMethod === "unpaid" ? "unpaid" : "paid";
+    const status =
+      finishAppointmentDialog.value.paymentMethod === "unpaid"
+        ? "unpaid"
+        : "paid";
     const payload = {
       appointment_id: finishAppointmentDialog.value.event.appointment_id,
       status: status,
       total_amount: finishAppointmentDialog.value.event.service_price,
-      actual_start_time:selectedDate.value+' '+finishAppointmentDialog.value.actual_start_time,
-      actual_end_time: selectedDate.value+' '+finishAppointmentDialog.value.actual_end_time,
+      actual_start_time:
+        selectedDate.value +
+        " " +
+        finishAppointmentDialog.value.actual_start_time,
+      actual_end_time:
+        selectedDate.value +
+        " " +
+        finishAppointmentDialog.value.actual_end_time,
       payment_note: finishAppointmentDialog.value.note,
       payment_method: finishAppointmentDialog.value.paymentMethod,
       paid_amount: finishAppointmentDialog.value.paymentAmount,
       operator_id: finishAppointmentDialog.value.event.staff_id,
-      operator_name: finishAppointmentDialog.value.event.staff_name
+      operator_name: finishAppointmentDialog.value.event.staff_name,
     };
     await api.post(`/api/orders`, payload);
     $q.notify({
@@ -1901,6 +2010,23 @@ function scrollToNow() {
     const currentTime = `${hours}:${minutes}`;
     calendar.value.scrollToTime(currentTime, 350);
   }
+}
+
+const customerHistory = ref([]);
+
+async function fetchCustomerHistory(userId: number) {
+  const response = await api.get("/api/getUserBookingHistory", {
+    params: { id: userId },
+  });
+  console.log("Customer History:", response.data);
+  customerHistory.value = response.data;
+  console.log("Customer History:", customerHistory);
+  $q.notify({
+    type: "info",
+    message: "Customer history fetched successfully",
+    position: "top",
+    timeout: 2000,
+  });
 }
 </script>
 

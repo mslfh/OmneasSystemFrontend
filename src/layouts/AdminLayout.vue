@@ -143,14 +143,14 @@ const zoomLeftDrawer = () => {
         "
       >
         <q-list>
-          <!-- <q-item active-class="q-item-no-link-highlighting">
+          <q-item active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
             <q-item-section>
               <q-item-label>Dashboard</q-item-label>
             </q-item-section>
-          </q-item> -->
+          </q-item>
           <q-item to="/admin/appointment" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="bookmark" />
@@ -203,7 +203,22 @@ const zoomLeftDrawer = () => {
               </q-item>
             </q-list>
           </q-expansion-item>
-
+          <q-item to="/admin/history" active-class="q-item-no-link-highlighting">
+            <q-item-section avatar>
+              <q-icon name="schedule" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>History</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item to="/admin/order" active-class="q-item-no-link-highlighting">
+            <q-item-section avatar>
+              <q-icon name="payments" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Invoice</q-item-label>
+            </q-item-section>
+          </q-item>
           <q-item to="/admin/setting" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="settings" />

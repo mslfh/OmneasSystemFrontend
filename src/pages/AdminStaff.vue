@@ -54,43 +54,43 @@
       :columns="columns"
       row-key="id"
     >
-    <template v-slot:body="props">
-      <q-tr :props="props">
-        <q-td key="name" :props="props">
-          {{ props.row.name }}
-        </q-td>
-        <q-td key="position" :props="props">
-          {{ props.row.position }}
-        </q-td>
-        <q-td key="phone" :props="props">
-          {{ props.row.phone }}
-        </q-td>
-        <q-td key="email" :props="props">
-          {{ props.row.email }}
-        </q-td>
-        <q-td key="status" :props="props">
-          <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
-            {{ props.row.status }}
-          </q-badge>
-        </q-td>
-        <q-td key="actions" :props="props">
-          <q-btn
-          flat
-          round
-          icon="edit"
-          color="primary"
-          @click="editStaff(props.row)"
-        />
-        <q-btn
-          flat
-          round
-          icon="delete"
-          color="red"
-          @click="deleteStaff(props.row)"
-        />
+      <template v-slot:body="props">
+        <q-tr :props="props">
+          <q-td key="name" :props="props">
+            {{ props.row.name }}
           </q-td>
-        </q-tr >
-    </template>
+          <q-td key="position" :props="props">
+            {{ props.row.position }}
+          </q-td>
+          <q-td key="phone" :props="props">
+            {{ props.row.phone }}
+          </q-td>
+          <q-td key="email" :props="props">
+            {{ props.row.email }}
+          </q-td>
+          <q-td key="status" :props="props">
+            <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
+              {{ props.row.status }}
+            </q-badge>
+          </q-td>
+          <q-td key="actions" :props="props">
+            <q-btn
+              flat
+              round
+              icon="edit"
+              color="primary"
+              @click="editStaff(props.row)"
+            />
+            <q-btn
+              flat
+              round
+              icon="delete"
+              color="red"
+              @click="deleteStaff(props.row)"
+            />
+          </q-td>
+        </q-tr>
+      </template>
     </q-table>
 
     <q-dialog v-model="isEditDialogOpen">
@@ -100,12 +100,7 @@
         </q-card-section>
         <q-card-section>
           <q-input v-model="editForm.name" label="Name" />
-          <q-input
-            filled
-            v-model="editForm.email"
-            label="Email"
-            type="email"
-          />
+          <q-input filled v-model="editForm.email" label="Email" type="email" />
           <q-input v-model="editForm.position" label="Position" />
           <q-select
             v-model="editForm.status"
@@ -167,7 +162,13 @@ const columns = [
   { name: "position", label: "Position", align: "left", field: "position" },
   { name: "phone", label: "Phone", align: "left", field: "phone" },
   { name: "email", label: "Email", align: "left", field: "email" },
-  { name: "status", label: "Status", align: "left", field: "status", style: "width: 150px" },
+  {
+    name: "status",
+    label: "Status",
+    align: "left",
+    field: "status",
+    style: "width: 150px",
+  },
   { name: "actions", label: "Actions", align: "center", style: "width: 120px" },
 ];
 
