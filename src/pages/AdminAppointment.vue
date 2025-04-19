@@ -1917,9 +1917,9 @@ function openEditEventDialog(event: Event) {
   if (event.status == "break") {
     openEditTakeBreakDialog();
   } else {
+    fetchAvailableBookingTime(event.date);
     editEventDialog.value.visible = true;
   }
-  fetchAvailableBookingTime(event.date);
 }
 
 async function saveEditedEvent() {
