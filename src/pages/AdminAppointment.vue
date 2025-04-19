@@ -30,12 +30,41 @@
     </div>
 
     <div class="text-h6 text-center">
+      <q-icon name="event" class="cursor-pointer">
+          <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+            <q-date v-model="selectedDate" mask="YYYY-MM-DD"
+            @update:model-value="
+              fetchAppointments();
+              fetchStaffList();"
+            >
+              <div class="row items-center justify-end">
+                <q-btn v-close-popup label="Close" color="primary" flat />
+              </div>
+            </q-date>
+          </q-popup-proxy>
+        </q-icon>
       {{ currentMonth }}
     </div>
+    <div class="float-right">
+        <q-icon
+          size="sm"
+          name="zoom_out"
+          color="grey"
+          clickable
+          @click="increaseInterval"
+        />
+        <q-icon
+          size="sm"
+          name="zoom_in"
+          color="grey"
+          clickable
+          @click="decreaseInterval"
+        />
+      </div>
 
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-
     <div class="row">
+
       <div class="q-mx-sm col-2">
         <div
           class="text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center"
@@ -87,9 +116,9 @@
           transition-prev="slide-right"
           no-active-date
           :column-count="staffList.length"
-          :interval-minutes="10"
-          :interval-start="50"
-          :interval-count="74"
+          :interval-minutes="interval"
+          :interval-start="intervalStart"
+          :interval-count="intervalCount"
           :interval-height="28"
           @moved="onMoved"
           @click-date="onClickDate"
@@ -164,6 +193,8 @@
                     @click="scrollToEvent(event)"
                   >
                     <q-tooltip>{{
+                      event.customer_name +
+                      " " +
                       event.time +
                       " - " +
                       event.service_title +
@@ -208,11 +239,12 @@
                 <div align="right" class="q-ma-sm">
                   <q-icon
                     :name="
-                      event.status != 'finished' && event.status != 'in_progress'
+                      event.status != 'finished' &&
+                      event.status != 'in_progress'
                         ? 'drag_indicator'
                         : event.status == 'finished'
                         ? 'o_check_circle'
-                        :'hourglass_top'
+                        : 'hourglass_top'
                     "
                     size="20px"
                     class="float-right"
@@ -223,26 +255,35 @@
                   style="height: 75%"
                 >
                   <q-list>
-                    <q-item-label
-                      :class="
-                        event.service_duration > 45
-                          ? 'text-subtitle2 text-weight-bold'
-                          : 'text-subtitle3 text-weight-bold'
-                      "
-                    >
-                      Name: {{ event.customer_name }}
+                    <div :class="interval == 10?'': 'row'">
+                      <q-item-label
+                        :class="
+                          event.service_duration > 45 && interval == 10
+                            ? 'text-subtitle2 text-weight-bold'
+                            : 'text-subtitle3 text-weight-bold'
+                        "
+                      >
                       <q-icon
                         size="13px"
                         v-if="!event.tag && event.status != 'break'"
                         color="white"
                         name="loyalty"
+                     />
+                        {{ event.customer_name }}
+                      </q-item-label>
+                      <q-item-label
+                        :class="
+                          event.service_duration > 45 && interval == 10
+                            ? 'text-subtitle2 text-weight-bold'
+                            : 'text-subtitle3 text-weight-bold q-ml-xs'
+                        "
+                        :style="'margin-top: 0px;'"
                       >
-                      </q-icon>
-                    </q-item-label>
-                    <q-item-label class="text-caption">
-                      Time: {{ event.time }} -
-                      {{ event.expected_end_time }}
-                    </q-item-label>
+                        {{ event.time }} -
+                        {{ event.expected_end_time }}
+                      </q-item-label>
+                    </div>
+
                     <q-item-label class="text-subtitle">
                       {{ event.service_title }} |
                       {{ event.service_duration }} Min
@@ -283,6 +324,8 @@
                   </q-list>
                 </div>
                 <q-tooltip>{{
+                  event.customer_name +
+                  " " +
                   event.time +
                   " - " +
                   event.service_title +
@@ -506,6 +549,7 @@
             <q-input
               v-model="addAppointmentForm.customer_service[0].customer_name"
               label="Customer Name"
+              @change="autoFillName"
             />
             <q-input
               v-model="addAppointmentForm.customer_first_name"
@@ -690,6 +734,62 @@
           label="Confirm"
           color="positive"
           @click="confirmTakeBreak"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+  <!-- Edit Break Dialog -->
+  <q-dialog v-model="editTakeBreakDialog.visible" seamless position="bottom">
+    <q-card>
+      <q-linear-progress :value="1.0" color="pink" />
+      <q-card-section>
+        <div class="text-h6">{{ selectedStaff.name + " 's " }} Break</div>
+        <q-input
+          label="From"
+          type="time"
+          v-model="editTakeBreakDialog.payload.time"
+        />
+        <div class="text-subtitle5 text-grey-8">Duration</div>
+        <q-radio
+          v-model="editTakeBreakDialog.payload.service_duration"
+          val="20"
+          label="20 min"
+        />
+        <q-radio
+          v-model="editTakeBreakDialog.payload.service_duration"
+          val="30"
+          label="30 min"
+        />
+        <q-radio
+          v-model="editTakeBreakDialog.payload.service_duration"
+          val="45"
+          label="45 min"
+        />
+        <q-radio
+          v-model="editTakeBreakDialog.payload.service_duration"
+          val="60"
+          label="60 min"
+        />
+        <q-input
+          v-model="editTakeBreakDialog.payload.service_duration"
+          label="Custom Duration (minutes)"
+          type="number"
+          outlined
+          dense
+        />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="editTakeBreakDialog.visible = false"
+        />
+        <q-btn
+          flat
+          label="Confirm"
+          color="positive"
+          @click="saveEditedBreakEvent()"
         />
       </q-card-actions>
     </q-card>
@@ -1030,6 +1130,8 @@ import {
   QCardActions,
   QBtn,
 } from "quasar";
+import { id } from "element-plus/es/locales.mjs";
+import App from "src/App.vue";
 
 const $q = useQuasar();
 interface Event {
@@ -1055,6 +1157,22 @@ interface Event {
 }
 
 const calendar = ref<QCalendarDay>();
+const interval = ref(10); // Interval in minutes
+const intervalStart = computed(() =>
+  Math.floor((8 * 60 + 30) / interval.value)
+); // Start at 8:30 AM
+const intervalCount = computed(() => Math.ceil((11 * 60) / interval.value)); // Duration from 8:30 AM to 7:30 PM
+
+function increaseInterval() {
+  interval.value = Math.min(interval.value + 10, 30); // Limit max interval to 60 minutes
+}
+
+function decreaseInterval() {
+  interval.value = Math.max(interval.value - 10, 10); // Limit min interval to 5 minutes
+}
+
+const interval_height = ref(28);
+
 const selectedDate = ref(today());
 const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
 const available_booking_time = ref<string[]>([]);
@@ -1412,6 +1530,7 @@ function onMoved(data: Timestamp) {
   console.info("onMoved", data);
   selectedDate.value = data.date;
   addAppointmentForm.value.booking_date = data.date;
+  fetchStaffList();
   fetchAppointments();
 }
 
@@ -1727,23 +1846,55 @@ const editEventDialog = ref({ visible: false });
 
 const editEventForm = ref({
   id: 0,
+  appointment_id: 0,
   booking_date: "",
   booking_time: "",
   customer_name: "",
   service: {},
   staff: {},
   comments: "",
+  status: "",
   customer_first_name: "",
   customer_last_name: "",
   customer_phone: "",
   customer_email: "",
 });
 
+const editTakeBreakDialog = ref({
+  id: 0,
+  visible: false,
+  payload: {},
+});
+
+function openEditTakeBreakDialog() {
+  editTakeBreakDialog.value.visible = true;
+  editTakeBreakDialog.value.id = editEventForm.value.id;
+  editTakeBreakDialog.value.payload = {
+    service_duration: 0,
+    time: editEventForm.value.booking_time,
+    date: editEventForm.value.booking_date,
+  };
+}
+async function saveEditedBreakEvent() {
+  const payload = { ...editTakeBreakDialog.value.payload };
+  await api.put(
+    `/api/service-appointments/${editTakeBreakDialog.value.id}`,
+    payload
+  );
+  editTakeBreakDialog.value = {
+    id: 0,
+    visible: false,
+    payload: {},
+  };
+  fetchAppointments();
+}
+
 function openEditEventDialog(event: Event) {
   selectedStaff.value.id = event.staff_id;
   selectedStaff.value.name = event.staff_name;
   editEventForm.value = {
-    id: event.appointment_id,
+    id: event.id,
+    appointment_id: event.appointment_id,
     booking_date: event.date,
     booking_time: event.time,
     customer_name: event.customer_name,
@@ -1761,8 +1912,13 @@ function openEditEventDialog(event: Event) {
     customer_last_name: event.customer_last_name,
     customer_phone: event.customer_phone,
     customer_email: event.customer_email,
+    status: event.status,
   };
-  editEventDialog.value.visible = true;
+  if (event.status == "break") {
+    openEditTakeBreakDialog();
+  } else {
+    editEventDialog.value.visible = true;
+  }
   fetchAvailableBookingTime(event.date);
 }
 
@@ -1770,10 +1926,11 @@ async function saveEditedEvent() {
   try {
     editEventForm.value.staff = selectedStaff.value;
     const payload = { ...editEventForm.value };
-    await api.put(`/api/appointments/${payload.id}`, payload);
+    await api.put(`/api/appointments/${payload.appointment_id}`, payload);
     editEventDialog.value.visible = false;
     editEventForm.value = {
       id: 0,
+      appointment_id: 0,
       booking_date: "",
       booking_time: "",
       customer_name: "",
@@ -1974,7 +2131,7 @@ async function deleteAppointment() {
     })
       .onOk(() => {
         const response = api.delete(
-          `/api/appointments/${editEventForm.value.id}`
+          `/api/appointments/${editEventForm.value.appointment_id}`
         );
         if (response.status === 200) {
           $q.notify({
@@ -2026,6 +2183,15 @@ async function fetchCustomerHistory(userId: number) {
     position: "top",
     timeout: 2000,
   });
+}
+
+function autoFillName() {
+  const fullName = addAppointmentForm.value.customer_service[0].customer_name;
+  if (fullName) {
+    const nameParts = fullName.split(" ");
+    addAppointmentForm.value.customer_first_name = nameParts[0] || "";
+    addAppointmentForm.value.customer_last_name = nameParts.slice(1).join(" ") || "";
+  }
 }
 </script>
 
