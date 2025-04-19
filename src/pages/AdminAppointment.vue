@@ -738,6 +738,7 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
   <!-- Edit Break Dialog -->
   <q-dialog v-model="editTakeBreakDialog.visible" seamless position="bottom">
     <q-card>
@@ -1548,7 +1549,6 @@ function onClickTime(data: Timestamp) {
   selectedTime.value = data.scope.timestamp.time.slice(0, 4);
   addAppointmentForm.value.booking_date = selectedDate.value;
   addAppointmentForm.value.booking_time = selectedTime.value + "0";
-  fetchAvailableBookingTime(selectedDate.value);
   showAddAppointmentDialog();
 }
 
