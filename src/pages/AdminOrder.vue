@@ -13,6 +13,9 @@
     >
       <template v-slot:header="props">
         <q-tr :props="props">
+          <q-th auto-width>
+            <q-icon name="expand_more" size="sm" />
+          </q-th>
           <q-th v-for="col in props.cols" :key="col.name" :props="props">
             {{ col.label }}
           </q-th>
@@ -136,6 +139,13 @@ const columns = [
     field: "payment_status",
   },
   {
+    name: "payment_method",
+    label: "Payment Method",
+    align: "center",
+    field: "payment_method",
+    format: (val) => `${val.replace("_", " ")}`,
+  },
+  {
     name: "total_amount",
     label: "Total Amount",
     align: "center",
@@ -149,13 +159,7 @@ const columns = [
     field: "paid_amount",
     format: (val) => `$${val}`,
   },
-  {
-    name: "payment_method",
-    label: "Payment Method",
-    align: "center",
-    field: "payment_method",
-    format: (val) => `${val.replace("_", " ")}`,
-  },
+
   {
     name: "operator_name",
     label: "Staff",

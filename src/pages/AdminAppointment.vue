@@ -2195,6 +2195,13 @@ async function confirmFinishAppointment() {
       finishAppointmentDialog.value.status = hasUnpaid
         ? "Unsettled"
         : "Completed";
+        //paymentAmount is the total paid amount of split payments except unpaid
+      finishAppointmentDialog.value.paymentAmount = finishAppointmentDialog.value.splitPayments.reduce(
+        (sum, payment) =>
+          payment.method.value !== "unpaid" ? sum + payment.amount : sum,
+        0
+      );
+
     } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
       // Check if payment amount is 0
       if (finishAppointmentDialog.value.paymentAmount !== 0) {
