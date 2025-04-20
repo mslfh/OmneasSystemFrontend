@@ -1055,7 +1055,7 @@
             <q-span>$ {{ finishAppointmentDialog.event.service_price }}</q-span>
           </q-card-section>
           <div class="text-weight-bold text-grey-9 q-mt-md">Payment Method</div>
-          <q-card-section horizontal class="text-weight-bold text-grey-7">
+          <q-card-section  class="text-weight-bold text-grey-7">
             <q-radio
               v-for="method in paymentMethods"
               v-model="finishAppointmentDialog.paymentMethod"
@@ -1063,9 +1063,57 @@
               :unchecked-icon="method.icon"
               :val="method.value"
               :label="method.label"
+              @update:model-value="handlePaymentMethodChange"
             />
+            <div v-if="finishAppointmentDialog.paymentMethod === 'split_payment'">
+              <div class="row">
+              <div class=" col-6 text-weight-bold text-grey-9 q-mt-md">
+                Split Payments
+              </div>
+              <div class="text-grey-6 q-mt-md">
+                Total: ${{ finishAppointmentDialog.splitPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) }} ,
+                Unpaid: ${{ Math.max(0, finishAppointmentDialog.event.service_price - finishAppointmentDialog.splitPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)) }}
+              </div>
+            </div>
+              <div v-for="(payment, index) in finishAppointmentDialog.splitPayments" :key="index" class="row items-center q-my-sm">
+                <q-select
+                  v-model="payment.method"
+                  :options="paymentMethods.filter(m => m.value !== 'split_payment')"
+                  label="Payment Method"
+                  option-value="value"
+                  option-label="label"
+                  dense
+                  outlined
+                  class="col-6"
+                />
+                <q-input
+                  v-model.number="payment.amount"
+                  label="$ Amount"
+                  type="number"
+                  dense
+                  outlined
+                  class="col-4"
+                />
+                <q-btn
+                  icon="delete"
+                  color="deep-orange"
+                  flat
+                  dense
+                  @click="removeSplitPayment(index)"
+                  class="col-2"
+                />
+              </div>
+              <q-btn
+                label="Add Payment"
+                icon="add"
+                color="blue"
+                flat
+                dense
+                @click="addSplitPayment"
+              />
+            </div>
           </q-card-section>
-          <q-card-section class="q-pa-sm text-grey-7">
+          <q-card-section class="q-pa-sm text-grey-7" v-if="finishAppointmentDialog.paymentMethod != 'split_payment'">
             <q-input
               v-model="finishAppointmentDialog.paymentAmount"
               label="Payment Amount"
@@ -2012,19 +2060,36 @@ const finishAppointmentDialog = ref({
   start_time: "",
   end_time: "",
   note: "",
+  status: "",
+  splitPayments: [] as { method: string; amount: number }[],
 });
 
 const paymentMethods = ref([
-  { label: "Cash", value: "cash", icon: "payments" },
   {
-    label: "Card",
-    value: "credit_card",
+    label: "Eftpos",
+    value: "eft_pos",
     icon: "credit_card",
   },
+  { label: "Cash", value: "cash", icon: "o_payments" },
   {
-    label: "Voucher",
-    value: "voucher",
-    icon: "request_page",
+    label: "Bank Transfer",
+    value: "bank_transfer",
+    icon: "o_paid",
+  },
+  // {
+  //   label: "Gift card",
+  //   value: "gift_card",
+  //   icon: "redeem",
+  // },
+  {
+    label: "Hicaps",
+    value: "hicaps",
+    icon: "o_account_balance",
+  },
+  {
+    label: "Split Payment",
+    value: "split_payment",
+    icon: "o_price_change",
   },
   {
     label: "Unpaid",
@@ -2032,6 +2097,27 @@ const paymentMethods = ref([
     icon: "money_off",
   },
 ]);
+
+function handlePaymentMethodChange(value: string) {
+  if (value === "unpaid") {
+    finishAppointmentDialog.value.paymentAmount = 0;
+  } else if (value === "split_payment") {
+    finishAppointmentDialog.value.splitPayments = [
+      { method: "", amount: 0 },
+    ];
+  } else {
+    finishAppointmentDialog.value.paymentAmount = finishAppointmentDialog.value.event.service_price;
+    finishAppointmentDialog.value.splitPayments = [];
+  }
+}
+
+function addSplitPayment() {
+  finishAppointmentDialog.value.splitPayments.push({ method: "", amount: 0 });
+}
+
+function removeSplitPayment(index: number) {
+  finishAppointmentDialog.value.splitPayments.splice(index, 1);
+}
 
 function openFinishAppointmentDialog(event: Event) {
   const start_time = new Date();
@@ -2045,7 +2131,7 @@ function openFinishAppointmentDialog(event: Event) {
     finishAppointmentDialog.value.actual_start_time = event.time;
   }
   finishAppointmentDialog.value.actual_end_time = formattedTime;
-  finishAppointmentDialog.value.paymentMethod = "credit_card";
+  finishAppointmentDialog.value.paymentMethod = "eft_pos";
   finishAppointmentDialog.value.paymentAmount = event.service_price;
   finishAppointmentDialog.value.visible = true;
 }
@@ -2074,13 +2160,61 @@ async function confirmFinishAppointment() {
     return;
   }
   try {
-    const status =
-      finishAppointmentDialog.value.paymentMethod === "unpaid"
-        ? "unpaid"
-        : "paid";
+    // Check if payment method is split_payment
+    if (finishAppointmentDialog.value.paymentMethod === "split_payment") {
+      // Check if all split payments have a method and amount
+      for (const payment of finishAppointmentDialog.value.splitPayments) {
+        if (!payment.method || payment.amount <= 0) {
+          $q.notify({
+            type: "negative",
+            message: "Please fill in all split payment details.",
+            position: "top",
+            timeout: 2000,
+          });
+          return;
+        }
+      }
+      if(
+        finishAppointmentDialog.value.splitPayments.reduce(
+          (sum, payment) => sum + payment.amount,
+          0
+        ) !== finishAppointmentDialog.value.event.service_price
+      ) {
+        $q.notify({
+          type: "negative",
+          message: "Split payments do not match the total amount.",
+          position: "top",
+          timeout: 2000,
+        });
+        return;
+      }
+      // Check if split_payment has unpaid method
+      const hasUnpaid = finishAppointmentDialog.value.splitPayments.some(
+        (payment) => payment.method.value === "unpaid"
+      );
+      finishAppointmentDialog.value.status = hasUnpaid
+        ? "Unsettled"
+        : "Completed";
+    } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
+      // Check if payment amount is 0
+      if (finishAppointmentDialog.value.paymentAmount !== 0) {
+        $q.notify({
+          type: "negative",
+          message: "Payment amount must be 0 for unpaid appointments.",
+          position: "top",
+          timeout: 2000,
+        });
+        return;
+      }
+      finishAppointmentDialog.value.status = "Unsettled";
+    }
+    else{
+      finishAppointmentDialog.value.status = "Completed";
+    }
+
     const payload = {
       appointment_id: finishAppointmentDialog.value.event.appointment_id,
-      status: status,
+      order_status: finishAppointmentDialog.value.status,
       total_amount: finishAppointmentDialog.value.event.service_price,
       actual_start_time:
         selectedDate.value +
@@ -2095,6 +2229,10 @@ async function confirmFinishAppointment() {
       paid_amount: finishAppointmentDialog.value.paymentAmount,
       operator_id: finishAppointmentDialog.value.event.staff_id,
       operator_name: finishAppointmentDialog.value.event.staff_name,
+      split_payment:
+        finishAppointmentDialog.value.paymentMethod === "split_payment"
+          ? finishAppointmentDialog.value.splitPayments
+          : [],
     };
     await api.post(`/api/orders`, payload);
     $q.notify({

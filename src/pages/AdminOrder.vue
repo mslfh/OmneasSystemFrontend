@@ -21,6 +21,15 @@
 
       <template v-slot:body="props">
         <q-tr :props="props">
+          <q-td auto-width>
+            <q-icon
+              v-if="props.row.payment.length > 0"
+              size="sm"
+              color="accent"
+              @click="props.expand = !props.expand"
+              :name="props.expand ? 'remove' : 'add'"
+            />
+          </q-td>
           <q-td v-for="col in props.cols" :key="col.name" :props="props">
             <template v-if="col.name === 'order_status'">
               <q-chip :color="getStatusColor(props.row.order_status)" outline>
@@ -56,6 +65,17 @@
             <template v-else>
               {{ props.row[col.field] }}
             </template>
+          </q-td>
+        </q-tr>
+        <q-tr v-if="props.expand" :props="props">
+          <q-td colspan="100%">
+              <q-card-section
+              horizontal  class="text-grey" v-for="(item, index) in props.row.payment" :key="index">
+                    <q-label class="q-ma-sm">{{ item.payment_status }}</q-label>
+                    <q-label class="q-ma-sm">{{ item.payment_method }}</q-label>
+                    <q-label class="q-ma-sm">Total:{{ item.total_amount }}</q-label>
+                    <q-label class="q-ma-sm">Paid:{{ item.paid_amount }}</q-label>
+              </q-card-section>
           </q-td>
         </q-tr>
       </template>
@@ -128,6 +148,13 @@ const columns = [
     align: "center",
     field: "paid_amount",
     format: (val) => `$${val}`,
+  },
+  {
+    name: "payment_method",
+    label: "Payment Method",
+    align: "center",
+    field: "payment_method",
+    format: (val) => `${val.replace("_", " ")}`,
   },
   {
     name: "operator_name",
