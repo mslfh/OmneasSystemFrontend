@@ -418,7 +418,7 @@
                       input-class="text-right"
                       label-slot
                       clearable
-                      mask="#### ### ###"
+                      mask="##########"
                       :rules="[(val) => !!val || 'Phone Number is required']"
                     >
                       <template v-slot:label>
