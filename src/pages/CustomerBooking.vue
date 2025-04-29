@@ -189,8 +189,10 @@
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
                             @update:model-value="
-                              refreshStaff();
-                              fetchAvailabelTime();
+                              async () => {
+                                await refreshStaff();
+                                await fetchAvailabelTime();
+                              }
                             "
                             :events="events"
                             event-color="teal"
@@ -837,6 +839,7 @@ const refreshStaff = async () => {
   } else {
     availableStaff.value = [];
   }
+  console.log('fetch',availableStaff.value)
 };
 
 const morning_time = ref<string[]>([]);
@@ -852,6 +855,7 @@ const fetchAvailabelTime = async () => {
     let unavailable_booking_time = [];
     let minTime = "";
     let maxTime = "";
+    console.log(availableStaff.value)
     if (selectedStaff.value.id == 0) {
       for (let i = 0; i < availableStaff.value.length; i++) {
         response = await axios.get(
