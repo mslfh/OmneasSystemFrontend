@@ -237,7 +237,7 @@
           </q-label>
           <q-range
             v-model="timeRangeModel"
-            color="green"
+            color="teal"
             :inner-min="8"
             :inner-max="19"
             markers
@@ -247,7 +247,7 @@
             switch-label-side
             switch-marker-labels-side
             :min="8"
-            :max="18"
+            :max="19"
           />
           <q-input v-model="schedule.remark" label="Remark" filled />
         </q-card-section>

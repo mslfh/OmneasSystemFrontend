@@ -3,6 +3,7 @@
     <q-btn
       class="float-left q-ma-md"
       label="Add Appointment"
+      :dense="$q.screen.lt.md"
       color="blue-8"
       @click="
         addAppointmentForm.booking_date = selectedDate;
@@ -12,7 +13,7 @@
         showAddAppointmentDialog();
       "
     />
-    <div class="float-right text-grey-7 text-weight-bold q-ma-md">
+    <div v-if="$q.screen.gt.md" class="float-right text-grey-7 text-weight-bold q-ma-md">
       <q-badge color="teal-5"></q-badge>
       Assigned
       <q-space />
@@ -64,7 +65,6 @@
 
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
     <div class="row">
-
       <div class="q-mx-sm col-2">
         <div
           class="text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center"
@@ -369,10 +369,11 @@
 
   <!-- Add Appointment Dialog -->
   <q-dialog v-model="addAppointmentDialog.visible">
-    <q-card style="min-width: 1000px">
+
+    <q-card :style = "$q.screen.gt.md?'min-width: 1000px':'min-width: 100%'" >
       <div class="row">
         <!--Events -->
-        <div class="col-2">
+        <div class="col-2" v-if="$q.screen.gt.md">
           <q-card-section>
             <q-label style="color: goldenrod" class="text-h5 text-weight-bold">
               <q-icon name="alarm" size="md" />
@@ -399,7 +400,7 @@
             />
           </q-card-section>
         </div>
-        <div class="col-4 q-pr-md">
+        <div :class="$q.screen.gt.md?'col-4 q-pr-md':'col-6 q-pl-xs'">
           <div>
             <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
             <q-chip
@@ -481,6 +482,7 @@
                     ? 'check_circle'
                     : 'o_fiber_manual_record'
                 "
+                :dense="$q.screen.lt.md"
                 :color="
                   addAppointmentForm.booking_time == item
                     ? 'orange-3'
@@ -492,7 +494,7 @@
             </q-scroll-area>
           </div>
         </div>
-        <div class="col-5">
+        <div :class="$q.screen.gt.md?'col-5':'col-6'">
           <q-tabs v-model="addAppointmentDialog.tab" class="text-blue-8">
             <q-tab name="customer" icon="person_add" label="Client" />
             <q-tab name="history" icon="schedule" label="History" />
@@ -504,6 +506,7 @@
               rounded
               v-model="user_search"
               outlined
+              debounce="500"
               placeholder="Find User by Name, Phone, or Email"
               @keyup.enter="selectUserFromSearch"
             >
@@ -679,6 +682,7 @@
         <q-btn flat label="Add" color="positive" @click="addAppointment" />
       </q-card-actions>
     </q-card>
+
   </q-dialog>
 
   <!-- Take a Break Dialog -->
@@ -798,7 +802,7 @@
 
   <!-- Edit Event Dialog -->
   <q-dialog v-model="editEventDialog.visible">
-    <q-card style="min-width: 850px">
+    <q-card :style = "$q.screen.gt.md?'min-width: 850px':'min-width: 100%'">
       <q-card-section horizontal class="q-ma-sm">
         <div class="text-h6">Edit Event</div>
         <q-space />
@@ -811,7 +815,7 @@
       </q-card-section>
       <div class="row q-ma-md">
         <!--Events -->
-        <div class="col-4">
+        <div :class="$q.screen.gt.md?'col-4':'col-6'">
           <div>
             <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
             <q-chip
@@ -890,6 +894,7 @@
                 v-for="item in available_booking_time"
                 :key="item"
                 clickable
+                :dense = "$q.screen.lt.md"
                 :icon="
                   editEventForm.booking_time == item
                     ? 'check_circle'
@@ -904,7 +909,7 @@
             </q-scroll-area>
           </div>
         </div>
-        <div class="col-1 flex justify-center">
+        <div v-if="$q.screen.gt.md" class="col-1 flex justify-center">
           <q-separator vertical class="q-my-md" style="height: 90%" />
         </div>
         <div class="col-6">

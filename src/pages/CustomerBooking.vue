@@ -739,6 +739,9 @@
       </q-dialog>
     </div>
     <div v-if="!$q.screen.lt.sm" class="col-2"></div>
+
+    <!-- <q-inner-loading :showing="loading_visible">
+    </q-inner-loading> -->
   </div>
 </template>
 
@@ -839,7 +842,7 @@ const refreshStaff = async () => {
   } else {
     availableStaff.value = [];
   }
-  console.log('fetch',availableStaff.value)
+  console.log("fetch", availableStaff.value);
 };
 
 const morning_time = ref<string[]>([]);
@@ -855,7 +858,7 @@ const fetchAvailabelTime = async () => {
     let unavailable_booking_time = [];
     let minTime = "";
     let maxTime = "";
-    console.log(availableStaff.value)
+    console.log(availableStaff.value);
     if (selectedStaff.value.id == 0) {
       for (let i = 0; i < availableStaff.value.length; i++) {
         response = await axios.get(
@@ -949,16 +952,15 @@ const getAvailableBookingTime = (
         .padStart(2, "0")}` + ":00";
 
     if (unavailable_booking_time.length == 0) {
-      return  endTime <= (maxTime + ":00");
-    }
-    else {
+      return endTime <= maxTime + ":00";
+    } else {
       return !unavailable_booking_time.some((timeRange) => {
         return (
           (startTime >= timeRange.start_time &&
             startTime < timeRange.end_time) ||
           (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
           (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
-          endTime > (maxTime + ":00")
+          endTime > maxTime + ":00"
         );
       });
     }
@@ -976,6 +978,8 @@ const name = ref({});
 const router = useRouter();
 const tick_group = ref([]);
 
+
+const loading_visible = ref(false);
 const submitAppointment = async () => {
   try {
     const payload = {
@@ -998,12 +1002,12 @@ const submitAppointment = async () => {
         },
       ],
     };
-
+    loading_visible.value = true;
     const response = await axios.post(
       VITE_API_URL + "/api/make-appointment",
       payload
     );
-
+    loading_visible.value = false;
     if (response.status === 201) {
       // Reset form fields
       selectedService.value = [];
