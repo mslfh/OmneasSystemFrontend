@@ -64,10 +64,12 @@
       </div>
 
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
+    <!-- Waitting List -->
     <div class="row">
-      <div class="q-mx-sm col-2">
+      <div class="q-mx-md-sm q-mx-sm-none col-2">
         <div
-          class="text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center"
+         :class="$q.screen.gt.md ? 'text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center'
+         :'text-subtitle3 text-weight-bold q-my-md text-brown-9 text-center'"
         >
           <q-btn dense flat color="grey-8" icon="calendar_month" size="md">
             <q-badge color="deep-orange" text-color="white" floating>
@@ -83,7 +85,8 @@
             draggable="true"
             @dragstart="onDragStart($event, item)"
           >
-            <q-card class="text-subtitle q-mb-sm bg-amber-11" flat bordered>
+            <q-card class="text-subtitle q-mb-sm bg-amber-11" flat bordered
+            >
               <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }} ({{
                 item.service_duration
               }}
@@ -100,7 +103,7 @@
         </ul>
       </div>
 
-      <div class="col-9" style="display: flex; height: 85vh">
+      <div class="col-10" style="display: flex; height: 85vh">
         <q-calendar-day
           ref="calendar"
           v-model="selectedDate"
@@ -369,17 +372,17 @@
 
   <!-- Add Appointment Dialog -->
   <q-dialog v-model="addAppointmentDialog.visible">
-
     <q-card :style = "$q.screen.gt.md?'min-width: 1000px':'min-width: 100%'" >
       <div class="row">
         <!--Events -->
-        <div class="col-2" v-if="$q.screen.gt.md">
+        <div :class="$q.screen.gt.md ?'col-2':'col-12'" >
           <q-card-section>
             <q-label style="color: goldenrod" class="text-h5 text-weight-bold">
               <q-icon name="alarm" size="md" />
               {{ addAppointmentForm.booking_time }}
             </q-label>
             <q-btn
+             v-if="$q.screen.gt.md"
               dense
               outline
               style="color: goldenrod"
