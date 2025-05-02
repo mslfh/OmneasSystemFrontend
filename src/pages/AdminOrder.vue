@@ -46,7 +46,14 @@
             </template>
             <template v-else-if="col.name === 'actions'">
               <q-btn flat round icon="delete" color="grey-6" size="10px" />
-              <q-btn flat round icon="o_visibility" color="grey" size="10px" />
+              <q-btn
+                flat
+                round
+                icon="o_visibility"
+                color="grey"
+                size="10px"
+                @click="router.push({ path: '/admin/invoice', query: { id: props.row.id } })"
+              />
               <q-btn flat round icon="more_vert" color="grey" size="10px" />
             </template>
             <template v-else-if="col.name === 'created_at'">
@@ -105,8 +112,10 @@
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { exportFile, useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 
 const $q = useQuasar();
+const router = useRouter();
 const orders = ref([]);
 const filter = ref("");
 const loading = ref(false);

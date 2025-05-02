@@ -1123,6 +1123,7 @@
           </q-card-section>
           <q-card-section class="q-pa-sm text-grey-7" v-if="finishAppointmentDialog.paymentMethod != 'split_payment'">
             <q-input
+              v-show="finishAppointmentDialog.paymentMethod !== 'unpaid'"
               v-model="finishAppointmentDialog.paymentAmount"
               label="Payment Amount"
               type="number"
@@ -2146,12 +2147,11 @@ function openFinishAppointmentDialog(event: Event) {
 
 async function confirmFinishAppointment() {
   if (
-    !finishAppointmentDialog.value.paymentMethod ||
-    !finishAppointmentDialog.value.paymentAmount
+    !finishAppointmentDialog.value.paymentMethod
   ) {
     $q.notify({
       type: "negative",
-      message: "Please select a payment method and enter the payment amount.",
+      message: "Please select a payment method.",
       position: "top",
       timeout: 2000,
     });
@@ -2211,16 +2211,6 @@ async function confirmFinishAppointment() {
       );
 
     } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
-      // Check if payment amount is 0
-      if (finishAppointmentDialog.value.paymentAmount !== 0) {
-        $q.notify({
-          type: "negative",
-          message: "Payment amount must be 0 for unpaid appointments.",
-          position: "top",
-          timeout: 2000,
-        });
-        return;
-      }
       finishAppointmentDialog.value.status = "Unsettled";
     }
     else{

@@ -84,7 +84,8 @@
               round
               icon="o_visibility"
               color="grey"
-               size="10px"
+              size="10px"
+              @click="router.push({ path: '/admin/appointment/detail', query: { id: props.row.id } })"
             />
             <q-btn
               flat
@@ -110,10 +111,11 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
-const { VITE_API_URL } = import.meta.env;
+import { onMounted, ref} from "vue";
+import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 
+const router = useRouter();
 const appointments = ref([]); // Ensure appointments is always initialized as an empty array
 const columns = [
   { name: "service_title", label: "Service Title", align: "left" },

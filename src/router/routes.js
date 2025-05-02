@@ -35,8 +35,10 @@ const routes = [
       { path: 'service', component: () => import('pages/AdminService.vue') },
       { path: 'schedule', component: () => import('pages/AdminSchedule.vue') },
       { path: 'appointment', component: () => import('pages/AdminAppointment.vue') },
+      { path: 'appointment/detail', component: () => import('pages/AdminHistoryDetail.vue') },
       { path: 'setting', component: () => import('pages/AdminSetting.vue') },
       { path: 'order', component: () => import('pages/AdminOrder.vue') },
+      { path: 'invoice', component: () => import('pages/AdminInvoice.vue') },
       { path: 'history', component: () => import('pages/AdminHistory.vue') },
     ]
   },
