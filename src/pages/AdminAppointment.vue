@@ -641,7 +641,7 @@
             <q-scroll-area class="q-pa-md" style="height: 420px">
               <q-timeline
                 class="q-pa-none"
-                color="secondary"
+                color="blue-3"
                 v-if="customerHistory.length > 0"
               >
                 <q-timeline-entry

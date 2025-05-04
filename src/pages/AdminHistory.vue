@@ -141,7 +141,7 @@ const columns = [
 const filter = ref("");
 const loading = ref(false);
 const pagination = ref({
-  sortBy: "booking_time",
+  sortBy: "id",
   descending: false,
   page: 1,
   rowsPerPage: 10,

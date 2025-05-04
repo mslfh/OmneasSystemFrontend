@@ -56,15 +56,15 @@
         </div>
       </q-card-section>
       <q-separator />
-      <!-- <q-card-section>
+      <q-card-section>
         <div class="text-subtitle1">Payment Details</div>
         <div v-for="(payment, index) in order.payment" :key="index">
-          <div><strong>Method:</strong> {{ payment.payment_method }}</div>
-          <div><strong>Status:</strong> {{ payment.payment_status }}</div>
-          <div><strong>Amount:</strong> ${{ payment.total_amount }}</div>
+          <div>  {{ payment.payment_method }}</div>
+          <div>  {{ payment.payment_status }}</div>
+          <div> ${{ payment.total_amount }}</div>
           <q-separator v-if="index < order.payment.length - 1" />
         </div>
-      </q-card-section> -->
+      </q-card-section>
       <q-card-section>
         <div class="row justify-between">
           <div>Subtotal </div>
