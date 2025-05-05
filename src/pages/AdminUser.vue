@@ -135,61 +135,76 @@
     </q-dialog>
 
     <q-dialog v-model="isHistoryDialogOpen">
-      <q-card
-        :style="$q.screen.gt.md ? 'min-width: 500px' : 'min-width: 100%'"
-      >
-      <q-card-section horizontal class="q-pl-md q-pt-md">
-        <div class="text-h6 text-grey">Customer History</div>
-      </q-card-section>
+      <q-card :style="$q.screen.gt.md ? 'min-width: 500px' : 'min-width: 100%'">
+        <q-card-section horizontal class="q-pl-md q-pt-md">
+          <div class="text-h6 text-grey">Customer History</div>
+        </q-card-section>
         <q-card-section>
-            <q-timeline
-              class="q-pl-md"
-
-              v-if="customerHistory.length > 0"
+          <q-timeline class="q-pl-md" v-if="customerHistory.length > 0">
+            <q-timeline-entry
+              v-for="event in customerHistory"
+              :key="event.id"
+              color="blue-5"
             >
-              <q-timeline-entry
-                v-for="event in customerHistory"
-                :key="event.id"
-                color="blue-5"
-              >
-                <div class="text-grey-8">
-                  <div>
-                    {{
-                      event.services[0].service_title +
-                      " | " +
-                      event.services[0].service_duration +
-                      " Min"
-                    }}
-                  </div>
-                  <div>{{ event.status }}</div>
-                  <div>{{ event.services[0].customer_name }}</div>
-                  <div>{{ event.services[0].staff_name }}</div>
-                  <div>{{ event.services[0].customer_phone }}</div>
-                  <div class="text-grey-7 text-weight-bold text-caption">
-                    <q-icon
-                    size="20px"
-                    color="orange"
-                    name="receipt_long">
-                    </q-icon>
-                    See Invoice
-                    <q-icon
-                    size="20px"
-                    color="green"
-                    name="dashboard">
-                    </q-icon>
-                    Appintment Details
-                  </div>
+              <div class="text-grey-6">
+                <div>
+                  {{
+                    event.services[0].service_title +
+                    " | " +
+                    event.services[0].service_duration +
+                    " Min"
+                  }}
                 </div>
-                <template v-slot:subtitle>
-                  <div class="row q-pa-none">
-                    <q-lable class="col-9">{{
-                      event.booking_time.slice(0, 16)
-                    }}</q-lable>
-                    <!-- <q-lable class="col-3 text-grey-8"> 2 days ago </q-lable> -->
-                  </div>
-                </template>
-              </q-timeline-entry>
-            </q-timeline>
+                <div>{{ event.status }}</div>
+                <div>{{ event.services[0].customer_name }}</div>
+                <div>{{ event.services[0].staff_name }}</div>
+                <div>{{ event.services[0].customer_phone }}</div>
+                <q-separator
+                  class="q-my-sm"
+                  color="grey-3"
+                  style="height: 1px"
+                />
+                <div class="text-grey-7 text-weight-bold text-caption">
+                  <q-btn
+                  size="sm"
+                  flat
+                   color="orange-4"
+                    icon="receipt_long"
+                    @click="
+                      router.push({
+                        path: '/admin/appointment/detail',
+                        query: { id:  event.appointment_id },
+                      })
+                    "
+                    label="View Order"
+                    >
+                  </q-btn>
+                  <q-btn
+                  size="sm"
+                  flat
+                    color="green-4"
+                    icon="list_alt"
+                    @click="
+                      router.push({
+                        path: '/admin/appointment/detail',
+                        query: { id:  event.id },
+                      })
+                    "
+                    label="View Appointment"
+                    >
+                  </q-btn>
+                </div>
+              </div>
+              <template v-slot:subtitle>
+                <div class="row q-pa-none">
+                  <q-lable class="col-9 text-subtitle2">{{
+                    event.booking_time.slice(0, 16)
+                  }}</q-lable>
+                  <!-- <q-lable class="col-3 text-grey-8"> 2 days ago </q-lable> -->
+                </div>
+              </template>
+            </q-timeline-entry>
+          </q-timeline>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -375,7 +390,7 @@ const importUsers = async (event) => {
 const isHistoryDialogOpen = ref(false);
 const customerHistory = ref([]);
 
-const fetchCustomerHistory = async (userId) =>   {
+const fetchCustomerHistory = async (userId) => {
   const response = await api.get("/api/getUserBookingHistory", {
     params: { id: userId },
   });
@@ -387,5 +402,5 @@ const fetchCustomerHistory = async (userId) =>   {
     timeout: 2000,
   });
   isHistoryDialogOpen.value = true;
-}
+};
 </script>

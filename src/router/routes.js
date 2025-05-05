@@ -38,6 +38,7 @@ const routes = [
       { path: 'appointment/detail', component: () => import('pages/AdminHistoryDetail.vue') },
       { path: 'setting', component: () => import('pages/AdminSetting.vue') },
       { path: 'order', component: () => import('pages/AdminOrder.vue') },
+      { path: 'order/detail', component: () => import('pages/AdminOrderDetail.vue') },
       { path: 'invoice', component: () => import('pages/AdminInvoice.vue') },
       { path: 'history', component: () => import('pages/AdminHistory.vue') },
     ]

@@ -52,22 +52,44 @@
                 icon="o_visibility"
                 color="grey"
                 size="10px"
-                @click="router.push({ path: '/admin/invoice', query: { id: props.row.id } })"
+                @click="
+                  router.push({
+                    path: '/admin/order/detail',
+                    query: { id: props.row.id },
+                  })
+                "
               />
-              <q-btn flat round icon="more_vert" color="grey" size="10px" />
+              <q-btn flat round icon="more_vert" color="grey" size="10px">
+                <q-menu>
+                  <q-list style="min-width: 100px">
+                    <q-btn
+                      flat
+                      icon="receipt_long"
+                      color="grey"
+                      size="10px"
+                      label="invoice"
+                      @click="
+                        router.push({
+                          path: '/admin/invoice',
+                          query: { id: props.row.id },
+                        })
+                      "
+                    />
+                  </q-list>
+                </q-menu>
+              </q-btn>
             </template>
             <template v-else-if="col.name === 'created_at'">
-              {{ new Date(props.row[col.field]).toLocaleDateString(
-                "en-AU",
-                {
+              {{
+                new Date(props.row[col.field]).toLocaleDateString("en-AU", {
                   year: "numeric",
                   month: "2-digit",
                   day: "2-digit",
                   hour: "2-digit",
                   minute: "2-digit",
                   hour12: true,
-                }
-              ) }}
+                })
+              }}
             </template>
             <template v-else-if="col.format">
               {{ col.format(props.row[col.field]) }}
@@ -79,19 +101,29 @@
         </q-tr>
         <q-tr v-if="props.expand" :props="props">
           <q-td colspan="100%">
-              <q-card-section
-              horizontal  class="text-grey" v-for="(item, index) in props.row.payment" :key="index">
-                    <q-label class="q-ma-sm">{{ item.payment_status }}</q-label>
-                    <q-label class="q-ma-sm">{{ item.payment_method }}</q-label>
-                    <q-label class="q-ma-sm">Total:{{ item.total_amount }}</q-label>
-                    <q-label class="q-ma-sm">Paid:{{ item.paid_amount }}</q-label>
-              </q-card-section>
+            <q-card-section
+              horizontal
+              class="text-grey"
+              v-for="(item, index) in props.row.payment"
+              :key="index"
+            >
+              <q-label class="q-ma-sm">{{ item.payment_status }}</q-label>
+              <q-label class="q-ma-sm">{{ item.payment_method }}</q-label>
+              <q-label class="q-ma-sm">Total:{{ item.total_amount }}</q-label>
+              <q-label class="q-ma-sm">Paid:{{ item.paid_amount }}</q-label>
+            </q-card-section>
           </q-td>
         </q-tr>
       </template>
 
       <template v-slot:top-right>
-        <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
+        <q-input
+          borderless
+          dense
+          debounce="300"
+          v-model="filter"
+          placeholder="Search"
+        >
           <template v-slot:append>
             <q-icon name="search" />
           </template>
