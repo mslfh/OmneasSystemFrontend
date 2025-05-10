@@ -214,7 +214,7 @@ const customerHistory = ref([]);
 const fetchCustomerHistory = async () => {
   const user_search = appointment.value.customer_phone;
   try {
-    const userResponse = await api.get("/api/findUserByField", {
+    const userResponse = await api.get("/api/search-user-by-field", {
       params: { search: user_search },
     });
     if (userResponse.data.length === 1) {

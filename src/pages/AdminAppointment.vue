@@ -2157,7 +2157,7 @@ const foundUsers = ref<{ id: number; name: string; phone: string }[]>([]);
 const selectUserFromSearch = async () => {
   foundUsers.value = [];
   try {
-    const response = await api.get("/api/findUserByField", {
+    const response = await api.get("/api/search-user-by-field", {
       params: { search: user_search.value },
     });
     if (response.data.length > 0) {

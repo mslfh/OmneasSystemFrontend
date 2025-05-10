@@ -1,51 +1,5 @@
 <template>
-  <div class="q-pa-md">
-    <q-btn
-      flat
-      label="Add New Staff"
-      color="primary"
-      @click="openAddStaffDialog"
-    />
-
-    <q-dialog v-model="isAddDialogOpen">
-      <q-card style="min-width: 400px">
-        <q-card-section>
-          <div class="text-h6">Add New Staff</div>
-        </q-card-section>
-        <q-card-section>
-          <q-input v-model="addForm.name" label="* Name" />
-          <q-input v-model="addForm.position" label="Position" />
-          <q-input v-model="addForm.phone" label="* Phone" />
-          <q-input v-model="addForm.email" label="Email" type="email" />
-          <q-select
-            v-model="addForm.status"
-            label="Status"
-            :options="statusOptions"
-            emit-value
-            map-options
-          />
-          <!-- <q-checkbox
-            v-model="addForm.has_certificate"
-            label="Has Certificate"
-          /> -->
-          <q-input
-            v-model="addForm.description"
-            label="Description"
-            type="textarea"
-          />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn
-            flat
-            label="Cancel"
-            color="primary"
-            @click="isAddDialogOpen = false"
-          />
-          <q-btn flat label="Add" color="green" @click="addStaff" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
+  <q-card class="q-pa-md">
     <q-table
       title="Staff"
       no-data-label="I didn't find anything for you"
@@ -54,31 +8,29 @@
       :columns="columns"
       row-key="id"
     >
-      <template v-slot:body="props">
-        <q-tr :props="props">
-          <q-td key="name" :props="props">
-            {{ props.row.name }}
-          </q-td>
-          <q-td key="position" :props="props">
-            {{ props.row.position }}
-          </q-td>
-          <q-td key="phone" :props="props">
-            {{ props.row.phone }}
-          </q-td>
-          <q-td key="email" :props="props">
-            {{ props.row.email }}
-          </q-td>
-          <q-td key="status" :props="props">
+    <template v-slot:top-right>
+      <q-btn
+      outlined
+      flat
+      label="Add New Staff"
+      color="accent"
+      @click="openAddStaffDialog"
+    />
+      </template>
+      <template v-slot:body-cell-status="props">
+        <q-td key="status" :props="props">
             <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
               {{ props.row.status }}
             </q-badge>
           </q-td>
-          <q-td key="actions" :props="props">
+      </template>
+      <template v-slot:body-cell-actions="props">
+        <q-td key="actions" :props="props">
             <q-btn
               flat
               round
               icon="edit"
-              color="primary"
+              color="accent"
               @click="editStaff(props.row)"
             />
             <q-btn
@@ -89,7 +41,6 @@
               @click="deleteStaff(props.row)"
             />
           </q-td>
-        </q-tr>
       </template>
     </q-table>
 
@@ -147,7 +98,46 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-  </div>
+
+    <q-dialog v-model="isAddDialogOpen">
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">Add New Staff</div>
+        </q-card-section>
+        <q-card-section>
+          <q-input v-model="addForm.name" label="* Name" />
+          <q-input v-model="addForm.phone" label="* Phone" />
+          <q-input v-model="addForm.email" label="Email" type="email" />
+          <q-input v-model="addForm.position" label="Position" />
+          <q-select
+            v-model="addForm.status"
+            label="Status"
+            :options="statusOptions"
+            emit-value
+            map-options
+          />
+          <!-- <q-checkbox
+            v-model="addForm.has_certificate"
+            label="Has Certificate"
+          /> -->
+          <q-input
+            v-model="addForm.description"
+            label="Description"
+            type="textarea"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Cancel"
+            color="primary"
+            @click="isAddDialogOpen = false"
+          />
+          <q-btn flat label="Add" color="green" @click="addStaff" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  </q-card>
 </template>
 
 <script setup>
@@ -167,9 +157,8 @@ const columns = [
     label: "Status",
     align: "left",
     field: "status",
-    style: "width: 150px",
   },
-  { name: "actions", label: "Actions", align: "center", style: "width: 120px" },
+  { name: "actions", label: "Actions", align: "center" },
 ];
 
 onMounted(() => {

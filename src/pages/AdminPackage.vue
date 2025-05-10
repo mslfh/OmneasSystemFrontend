@@ -1,12 +1,5 @@
 <template>
   <div class="q-pa-md">
-    <q-btn
-      flat
-      label="Add New Package"
-      color="primary"
-      @click="openAddPackageDialog"
-    />
-
     <q-dialog v-model="isAddDialogOpen">
       <q-card style="min-width: 400px">
         <q-card-section>
@@ -43,26 +36,38 @@
       :columns="columns"
       row-key="id"
     >
+      <template v-slot:top-right>
+        <q-btn
+          flat
+          label="Add New Package"
+          color="accent"
+          @click="openAddPackageDialog"
+        />
+      </template>
       <template v-slot:body-cell-status="props">
-        <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
-          {{ props.row.status }}
-        </q-badge>
+        <q-td class="text-center">
+          <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
+            {{ props.row.status }}
+          </q-badge>
+        </q-td>
       </template>
       <template v-slot:body-cell-actions="props">
-        <q-btn
-          flat
-          round
-          icon="edit"
-          color="primary"
-          @click="editPackage(props.row)"
-        />
-        <q-btn
-          flat
-          round
-          icon="delete"
-          color="red"
-          @click="deletePackage(props.row)"
-        />
+        <q-td class="text-center">
+          <q-btn
+            flat
+            round
+            icon="edit"
+            color="accent"
+            @click="editPackage(props.row)"
+          />
+          <q-btn
+            flat
+            round
+            icon="delete"
+            color="red"
+            @click="deletePackage(props.row)"
+          />
+        </q-td>
       </template>
     </q-table>
 
@@ -124,9 +129,15 @@ import { api } from "boot/axios";
 
 const packages = ref([]);
 const columns = [
-  { name: "title", required: true, label: "Title", align: "left", field: "title" },
+  {
+    name: "title",
+    required: true,
+    label: "Title",
+    align: "left",
+    field: "title",
+  },
   { name: "hint", label: "Hint", align: "left", field: "hint" },
-  { name: "status", label: "Status", align: "left", field: "status" },
+  { name: "status", label: "Status", align: "center", field: "status" },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
@@ -183,7 +194,10 @@ const editPackage = (row) => {
 
 const updatePackage = async () => {
   try {
-    const response = await api.put(`/api/packages/${editForm.value.id}`, editForm.value);
+    const response = await api.put(
+      `/api/packages/${editForm.value.id}`,
+      editForm.value
+    );
     const index = packages.value.findIndex((p) => p.id === editForm.value.id);
     if (index !== -1) {
       packages.value[index] = { ...editForm.value };
@@ -205,7 +219,9 @@ const deletePackage = (row) => {
 const confirmDelete = async () => {
   try {
     await api.delete(`/api/packages/${deleteTarget.value.id}`);
-    packages.value = packages.value.filter((p) => p.id !== deleteTarget.value.id);
+    packages.value = packages.value.filter(
+      (p) => p.id !== deleteTarget.value.id
+    );
     isDeleteDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (error) {

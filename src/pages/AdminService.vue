@@ -1,12 +1,5 @@
 <template>
   <div class="q-pa-md">
-    <q-btn
-      flat
-      label="Add New Service"
-      color="primary"
-      @click="openAddServiceDialog"
-    />
-
     <q-dialog v-model="isAddDialogOpen">
       <q-card style="min-width: 400px">
         <q-card-section>
@@ -23,8 +16,16 @@
             map-options
           />
           <q-input v-model="addForm.title" label="Title" />
-          <q-input v-model="addForm.description" label="Description" type="textarea" />
-          <q-input v-model="addForm.duration" label="Duration (minutes)" type="number" />
+          <q-input
+            v-model="addForm.description"
+            label="Description"
+            type="textarea"
+          />
+          <q-input
+            v-model="addForm.duration"
+            label="Duration (minutes)"
+            type="number"
+          />
           <q-input v-model="addForm.price" label="Price ($)" type="number" />
           <q-select
             v-model="addForm.status"
@@ -54,17 +55,29 @@
       :columns="columns"
       row-key="id"
     >
+
+    <template v-slot:top-right>
+      <q-btn
+          flat
+          label="Add New Service"
+          color="accent"
+          @click="openAddServiceDialog"
+      />
+      </template>
       <template v-slot:body-cell-status="props">
+        <q-td class="text-center">
         <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
           {{ props.row.status }}
         </q-badge>
+      </q-td>
       </template>
       <template v-slot:body-cell-actions="props">
+        <q-td class="text-center">
         <q-btn
           flat
           round
           icon="edit"
-          color="primary"
+          color="accent"
           @click="editService(props.row)"
         />
         <q-btn
@@ -74,6 +87,7 @@
           color="red"
           @click="deleteService(props.row)"
         />
+      </q-td>
       </template>
     </q-table>
 
@@ -93,8 +107,16 @@
             map-options
           />
           <q-input v-model="editForm.title" label="Title" />
-          <q-input v-model="editForm.description" label="Description" type="textarea" />
-          <q-input v-model="editForm.duration" label="Duration (minutes)" type="number" />
+          <q-input
+            v-model="editForm.description"
+            label="Description"
+            type="textarea"
+          />
+          <q-input
+            v-model="editForm.duration"
+            label="Duration (minutes)"
+            type="number"
+          />
           <q-input v-model="editForm.price" label="Price ($)" type="number" />
           <q-select
             v-model="editForm.status"
@@ -148,9 +170,25 @@ const services = ref([]);
 const packages = ref([]);
 const packageOptions = ref([]);
 const columns = [
-  { name: "title", required: true, label: "Title", align: "left", field: "title" },
-  { name: "description", label: "Description", align: "left", field: "description" },
-  { name: "duration", label: "Duration (min)", align: "left", field: "duration" },
+  {
+    name: "title",
+    required: true,
+    label: "Title",
+    align: "left",
+    field: "title",
+  },
+  {
+    name: "description",
+    label: "Description",
+    align: "left",
+    field: "description",
+  },
+  {
+    name: "duration",
+    label: "Duration (min)",
+    align: "left",
+    field: "duration",
+  },
   { name: "price", label: "Price ($)", align: "left", field: "price" },
   { name: "status", label: "Status", align: "left", field: "status" },
   { name: "actions", label: "Actions", align: "center" },
@@ -224,7 +262,10 @@ const editService = (row) => {
 
 const updateService = async () => {
   try {
-    const response = await api.put(`/api/services/${editForm.value.id}`, editForm.value);
+    const response = await api.put(
+      `/api/services/${editForm.value.id}`,
+      editForm.value
+    );
     const index = services.value.findIndex((s) => s.id === editForm.value.id);
     if (index !== -1) {
       services.value[index] = { ...editForm.value };
@@ -246,7 +287,9 @@ const deleteService = (row) => {
 const confirmDelete = async () => {
   try {
     await api.delete(`/api/services/${deleteTarget.value.id}`);
-    services.value = services.value.filter((s) => s.id !== deleteTarget.value.id);
+    services.value = services.value.filter(
+      (s) => s.id !== deleteTarget.value.id
+    );
     isDeleteDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (error) {

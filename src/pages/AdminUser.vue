@@ -1,26 +1,5 @@
 <template>
-  <div class="q-pa-md">
-    <!-- Add search input and dropdown for field selection -->
-    <div class="col-8 items-center q-pa-md">
-      <q-input
-        rounded
-        v-model="user_search"
-        outlined
-        placeholder="Search User"
-        @update:model-value="findUserByField"
-      >
-        <template v-slot:append>
-          <q-icon v-if="user_search === ''" name="search" />
-          <q-icon
-            v-else
-            name="clear"
-            class="cursor-pointer"
-            @click="user_search = ''"
-          />
-        </template>
-      </q-input>
-    </div>
-
+  <q-card class="q-pa-md">
     <q-table
       title="Users"
       no-data-label="No users found"
@@ -28,32 +7,53 @@
       :rows="users"
       :columns="columns"
       row-key="id"
+      v-model:pagination="pagination"
+      :loading="loading"
+      :filter="filter"
+      @request="onRequest"
     >
+      <template v-slot:top-right>
+        <q-input
+          outlined
+          dense
+          debounce="300"
+          clearable
+          rounded
+          v-model="filter"
+          placeholder="Search by name, phone or email"
+          style="width: 280px; "
+        >
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </template>
       <template v-slot:body-cell-actions="props">
-        <q-btn
-          flat
-          round
-          icon="edit"
-          color="primary"
-          @click="editUser(props.row)"
-        />
-        <q-btn
-          flat
-          round
-          icon="visibility"
-          color="primary"
-          @click="fetchCustomerHistory(props.row.id)"
-        />
-        <!-- <q-btn
-          flat
-          round
-          icon="delete"
-          color="red"
-          @click="deleteUser(props.row)"
-        /> -->
+        <q-td class="text-center">
+          <q-btn
+            flat
+            round
+            icon="edit"
+            color="accent"
+            @click="editUser(props.row)"
+          />
+          <q-btn
+            flat
+            round
+            icon="visibility"
+            color="accent"
+            @click="fetchCustomerHistory(props.row.id)"
+          />
+          <!-- <q-btn
+                flat
+                round
+                icon="delete"
+                color="red"
+                @click="deleteUser(props.row)"
+              /> -->
+        </q-td>
       </template>
     </q-table>
-
     <q-btn
       flat
       label="Import Users"
@@ -106,10 +106,10 @@
           <q-btn
             flat
             label="Cancel"
-            color="primary"
+            color="negative"
             @click="isEditDialogOpen = false"
           />
-          <q-btn flat label="Update" color="green" @click="updateUser" />
+          <q-btn flat label="Update" color="positive" @click="updateUser" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -166,32 +166,32 @@
                 />
                 <div class="text-grey-7 text-weight-bold text-caption">
                   <q-btn
-                  size="sm"
-                  flat
-                   color="orange-4"
+                    size="sm"
+                    flat
+                    color="orange-4"
                     icon="receipt_long"
                     @click="
                       router.push({
                         path: '/admin/appointment/detail',
-                        query: { id:  event.appointment_id },
+                        query: { id: event.appointment_id },
                       })
                     "
                     label="View Order"
-                    >
+                  >
                   </q-btn>
                   <q-btn
-                  size="sm"
-                  flat
+                    size="sm"
+                    flat
                     color="green-4"
                     icon="list_alt"
                     @click="
                       router.push({
                         path: '/admin/appointment/detail',
-                        query: { id:  event.id },
+                        query: { id: event.id },
                       })
                     "
                     label="View Appointment"
-                    >
+                  >
                   </q-btn>
                 </div>
               </div>
@@ -208,18 +208,19 @@
         </q-card-section>
       </q-card>
     </q-dialog>
-  </div>
+  </q-card>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
-const router = useRouter();
 
+const router = useRouter();
 const $q = useQuasar();
 const users = ref([]);
+const filter  = ref("");
 const columns = [
   {
     name: "name",
@@ -253,42 +254,80 @@ const columns = [
   { name: "actions", label: "Actions", align: "center" },
 ];
 
-onMounted(() => {
-  fetchUsers();
+const loading = ref(false);
+const pagination = ref({
+  sortBy: "id",
+  descending: false,
+  page: 1,
+  rowsPerPage: 10,
+  rowsNumber: 0,
 });
 
-const user_search = ref("");
-const findUserByField = async () => {
+const fetchUsers = async (startRow, count, filter, sortBy, descending) => {
   try {
-    const response = await api.get("/api/findUserByField", {
-      params: { search: user_search.value },
+    loading.value = true;
+    const response = await api.get("/api/user", {
+      params: {
+        start: startRow,
+        count,
+        filter,
+        sortBy,
+        descending,
+      },
     });
-    if (response.data.length > 0) {
-      users.value = response.data.map((user) => ({
+
+    if (response.data && Array.isArray(response.data.rows)) {
+      users.value = response.data.rows.map((user) => ({
         ...user,
         first_name: user.first_name || "N/A",
         last_name: user.last_name || "N/A",
       }));
+      pagination.value.rowsNumber = response.data.total || 0;
+    } else {
+      console.error("Unexpected API response structure:", response.data);
+      users.value = [];
+      pagination.value.rowsNumber = 0;
     }
   } catch (error) {
     console.error("Error fetching users:", error);
+    users.value = [];
+    pagination.value.rowsNumber = 0;
+  } finally {
+    loading.value = false;
   }
 };
 
-const fetchUsers = async () => {
-  try {
-    const response = await api.get("/api/user");
-    if (response.data.length > 0) {
-      users.value = response.data.map((user) => ({
-        ...user,
-        first_name: user.first_name || "N/A",
-        last_name: user.last_name || "N/A",
-      }));
-    }
-  } catch (error) {
-    console.error("Error fetching users:", error);
-  }
+const onRequest = (props) => {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination;
+  const searchValue = props.filter || filter.value;
+
+  loading.value = true;
+
+  // Calculate starting row and fetch count
+  const startRow = (page - 1) * rowsPerPage;
+  const count = rowsPerPage === 0 ? pagination.value.rowsNumber : rowsPerPage;
+
+  // Fetch data from server
+  fetchUsers(startRow, count, searchValue, sortBy, descending)
+    .then(() => {
+      // Update pagination object
+      pagination.value.page = page;
+      pagination.value.rowsPerPage = rowsPerPage;
+      pagination.value.sortBy = sortBy;
+      pagination.value.descending = descending;
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
+
+onMounted(() => {
+  onRequest({
+    pagination: pagination.value,
+    filter: undefined,
+  });
+});
+
 const isEditDialogOpen = ref(false);
 
 const editForm = ref({
@@ -371,7 +410,7 @@ const importUsers = async (event) => {
 
   isLoading.value = true; // Show loading indicator
   try {
-    await api.post("/api/importUser", formData, {
+    await api.post("/api/import-user", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
