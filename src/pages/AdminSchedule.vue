@@ -1,15 +1,18 @@
 <template>
   <q-page class="q-pa-sm bg-white">
     <q-btn
-      label="Set Staff Schedule"
-      color="primary"
+      :dense="$q.screen.lt.md"
+      label="Staff Schedule"
+      color="accent"
       @click="openScheduleDialog"
+      class="q-mr-md"
     />
-    <div class="text-h6 q-my-md text-center">
+
+    <div class="text-h6 q-mb-md text-center">
       {{ currentMonth }}
     </div>
+
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-    <!-- Display current month -->
 
     <q-calendar-month
       ref="calendar"
@@ -27,13 +30,13 @@
         <template v-for="event in eventsMap[timestamp.date]" :key="event.id">
           <div
             :class="badgeClasses(event)"
-            class="my-event"
+            class="my-event "
             @click="openEventDialog(event)"
           >
             <abbr :title="event.details" class="tooltip">
-              <div :class="'bg-' + eventColors[event.title]">
-                {{ event.title }} {{ event.time }} {{ event.status }}
-                <div>Remark: {{ event.remark }}</div>
+              <div :class="'bg-' + eventColors[event.title] + ' q-mt-xs text-center rounded-borders' " :style="event.status == 'inactive' ?'text-decoration: line-through;':''">
+                {{ event.title }} {{ event.time }}
+                <div v-if="event.remark">Remark: {{ event.remark }}</div>
               </div>
             </abbr>
           </div>
@@ -42,12 +45,12 @@
     </q-calendar-month>
 
     <q-dialog v-model="scheduleDialog">
-      <q-card style="min-width: 1000px;">
+      <q-card>
         <q-card-section>
           <div class="text-h6">Set Staff Schedule</div>
         </q-card-section>
-        <div class="row q-ma-md">
-          <q-card class="col-3">
+        <q-card-section horizontal>
+          <q-card style="width: 400px">
             <q-card-section>
               <q-select
                 v-model="selectedStaff"
@@ -113,9 +116,9 @@
               </q-input>
             </q-card-section>
           </q-card>
-          <div class="col-1"></div>
-          <div class="col-6">
-            <q-scroll-area style="height: 450px">
+          <q-separator vertical />
+          <q-card style="width: 400px">
+            <q-card-section>
               <q-card class="q-ma-sm q-gutter-sm">
                 <q-card-section
                   horizontal
@@ -134,7 +137,7 @@
                         outlined
                         v-model="day.start"
                         type="time"
-                        style="width: 70px;"
+                        style="width: 70px"
                         dense
                       />
                       <q-label class="q-ma-sm"> -- </q-label>
@@ -178,29 +181,23 @@
                   </div>
                 </q-card-section>
               </q-card>
-            </q-scroll-area>
-            <q-card-actions align="right">
-              <q-btn
-                flat
-                label="Cancel"
-                color="primary"
-                @click="closeScheduleDialog"
-              />
-              <q-btn
-                flat
-                label="Save"
-                color="primary"
-                @click="saveSchedule"
-              />
-            </q-card-actions>
-          </div>
-
-        </div>
+            </q-card-section>
+          </q-card>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Cancel"
+            color="primary"
+            @click="closeScheduleDialog"
+          />
+          <q-btn flat label="Save" color="primary" @click="saveSchedule" />
+        </q-card-actions>
       </q-card>
     </q-dialog>
 
     <q-dialog v-model="dayScheduleDialog">
-      <q-card>
+      <q-card style="width: 100%">
         <q-card-section>
           <div class="text-h6">Add Day Schedule</div>
         </q-card-section>
@@ -211,41 +208,34 @@
             type="date"
             label="Work Date"
           />
+        </q-card-section>
+        <q-card-section>
           <q-select
             v-model="selectedStaff"
             :options="staffList"
             option-label="name"
             option-value="id"
-            label="Select Staff"
+            label=" * Select Staff"
+            clearable
             dense
           />
-          <!-- <q-input
-            v-model="schedule.break_start_time"
-            filled
-            type="time"
-            label="Break Start Time"
-          /> -->
-          <!-- <q-input
-            v-model="schedule.break_end_time"
-            filled
-            type="time"
-            label="Break End Time"
-          /> -->
-          <q-label>
-            <q-icon name="access_time" class="q-mr-sm" />
-            <span class="text-subtitle1">Working Hours</span>
+        </q-card-section>
+        <q-card-section>
+          <q-label class="text-grey">
+            <q-icon size="xs" name="access_time" />
+            Working Time
           </q-label>
           <q-range
             v-model="timeRangeModel"
             color="teal"
             :inner-min="8"
             :inner-max="19"
+            :step="0.5"
             markers
             label-always
             :left-label-value="minTimeLabel"
             :right-label-value="maxTimeLabel"
             switch-label-side
-            switch-marker-labels-side
             :min="8"
             :max="19"
           />
@@ -265,7 +255,7 @@
 
     <!-- Event Details Dialog -->
     <q-dialog v-model="eventDialog">
-      <q-card>
+      <q-card style="width: 100%">
         <q-card-section>
           <div class="text-h6">Event Details</div>
         </q-card-section>
@@ -278,13 +268,11 @@
           />
           <q-input
             v-model="selectedEvent.start_time"
-            filled
             type="time"
             label="Start Time"
           />
           <q-input
             v-model="selectedEvent.end_time"
-            filled
             type="time"
             label="End Time"
           />
@@ -309,15 +297,9 @@
             ]"
             inline
           />
-          <q-input v-model="selectedEvent.remark" label="Remark" filled />
+          <q-input v-model="selectedEvent.remark" label="Remark"   />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn
-            flat
-            label="Cancel"
-            color="primary"
-            @click="closeEventDialog"
-          />
           <q-btn flat label="Delete" color="negative" @click="deleteEvent" />
           <q-btn flat label="Save" color="primary" @click="updateEvent" />
         </q-card-actions>
@@ -346,10 +328,24 @@ const schedule = ref({
   break_end_time: "",
 });
 
-const timeRangeModel = ref({ min: 8, max: 18 });
+const timeRangeModel = ref({ min: 8, max: 19 });
 
-const minTimeLabel = computed(() => `${timeRangeModel.value.min}:00`);
-const maxTimeLabel = computed(() => `${timeRangeModel.value.max}:00`);
+const minTimeLabel = computed(() => {
+  return formatTimeLabel( timeRangeModel.value.min)
+});
+const maxTimeLabel = computed(() => {
+  return formatTimeLabel( timeRangeModel.value.max)
+});
+
+function formatTimeLabel(time) {
+  const hasHalfStep = time % 1 === 0.5;
+
+  if (hasHalfStep) {
+    return Math.floor(time) + ":30";
+  } else {
+    return time + ":00";
+  }
+}
 
 const timeMarkerLabels = Array.from({ length: 11 }, (_, i) => ({
   value: 8 + i,
@@ -402,7 +398,6 @@ async function fetchSchedules() {
       break_start_time: schedule.break_start_time,
       status: schedule.status,
       remark: schedule.remark,
-      bgcolor: "blue",
     }));
   } catch (error) {
     console.error("Error fetching schedules:", error);
@@ -437,6 +432,7 @@ function resetScheduleForm() {
 }
 
 const scheduleType = ref("Every week");
+const dateRange = ref("");
 const startDate = ref("");
 const endDate = ref("");
 
@@ -449,7 +445,6 @@ const weekDays = ref([
   { label: "Saturday", enabled: false, start: "", end: "" },
   { label: "Sunday", enabled: false, start: "", end: "" },
 ]);
-
 
 function addTimeInput(day) {
   if (!day.additionalTimes) {
@@ -490,7 +485,7 @@ async function saveSchedule() {
   };
 
   try {
-    await api.post("/api/insertSchedule", payload);
+    await api.post("/api/insert-schedule", payload);
     fetchSchedules();
     closeScheduleDialog();
   } catch (error) {
@@ -500,7 +495,7 @@ async function saveSchedule() {
 
 function badgeClasses(event) {
   return {
-    [`text-white bg-${event.bgcolor}`]: true,
+    [`text-white `]: true,
     "rounded-border": true,
   };
 }
@@ -607,8 +602,10 @@ async function saveDaySchedule() {
   // Set date into yyyy/mm/dd format
   schedule.value.work_date = schedule.value.work_date.replace(/-/g, "/");
   // Set start_time and end_time based on timeRangeModel
-  schedule.value.start_time = `${timeRangeModel.value.min}:00`;
-  schedule.value.end_time = `${timeRangeModel.value.max}:00`;
+
+  schedule.value.start_time = formatTimeLabel(timeRangeModel.value.min);
+  schedule.value.end_time = formatTimeLabel(timeRangeModel.value.max);
+
   if (schedule.value.start_time.length == 4) {
     schedule.value.start_time = "0" + schedule.value.start_time;
   }
@@ -629,12 +626,10 @@ async function saveDaySchedule() {
   }
 }
 
-
 onMounted(() => {
   fetchSchedules();
   fetchStaffList(); // Ensure this is only called once and does not trigger unnecessary reactivity
 });
-
 </script>
 
 <style>
@@ -647,29 +642,5 @@ onMounted(() => {
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
-}
-
-.title {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
-.text-white {
-  color: white;
-}
-
-.bg-blue {
-  background: blue;
-}
-
-.rounded-border {
-  border-radius: 2px;
-}
-
-abbr.tooltip {
-  text-decoration: none;
 }
 </style>
