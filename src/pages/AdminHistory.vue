@@ -66,7 +66,7 @@
              size="12px"
             dense
               :color="props.row.status === 'finished' ? 'teal-4' : 'deep-orange-5'"
-              :label="props.row.status === 'finished' ? 'Finished' : 'Pending'"
+              :label="props.row.status === 'finished' ? 'Finished' : 'Booked'"
               text-color="white"
               class="q-mr-sm"
             />

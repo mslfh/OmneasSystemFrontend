@@ -30,11 +30,22 @@
         <template v-for="event in eventsMap[timestamp.date]" :key="event.id">
           <div
             :class="badgeClasses(event)"
-            class="my-event "
+            class="my-event"
             @click="openEventDialog(event)"
           >
             <abbr :title="event.details" class="tooltip">
-              <div :class="'bg-' + eventColors[event.title] + ' q-mt-xs text-center rounded-borders' " :style="event.status == 'inactive' ?'text-decoration: line-through;':''">
+              <div
+                :class="
+                  'bg-' +
+                  eventColors[event.title] +
+                  ' q-mt-xs text-center rounded-borders'
+                "
+                :style="
+                  event.status == 'inactive'
+                    ? 'text-decoration: line-through;'
+                    : ''
+                "
+              >
                 {{ event.title }} {{ event.time }}
                 <div v-if="event.remark">Remark: {{ event.remark }}</div>
               </div>
@@ -67,6 +78,8 @@
                 label="Schedule Type"
                 :options="['Every week']"
             /></q-card-section>
+
+
             <q-card-section>
               <q-input v-model="startDate" label="Start Date" mask="####-##-##">
                 <template v-slot:prepend>
@@ -148,7 +161,13 @@
                         style="width: 70px"
                         dense
                       />
-                      <q-btn icon="add" @click="addTimeInput(day)" flat round />
+                      <q-btn
+                        color="accent"
+                        icon="add"
+                        @click="addTimeInput(day)"
+                        flat
+                        round
+                      />
                     </q-card-section>
                     <q-card-section
                       v-for="(time, timeIndex) in day.additionalTimes || []"
@@ -297,7 +316,7 @@
             ]"
             inline
           />
-          <q-input v-model="selectedEvent.remark" label="Remark"   />
+          <q-input v-model="selectedEvent.remark" label="Remark" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Delete" color="negative" @click="deleteEvent" />
@@ -323,6 +342,10 @@ const dayScheduleDialog = ref(false);
 const staffList = ref([]);
 const selectedStaff = ref(null);
 const schedule = ref({
+  status: "",
+  start_time: "",
+  end_time: "",
+  remark: "",
   work_date: "",
   break_start_time: "",
   break_end_time: "",
@@ -331,10 +354,10 @@ const schedule = ref({
 const timeRangeModel = ref({ min: 8, max: 19 });
 
 const minTimeLabel = computed(() => {
-  return formatTimeLabel( timeRangeModel.value.min)
+  return formatTimeLabel(timeRangeModel.value.min);
 });
 const maxTimeLabel = computed(() => {
-  return formatTimeLabel( timeRangeModel.value.max)
+  return formatTimeLabel(timeRangeModel.value.max);
 });
 
 function formatTimeLabel(time) {
@@ -432,7 +455,6 @@ function resetScheduleForm() {
 }
 
 const scheduleType = ref("Every week");
-const dateRange = ref("");
 const startDate = ref("");
 const endDate = ref("");
 
@@ -612,7 +634,8 @@ async function saveDaySchedule() {
   if (schedule.value.end_time.length == 4) {
     schedule.value.end_time = "0" + schedule.value.end_time;
   }
-  console.log("Day Schedule Data:", schedule.value);
+
+  schedule.value.status = 'active';
   try {
     const payload = {
       staff_id: selectedStaff.value.id,

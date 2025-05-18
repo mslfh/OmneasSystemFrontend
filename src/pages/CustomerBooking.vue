@@ -144,7 +144,7 @@
                                     done1 = true;
                                     step = 2;
                                     selectedService = service;
-                                    fetchAvailabelTime();
+                                    fetchAvailableTime();
                                   }
                                 "
                               />
@@ -174,8 +174,6 @@
                     readonly
                     filled
                     v-model="date"
-                    mask="date"
-                    :rules="['date']"
                   >
                     <template v-slot:append>
                       <q-icon name="event" class="cursor-pointer">
@@ -188,10 +186,11 @@
                           <q-date
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
+                             mask="YYYY-MM-DD"
                             @update:model-value="
                               async () => {
                                 await refreshStaff();
-                                await fetchAvailabelTime();
+                                await fetchAvailableTime();
                               }
                             "
                             :events="events"
@@ -235,7 +234,7 @@
                           () => {
                             selectedStaff.id = 0;
                             selectedStaff.name = 'Any Therapist';
-                            fetchAvailabelTime();
+                            fetchAvailableTime();
                           }
                         "
                         :color="selectedStaff.id === 0 ? 'orange-2' : 'blue-1'"
@@ -256,7 +255,7 @@
                             selectedStaff.id = staff.id;
                             selectedStaff.name = staff.name;
                             selectedStaff.position = staff.position;
-                            fetchAvailabelTime();
+                            fetchAvailableTime();
                             time = '';
                           }
                         "
@@ -771,8 +770,7 @@ const toggleExpanded = (pkgId) => {
   expandedStates.value[pkgId] = !expandedStates.value[pkgId];
 };
 
-// Default to today's date in Y/m/d format
-const date = ref(new Date().toLocaleDateString("en-CA").replace(/-/g, "/"));
+const date = ref(new Date().toLocaleDateString("en-CA"));
 
 const showDate = () => {
   const dateObj = new Date(date.value);
@@ -808,7 +806,7 @@ onMounted(async () => {
     var response = await axios.get(VITE_API_URL + "/api/packages-with-service");
     packages.value = response.data;
 
-    response = await axios.get(VITE_API_URL + "/api/get-available-shedules");
+    response = await axios.get(VITE_API_URL + "/api/get-available-schedules");
     if (response.data.length > 0) {
       response.data.forEach((element) => {
         events.value.push(element.date);
@@ -830,7 +828,7 @@ const refreshStaff = async () => {
     return;
   }
   const response = await axios.get(
-    VITE_API_URL + "/api/get-available-staff-from-scheduletime",
+    VITE_API_URL + "/api/get-available-staff-from-schedule-date",
     {
       params: {
         date: date.value,
@@ -848,7 +846,7 @@ const refreshStaff = async () => {
 const morning_time = ref<string[]>([]);
 const afternoon_time = ref<string[]>([]);
 
-const fetchAvailabelTime = async () => {
+const fetchAvailableTime = async () => {
   try {
     if (!date.value) {
       return;

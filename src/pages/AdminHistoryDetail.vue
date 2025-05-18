@@ -62,7 +62,7 @@
                 text-color="white"
                 dense
               >
-                {{ appointment.status === "finished" ? "Finished" : "Pending" }}
+                {{ appointment.status }}
               </q-chip>
             </q-item-section>
           </q-item>

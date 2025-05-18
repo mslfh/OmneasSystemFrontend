@@ -13,6 +13,7 @@
         showAddAppointmentDialog();
       "
     />
+    <!-- hint -->
     <div
       v-if="$q.screen.gt.md"
       class="float-right text-grey-7 text-weight-bold q-ma-md"
@@ -33,6 +34,7 @@
       Online Booking
     </div>
 
+    <!-- current day -->
     <div class="text-h6 text-center">
       <q-icon name="event" class="cursor-pointer">
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -52,6 +54,8 @@
       </q-icon>
       {{ currentMonth }}
     </div>
+
+    <!-- zoom controls -->
     <div class="float-right">
       <q-icon
         size="sm"
@@ -69,9 +73,12 @@
       />
     </div>
 
+    <!-- navigation bar -->
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-    <!-- Waitting List -->
+
+    <!-- calendar -->
     <div class="row">
+      <!-- Waitting List -->
       <div class="q-mx-md-sm q-mx-sm-none col-2">
         <div
           :class="
@@ -305,7 +312,7 @@
                     <q-chip
                       size="10px"
                       v-if="
-                        event.status === 'pending' ||
+                        event.status === 'booked' ||
                         event.status === 'unassigned'
                       "
                       class="shadow-up-1"
@@ -595,7 +602,6 @@
               unchecked-icon="clear"
             />
           </q-card-section>
-
           <q-card-section v-if="addAppointmentDialog.tab === 'history'">
             <q-input
               dense
@@ -695,7 +701,7 @@
     </q-card>
   </q-dialog>
 
-  <!-- Take a Break Dialog -->
+  <!-- Add a Break Dialog -->
   <q-dialog v-model="takeBreakDialog.visible" seamless position="bottom">
     <q-card>
       <q-linear-progress :value="1.0" color="pink" />
@@ -753,557 +759,58 @@
     </q-card>
   </q-dialog>
 
-  <!-- Edit Break Dialog -->
-  <q-dialog v-model="editTakeBreakDialog.visible" seamless position="bottom">
-    <q-card>
-      <q-linear-progress :value="1.0" color="pink" />
-      <q-card-section>
-        <div class="text-h6">{{ selectedStaff.name + " 's " }} Break</div>
-        <q-input
-          label="From"
-          type="time"
-          v-model="editTakeBreakDialog.payload.time"
-        />
-        <div class="text-subtitle5 text-grey-8">Duration</div>
-        <q-radio
-          v-model="editTakeBreakDialog.payload.service_duration"
-          val="20"
-          label="20 min"
-        />
-        <q-radio
-          v-model="editTakeBreakDialog.payload.service_duration"
-          val="30"
-          label="30 min"
-        />
-        <q-radio
-          v-model="editTakeBreakDialog.payload.service_duration"
-          val="45"
-          label="45 min"
-        />
-        <q-radio
-          v-model="editTakeBreakDialog.payload.service_duration"
-          val="60"
-          label="60 min"
-        />
-        <q-input
-          v-model="editTakeBreakDialog.payload.service_duration"
-          label="Custom Duration (minutes)"
-          type="number"
-          outlined
-          dense
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="editTakeBreakDialog.visible = false"
-        />
-        <q-btn
-          flat
-          label="Confirm"
-          color="positive"
-          @click="saveEditedBreakEvent()"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
-
   <!-- Edit Event Dialog -->
-  <q-dialog v-model="editEventDialog.visible">
-    <q-card :style="$q.screen.gt.md ? 'min-width: 850px' : 'min-width: 100%'">
-      <q-card-section horizontal class="q-ma-sm">
-        <div class="text-h6">Edit Event</div>
-        <q-space />
-        <q-btn flat round icon="more_vert" color="grey">
-          <q-menu>
-            <q-list style="min-width: 100px">
-              <q-item clickable v-close-popup>
-                <q-btn
-                  color="green-5"
-                  size="sm"
-                  dense
-                  flat
-                  icon="send"
-                  label="Message"
-                  @click="openSendSmsDialog"
-                />
-              </q-item>
-              <q-item clickable v-close-popup>
-                <q-btn
-                  size="sm"
-                  dense
-                  flat
-                  color="red-4"
-                  icon="delete"
-                  label="Delete"
-                  @click="deleteAppointment()"
-                />
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-      </q-card-section>
-      <div class="row q-ma-md">
-        <!--Events -->
-        <div :class="$q.screen.gt.md ? 'col-4' : 'col-6'">
-          <div>
-            <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
-            <q-chip
-              v-for="staff in staffOptions"
-              :key="staff.id"
-              clickable
-              :color="selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'"
-              @click="
-                () => {
-                  selectedStaff.id = staff.id;
-                  selectedStaff.name = staff.name;
-                  fetchAvailableBookingTime(editEventForm.booking_date);
-                }
-              "
-            >
-              {{ staff.id == 0 ? "* Waitting List" : staff.name }}
-            </q-chip>
+  <EditAppointmentDialog
+    v-if="showEditEventDialog"
+    :editEventForm="editEventForm"
+    :selectedStaff = "selectedStaff"
+    :staffOptions = "staffOptions"
+    :available_booking_time = "available_booking_time"
+    @close="
+      showEditEventDialog = false;
+    "
+    @openSms="
+      showEditEventDialog = false;
+      showSendSmsDialog = true;
+    "
+    @delelte = "
+     showEditEventDialog = false;
+      fetchAppointments();
+    "
+    @save="
+     editedEvent();
+    "
+  />
 
-            <q-select
-              v-model="editEventForm.service"
-              :options="serviceOptions"
-              label="* Service"
-              option-value="id"
-              option-label="name"
-              clearable
-              @update:model-value="
-                fetchAvailableBookingTime(editEventForm.booking_date)
-              "
-            />
-            <q-input
-              v-model="editEventForm.booking_date"
-              label="Select Date"
-              mask="####-##-##"
-            >
-              <template v-slot:prepend>
-                <q-icon name="event" class="cursor-pointer">
-                  <q-popup-proxy
-                    cover
-                    transition-show="scale"
-                    transition-hide="scale"
-                  >
-                    <q-date
-                      v-model="editEventForm.booking_date"
-                      mask="YYYY-MM-DD"
-                      @update:model-value="
-                        fetchAvailableBookingTime(editEventForm.booking_date)
-                      "
-                    >
-                      <div class="row items-center justify-end">
-                        <q-btn
-                          v-close-popup
-                          label="Close"
-                          color="primary"
-                          flat
-                        />
-                      </div>
-                    </q-date>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
-            <div class="q-mb-sm text-weight-bold">
-              <q-label class="text-subtitle2 text-grey-9">
-                Booking Time:</q-label
-              >
-              <q-input
-                dense
-                v-model="editEventForm.booking_time"
-                outlined
-                type="time"
-              />
-              <q-separator class="q-my-md" />
-            </div>
-            <q-scroll-area style="height: 200px">
-              <q-chip
-                v-for="item in available_booking_time"
-                :key="item"
-                clickable
-                :dense="$q.screen.lt.md"
-                :icon="
-                  editEventForm.booking_time == item
-                    ? 'check_circle'
-                    : 'o_fiber_manual_record'
-                "
-                :color="
-                  editEventForm.booking_time == item ? 'orange-3' : 'teal-1'
-                "
-                @click="editEventForm.booking_time = item"
-                >{{ item }}</q-chip
-              >
-            </q-scroll-area>
-          </div>
-        </div>
-        <div v-if="$q.screen.gt.md" class="col-1 flex justify-center">
-          <q-separator vertical class="q-my-md" style="height: 90%" />
-        </div>
-        <div class="col-6">
-          <q-card-section>
-            <q-input
-              rounded
-              v-model="user_search"
-              outlined
-              placeholder="Find User by Name, Phone, or Email"
-              @keyup.enter="selectUserFromSearch"
-            >
-              <template v-slot:append>
-                <q-icon v-if="user_search === ''" name="search" />
-                <q-icon
-                  v-else
-                  name="clear"
-                  class="cursor-pointer"
-                  @click="user_search = ''"
-                />
-              </template>
-            </q-input>
-            <q-item-label
-              v-if="foundUsers.length == 0 && user_search !== ''"
-              class="text-caption"
-              >No data found</q-item-label
-            >
-            <q-scroll-area v-if="user_search !== ''" style="height: 100px">
-              <q-list>
-                <q-item
-                  v-for="user in foundUsers"
-                  :key="user.id"
-                  clickable
-                  @click="
-                    editEventForm.customer_name = user.name;
-                    editEventForm.customer_first_name = user.first_name;
-                    editEventForm.customer_last_name = user.last_name;
-                    editEventForm.customer_email = user.email;
-                    editEventForm.customer_phone = user.phone;
-                  "
-                >
-                  <q-item-section>
-                    <q-item-label>{{ user.name }}</q-item-label>
-                    <q-item-label caption>{{ user.phone }}</q-item-label>
-                    <q-item-label caption>{{ user.email }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-scroll-area>
-            <q-input
-              v-model="editEventForm.customer_name"
-              label="Customer Name"
-            />
-            <q-input
-              v-model="editEventForm.customer_first_name"
-              label="First Name"
-            />
-            <q-input
-              v-model="editEventForm.customer_last_name"
-              label="Last Name"
-            />
-            <q-input v-model="editEventForm.customer_email" label="Email" />
-            <q-input v-model="editEventForm.customer_phone" label="Phone" />
-            <q-input v-model="editEventForm.comments" label="Comments" />
-          </q-card-section>
-        </div>
-      </div>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="editEventDialog.visible = false"
-        />
-        <q-btn flat label="Save" color="positive" @click="saveEditedEvent" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <!-- Edit Break Dialog -->
+  <EditBreakEventDialog
+    v-if="showEditBreakEventDialog"
+    :editEventForm="editEventForm"
+    @close="
+      showEditBreakEventDialog = false;
+      fetchAppointments();
+    "
+  />
 
   <!-- Finish Appointment Dialog -->
-  <q-dialog v-model="finishAppointmentDialog.visible">
-    <q-card style="min-width: 650px">
-      <q-card-section horizontal class="q-ma-sm">
-        <div class="text-h6">Appointment Details</div>
-      </q-card-section>
-      <div class="row q-ma-md">
-        <!--Events -->
-        <div class="col-4 q-pa-xs">
-          <div class="text-subtitle2 text-grey-8">
-            <q-chip color="blue-2">
-              {{ finishAppointmentDialog.event.staff_name }}
-            </q-chip>
-          </div>
-          <q-input
-            dense
-            v-model="finishAppointmentDialog.event.customer_name"
-            readonly
-            label="Customer Name"
-          />
-          <q-input
-            dense
-            v-model="finishAppointmentDialog.event.service_title"
-            label="Service"
-            readonly
-          />
-          <div class="q-mb-sm text-weight-bold">
-            <q-input
-              v-model="finishAppointmentDialog.event.time"
-              dense
-              readonly
-              label="Booking Time"
-            />
-          </div>
-          <q-separator class="q-my-md" />
-          <q-input
-            dense
-            v-model="finishAppointmentDialog.actual_start_time"
-            filled
-            type="time"
-            label="Started At"
-          >
-            <template v-slot:prepend>
-              <q-icon size="xs" name="hourglass_top" />
-            </template>
-          </q-input>
-          <q-input
-            dense
-            v-model="finishAppointmentDialog.actual_end_time"
-            filled
-            type="time"
-            label="Ended At"
-          >
-            <template v-slot:prepend>
-              <q-icon size="xs" name="hourglass_bottom" />
-            </template>
-          </q-input>
-        </div>
-        <div class="col-1 flex justify-center">
-          <q-separator vertical class="q-my-md" style="height: 90%" />
-        </div>
-        <div class="col-7">
-          <q-card-section
-            horizontal
-            class="q-pa-sm bg-grey-3 text-grey-7 text-weight-bold"
-            style="border-radius: 8px"
-          >
-            <div>Total Price:</div>
-            <q-space />
-            <q-span>$ {{ finishAppointmentDialog.event.service_price }}</q-span>
-          </q-card-section>
-          <div class="text-weight-bold text-grey-9 q-mt-md">Payment Method</div>
-          <q-card-section class="text-weight-bold text-grey-7">
-            <q-radio
-              v-for="method in paymentMethods"
-              v-model="finishAppointmentDialog.paymentMethod"
-              keep-color
-              :unchecked-icon="method.icon"
-              :val="method.value"
-              :label="method.label"
-              @update:model-value="handlePaymentMethodChange"
-            />
-            <div
-              v-if="finishAppointmentDialog.paymentMethod === 'split_payment'"
-            >
-              <div class="row">
-                <div class="col-6 text-weight-bold text-grey-9 q-mt-md">
-                  Split Payments
-                </div>
-                <div class="text-grey-6 q-mt-md">
-                  Total: ${{
-                    finishAppointmentDialog.splitPayments.reduce(
-                      (sum, payment) => sum + (payment.amount || 0),
-                      0
-                    )
-                  }}
-                  , Unpaid: ${{
-                    Math.max(
-                      0,
-                      finishAppointmentDialog.event.service_price -
-                        finishAppointmentDialog.splitPayments.reduce(
-                          (sum, payment) => sum + (payment.amount || 0),
-                          0
-                        )
-                    )
-                  }}
-                </div>
-              </div>
-              <div
-                v-for="(
-                  payment, index
-                ) in finishAppointmentDialog.splitPayments"
-                :key="index"
-                class="row items-center q-my-sm"
-              >
-                <q-select
-                  v-model="payment.method"
-                  :options="
-                    paymentMethods.filter((m) => m.value !== 'split_payment')
-                  "
-                  label="Payment Method"
-                  option-value="value"
-                  option-label="label"
-                  dense
-                  outlined
-                  class="col-6"
-                />
-                <q-input
-                  v-model.number="payment.amount"
-                  label="$ Amount"
-                  type="number"
-                  dense
-                  outlined
-                  class="col-4"
-                />
-                <q-btn
-                  icon="delete"
-                  color="deep-orange"
-                  flat
-                  dense
-                  @click="removeSplitPayment(index)"
-                  class="col-2"
-                />
-              </div>
-              <q-btn
-                label="Add Payment"
-                icon="add"
-                color="blue"
-                flat
-                dense
-                @click="addSplitPayment"
-              />
-            </div>
-          </q-card-section>
-          <q-card-section
-            class="q-pa-sm text-grey-7"
-            v-if="finishAppointmentDialog.paymentMethod != 'split_payment'"
-          >
-            <q-input
-              v-show="finishAppointmentDialog.paymentMethod !== 'unpaid'"
-              v-model="finishAppointmentDialog.paymentAmount"
-              label="Payment Amount"
-              type="number"
-              outlined
-              dense
-            >
-              <template v-slot:prepend>
-                <q-icon name="attach_money" />
-              </template>
-            </q-input>
-          </q-card-section>
-          <q-card-section class="q-pa-sm text-grey-7">
-            Payment Note
-            <q-input
-              v-model="finishAppointmentDialog.note"
-              type="textarea"
-              outlined
-              dense
-            >
-            </q-input>
-          </q-card-section>
-        </div>
-      </div>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="finishAppointmentDialog.visible = false"
-        />
-        <q-btn
-          flat
-          label="Confirm"
-          color="positive"
-          @click="confirmFinishAppointment"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <FinishAppointmentDialog
+    v-if="showFinishAppointmentDialog"
+    :event="clickedEvent"
+    :selectedDate="selectedDate"
+    @close="
+      showFinishAppointmentDialog = false;
+      fetchAppointments();
+    "
+  />
 
   <!-- Send SMS Dialog -->
-  <q-dialog v-model="sendSmsDialog.visible">
-    <q-card style="min-width: 500px">
-      <q-card-section>
-        <div class="text-h6">Send SMS</div>
-      </q-card-section>
-      <q-card-section>
-        <q-lable class="text-subtitle1 text-weight-bold text-grey-7 q-ma-sm">
-          {{ editEventForm.customer_first_name }}
-          {{ editEventForm.customer_last_name }}
-        </q-lable>
-        <q-input
-          class="q-ma-sm"
-          v-model="sendSmsDialog.phone"
-          label="Phone"
-          dense
-        />
-        <q-input
-          class="q-ma-sm"
-          v-model="sendSmsDialog.message"
-          label="Message"
-          type="textarea"
-          outlined
-          dense
-        />
-      </q-card-section>
-      <q-card-section>
-        <q-checkbox size="sm" v-model="sendSmsDialog.is_schedule_time" />
-        <q-label class="text-grey-7 text-weight-bold">Scheduled Send</q-label>
-        <q-input
-          class="q-ma-md"
-          v-if="sendSmsDialog.is_schedule_time"
-          v-model="sendSmsDialog.schedule_time"
-        >
-          <template v-slot:prepend>
-            <q-icon name="event" class="cursor-pointer">
-              <q-popup-proxy
-                cover
-                transition-show="scale"
-                transition-hide="scale"
-              >
-                <q-date
-                  v-model="sendSmsDialog.schedule_time"
-                  mask="YYYY-MM-DD HH:mm:ss"
-                >
-                  <div class="row items-center justify-end">
-                    <q-btn v-close-popup label="Close" color="primary" flat />
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-icon>
-          </template>
-
-          <template v-slot:append>
-            <q-icon name="access_time" class="cursor-pointer">
-              <q-popup-proxy
-                cover
-                transition-show="scale"
-                transition-hide="scale"
-              >
-                <q-time
-                  v-model="sendSmsDialog.schedule_time"
-                  mask="YYYY-MM-DD HH:mm:ss"
-                >
-                  <div class="row items-center justify-end">
-                    <q-btn v-close-popup label="Close" color="primary" flat />
-                  </div>
-                </q-time>
-              </q-popup-proxy>
-            </q-icon>
-          </template>
-        </q-input>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="closeSendSmsDialog"
-        />
-        <q-btn flat label="Send" color="positive" @click="sendSms" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <SendSmsDialog
+    v-if="showSendSmsDialog"
+    :editEventForm="editEventForm"
+    :selectedDate="selectedDate"
+    :reminder_msg_template = "reminder_msg_template"
+    @close="showSendSmsDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -1321,6 +828,13 @@ import "@quasar/quasar-ui-qcalendar/index.css";
 import { ref, computed, onMounted } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "components/NavigationBar.vue";
+import SendSmsDialog from "components/dialog/SendSmsDialog.vue";
+import EditBreakEventDialog from "components/dialog/EditBreakEventDialog.vue";
+import FinishAppointmentDialog from "components/dialog/FinishAppointmentDialog.vue";
+import EditAppointmentDialog from "components/dialog/EditAppointmentDialog.vue";
+import { fetchUserFromSearch } from "../composables/useUserFromSearch";
+import { fetchAvailableBookingTimeSlots } from "../composables/useAvailableBookingTime";
+
 import {
   useQuasar,
   QDialog,
@@ -1329,8 +843,6 @@ import {
   QCardActions,
   QBtn,
 } from "quasar";
-import { id } from "element-plus/es/locales.mjs";
-import App from "src/App.vue";
 
 const $q = useQuasar();
 interface Event {
@@ -1381,6 +893,7 @@ const serviceOptions = ref<{ id: number; name: string; duration: Number }[]>(
 const staffOptions = ref<{ id: number; name: string }[]>([]);
 
 onMounted(() => {
+  fetchSystemSetting();
   fetchAppointments();
   fetchServiceOptions();
   fetchStaffList();
@@ -1544,31 +1057,25 @@ async function fetchServiceOptions() {
 
 async function fetchAvailableBookingTime(date: string) {
   try {
-    let formattedDate = new Date(date);
-    const day = String(formattedDate.getDate()).padStart(2, "0");
-    const month = String(formattedDate.getMonth() + 1).padStart(2, "0");
-    const year = formattedDate.getFullYear();
-
     let url = "/api/get-unavailable-time-from-date";
+
     if (selectedStaff.value.id !== 0) {
       url = "/api/get-unavailable-time-from-staff";
     }
     const response = await api.get(url, {
       params: {
-        date: `${year}/${month}/${day}`,
+        date: date,
         staff_id: selectedStaff.value.id,
       },
     });
+
     if (response.data.no_schedule) {
       available_booking_time.value = [];
       return;
     }
     const minTime = response.data.start_time;
     const maxTime = response.data.end_time;
-    const unavailable_booking_time = response.data.unavilable_time;
-
-    console.log("Unavailable booking times:", unavailable_booking_time);
-
+    const unavailable_booking_time = response.data.unavailable_time;
     const allTimes = [];
     const startTime = new Date(`1970-01-01T${minTime}:00`);
     const endTime = new Date(`1970-01-01T${maxTime}:00`);
@@ -1580,7 +1087,7 @@ async function fetchAvailableBookingTime(date: string) {
     ) {
       allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
     }
-    // Check the time  duration
+    // Check the time duration
     let duration = addAppointmentForm.value.customer_service[0].service
       ? serviceOptions.value.filter(
           (service) =>
@@ -1588,7 +1095,7 @@ async function fetchAvailableBookingTime(date: string) {
             addAppointmentForm.value.customer_service[0].service.id
         )[0].duration
       : 0;
-    if (duration === 0 && editEventDialog.value.visible) {
+    if (duration === 0 && showEditEventDialog.value) {
       duration = editEventForm.value.service.duration;
     }
     // Filter out unavailable times
@@ -1640,6 +1147,7 @@ function getEventsByStaff(date: string, staffId: number): Event[] {
     eventsMap.value[date]?.filter((event) => event.staff_id === staffId) || []
   );
 }
+
 function badgeClasses(event: Event, type: string) {
   const isHeader = type === "header";
   return {
@@ -1737,6 +1245,7 @@ const selectedStaff = ref({
   id: 0,
   name: "Any therapist",
 });
+
 const selectedTime = ref("");
 
 function onClickTime(data: Timestamp) {
@@ -1749,11 +1258,9 @@ function onClickTime(data: Timestamp) {
   addAppointmentForm.value.booking_time = selectedTime.value + "0";
   showAddAppointmentDialog();
 }
-
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
 }
-
 function onDragStart(e: DragEvent, item: DragItem) {
   console.info("onDragStart called");
   if (e.dataTransfer) {
@@ -1762,34 +1269,28 @@ function onDragStart(e: DragEvent, item: DragItem) {
     e.dataTransfer.setData("ID", String(item.id));
   }
 }
-
 function onDragEnter(e: DragEvent, type: string, { scope }: Scope) {
   console.info("onDragEnter", type, scope);
   e.preventDefault();
   return true;
 }
-
 function onDragOver(e: DragEvent, type: string, { scope }: Scope) {
   console.info("onDragOver", type, scope);
   e.preventDefault();
   return true;
 }
-
 function onDragLeave(_e: DragEvent, type: string, { scope }: Scope) {
   console.info("onDragLeave", type, scope);
   return false;
 }
-
 interface DropEvent extends CustomDragEvent {
   dataTransfer: DataTransfer;
 }
-
 interface DropScope extends Scope {
   timestamp: Timestamp;
   staff_id: number;
   staff_name: string;
 }
-
 async function onDrop(
   e: DropEvent,
   type: string,
@@ -1830,6 +1331,7 @@ async function onDrop(
   return false;
 }
 
+// Add Appointment
 const addAppointmentDialog = ref({ visible: false, tab: "customer" });
 
 const addAppointmentForm = ref({
@@ -1947,6 +1449,7 @@ async function addAppointment() {
   }
 }
 
+// Take a Break
 const takeBreakDialog = ref({
   visible: false,
   selectedDuration: null as number | null,
@@ -2040,7 +1543,8 @@ async function confirmTakeBreak() {
   fetchAppointments(); // Refresh appointments after taking a break
 }
 
-const editEventDialog = ref({ visible: false });
+// Edit Appointment Event
+const showEditEventDialog = ref(false);
 
 const editEventForm = ref({
   id: 0,
@@ -2057,35 +1561,6 @@ const editEventForm = ref({
   customer_phone: "",
   customer_email: "",
 });
-
-const editTakeBreakDialog = ref({
-  id: 0,
-  visible: false,
-  payload: {},
-});
-
-function openEditTakeBreakDialog() {
-  editTakeBreakDialog.value.visible = true;
-  editTakeBreakDialog.value.id = editEventForm.value.id;
-  editTakeBreakDialog.value.payload = {
-    service_duration: 0,
-    time: editEventForm.value.booking_time,
-    date: editEventForm.value.booking_date,
-  };
-}
-async function saveEditedBreakEvent() {
-  const payload = { ...editTakeBreakDialog.value.payload };
-  await api.put(
-    `/api/service-appointments/${editTakeBreakDialog.value.id}`,
-    payload
-  );
-  editTakeBreakDialog.value = {
-    id: 0,
-    visible: false,
-    payload: {},
-  };
-  fetchAppointments();
-}
 
 function openEditEventDialog(event: Event) {
   selectedStaff.value.id = event.staff_id;
@@ -2112,20 +1587,19 @@ function openEditEventDialog(event: Event) {
     customer_email: event.customer_email,
     status: event.status,
   };
+
   if (event.status == "break") {
     openEditTakeBreakDialog();
-  } else {
+  }
+  else {
     fetchAvailableBookingTime(event.date);
-    editEventDialog.value.visible = true;
+    showEditEventDialog.value = true;
   }
 }
 
-async function saveEditedEvent() {
+function editedEvent() {
   try {
-    editEventForm.value.staff = selectedStaff.value;
-    const payload = { ...editEventForm.value };
-    await api.put(`/api/appointments/${payload.appointment_id}`, payload);
-    editEventDialog.value.visible = false;
+    showEditEventDialog.value = false;
     editEventForm.value = {
       id: 0,
       appointment_id: 0,
@@ -2151,26 +1625,59 @@ async function saveEditedEvent() {
   }
 }
 
+// Edit Break
+const showEditBreakEventDialog = ref(false);
+function openEditTakeBreakDialog() {
+  showEditBreakEventDialog.value  = true;
+}
+
+// Customer History
+const customerHistory = ref([]);
+
 const user_search = ref("");
 const foundUsers = ref<{ id: number; name: string; phone: string }[]>([]);
 
 const selectUserFromSearch = async () => {
-  foundUsers.value = [];
-  try {
-    const response = await api.get("/api/search-user-by-field", {
-      params: { search: user_search.value },
-    });
-    if (response.data.length > 0) {
-      foundUsers.value = response.data.map((user) => ({
-        ...user,
-      }));
-    }
-  } catch (error) {
-    console.error("Error fetching users:", error);
-  }
+    foundUsers.value = await fetchUserFromSearch(user_search.value);
 };
 
-const startAppointment = async (event: Event) => {
+async function fetchCustomerHistory(userId: number) {
+  const response = await api.get("/api/getUserBookingHistory", {
+    params: { id: userId },
+  });
+  console.log("Customer History:", response.data);
+  customerHistory.value = response.data;
+  console.log("Customer History:", customerHistory);
+  $q.notify({
+    type: "info",
+    message: "Customer history fetched successfully",
+    position: "top",
+    timeout: 2000,
+  });
+}
+
+function autoFillName() {
+  const fullName = addAppointmentForm.value.customer_service[0].customer_name;
+  if (fullName) {
+    const nameParts = fullName.split(" ");
+    addAppointmentForm.value.customer_first_name = nameParts[0] || "";
+    addAppointmentForm.value.customer_last_name =
+      nameParts.slice(1).join(" ") || "";
+  }
+}
+
+function scrollToNow() {
+  if (calendar.value) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const currentTime = `${hours}:${minutes}`;
+    calendar.value.scrollToTime(currentTime, 350);
+  }
+}
+
+// Start appointment
+async function startAppointment(event: Event)  {
   // Show confirmation dialog before starting the appointment
   //get the current time
   const start_time = new Date();
@@ -2202,400 +1709,32 @@ const startAppointment = async (event: Event) => {
     .onCancel(() => {});
 };
 
-const finishAppointmentDialog = ref({
-  visible: false,
-  event: {} as Event,
-  paymentMethod: null as string | null,
-  paymentAmount: null as number | null,
-  start_time: "",
-  end_time: "",
-  note: "",
-  status: "",
-  splitPayments: [] as { method: string; amount: number }[],
-});
-
-const paymentMethods = ref([
-  {
-    label: "Eftpos",
-    value: "eft_pos",
-    icon: "credit_card",
-  },
-  { label: "Cash", value: "cash", icon: "o_payments" },
-  {
-    label: "Bank Transfer",
-    value: "bank_transfer",
-    icon: "o_paid",
-  },
-  // {
-  //   label: "Gift card",
-  //   value: "gift_card",
-  //   icon: "redeem",
-  // },
-  {
-    label: "Hicaps",
-    value: "hicaps",
-    icon: "o_account_balance",
-  },
-  {
-    label: "Split Payment",
-    value: "split_payment",
-    icon: "o_price_change",
-  },
-  {
-    label: "Unpaid",
-    value: "unpaid",
-    icon: "money_off",
-  },
-]);
-
-function handlePaymentMethodChange(value: string) {
-  if (value === "unpaid") {
-    finishAppointmentDialog.value.paymentAmount = 0;
-  } else if (value === "split_payment") {
-    finishAppointmentDialog.value.splitPayments = [{ method: "", amount: 0 }];
-  } else {
-    finishAppointmentDialog.value.paymentAmount =
-      finishAppointmentDialog.value.event.service_price;
-    finishAppointmentDialog.value.splitPayments = [];
-  }
+// Finish appointment
+const clickedEvent = ref(null);
+const showFinishAppointmentDialog = ref(false);
+function finishAppointment(event: Event) {
+  clickedEvent.value = event;
+  showFinishAppointmentDialog.value = true;
 }
 
-function addSplitPayment() {
-  finishAppointmentDialog.value.splitPayments.push({ method: "", amount: 0 });
-}
+// Sms Related
+const reminder_msg_template = ref("");
+const showSendSmsDialog = ref(false);
 
-function removeSplitPayment(index: number) {
-  finishAppointmentDialog.value.splitPayments.splice(index, 1);
-}
-
-function openFinishAppointmentDialog(event: Event) {
-  const start_time = new Date();
-  const hours = String(start_time.getHours()).padStart(2, "0");
-  const minutes = String(start_time.getMinutes()).padStart(2, "0");
-  const formattedTime = `${hours}:${minutes}`;
-  finishAppointmentDialog.value.event = event;
-  if (event.actual_start_time) {
-    finishAppointmentDialog.value.actual_start_time = event.actual_start_time;
-  } else {
-    finishAppointmentDialog.value.actual_start_time = event.time;
-  }
-  finishAppointmentDialog.value.actual_end_time = formattedTime;
-  finishAppointmentDialog.value.paymentMethod = "eft_pos";
-  finishAppointmentDialog.value.paymentAmount = event.service_price;
-  finishAppointmentDialog.value.visible = true;
-}
-
-async function confirmFinishAppointment() {
-  if (!finishAppointmentDialog.value.paymentMethod) {
-    $q.notify({
-      type: "negative",
-      message: "Please select a payment method.",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-  //check if the selected date is not today
-  if (selectedDate.value != today()) {
-    $q.notify({
-      type: "negative",
-      message: "You can only finish the appointment on today.",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-  try {
-    // Check if payment method is split_payment
-    if (finishAppointmentDialog.value.paymentMethod === "split_payment") {
-      // Check if all split payments have a method and amount
-      for (const payment of finishAppointmentDialog.value.splitPayments) {
-        if (!payment.method || payment.amount <= 0) {
-          $q.notify({
-            type: "negative",
-            message: "Please fill in all split payment details.",
-            position: "top",
-            timeout: 2000,
-          });
-          return;
-        }
-      }
-      if (
-        finishAppointmentDialog.value.splitPayments.reduce(
-          (sum, payment) => sum + payment.amount,
-          0
-        ) !== finishAppointmentDialog.value.event.service_price
-      ) {
-        $q.notify({
-          type: "negative",
-          message: "Split payments do not match the total amount.",
-          position: "top",
-          timeout: 2000,
-        });
-        return;
-      }
-      // Check if split_payment has unpaid method
-      const hasUnpaid = finishAppointmentDialog.value.splitPayments.some(
-        (payment) => payment.method.value === "unpaid"
-      );
-      finishAppointmentDialog.value.status = hasUnpaid
-        ? "Unsettled"
-        : "Completed";
-      //paymentAmount is the total paid amount of split payments except unpaid
-      finishAppointmentDialog.value.paymentAmount =
-        finishAppointmentDialog.value.splitPayments.reduce(
-          (sum, payment) =>
-            payment.method.value !== "unpaid" ? sum + payment.amount : sum,
-          0
-        );
-    } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
-      finishAppointmentDialog.value.status = "Unsettled";
-    } else {
-      finishAppointmentDialog.value.status = "Completed";
-    }
-
-    const payload = {
-      appointment_id: finishAppointmentDialog.value.event.appointment_id,
-      order_status: finishAppointmentDialog.value.status,
-      total_amount: finishAppointmentDialog.value.event.service_price,
-      actual_start_time:
-        selectedDate.value +
-        " " +
-        finishAppointmentDialog.value.actual_start_time,
-      actual_end_time:
-        selectedDate.value +
-        " " +
-        finishAppointmentDialog.value.actual_end_time,
-      payment_note: finishAppointmentDialog.value.note,
-      payment_method: finishAppointmentDialog.value.paymentMethod,
-      paid_amount: finishAppointmentDialog.value.paymentAmount,
-      operator_id: finishAppointmentDialog.value.event.staff_id,
-      operator_name: finishAppointmentDialog.value.event.staff_name,
-      split_payment:
-        finishAppointmentDialog.value.paymentMethod === "split_payment"
-          ? finishAppointmentDialog.value.splitPayments
-          : [],
-    };
-    await api.post(`/api/orders`, payload);
-    $q.notify({
-      type: "positive",
-      message: "Appointment Comfirmed Successfully",
-      position: "top",
-      timeout: 2000,
-    });
-    finishAppointmentDialog.value.visible = false;
-    fetchAppointments(); // Refresh appointments after finishing
-  } catch (error) {
-    console.error("Error finishing appointment:", error);
-    $q.notify({
-      type: "negative",
-      message: "Failed to finish the appointment. Please try again.",
-      position: "top",
-      timeout: 2000,
-    });
-  }
-}
-
-const finishAppointment = async (event: Event) => {
-  openFinishAppointmentDialog(event);
-};
-
-async function deleteAppointment() {
-  try {
-    // Show confirmation dialog
-    $q.dialog({
-      title: "Delete Appointment",
-      message: "Are you sure you want to delete this appointment?",
-      cancel: true,
-      persistent: true,
-    })
-      .onOk(() => {
-        const response = api.delete(
-          `/api/appointments/${editEventForm.value.appointment_id}`
-        );
-        if (response.status === 200) {
-          $q.notify({
-            type: "positive",
-            message: "Appointment deleted successfully",
-            position: "top",
-            timeout: 2000,
-          });
-        }
-        editEventDialog.value.visible = false;
-        fetchAppointments();
-      })
-      .onCancel(() => {
-        console.log("Delete appointment canceled");
-      });
-  } catch (error) {
-    console.error("Error deleting appointment:", error);
-    $q.notify({
-      type: "negative",
-      message: "Failed to delete the appointment. Please try again.",
-      position: "top",
-      timeout: 2000,
-    });
-  }
-}
-
-function scrollToNow() {
-  if (calendar.value) {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const currentTime = `${hours}:${minutes}`;
-    calendar.value.scrollToTime(currentTime, 350);
-  }
-}
-
-const customerHistory = ref([]);
-
-async function fetchCustomerHistory(userId: number) {
-  const response = await api.get("/api/getUserBookingHistory", {
-    params: { id: userId },
-  });
-  console.log("Customer History:", response.data);
-  customerHistory.value = response.data;
-  console.log("Customer History:", customerHistory);
-  $q.notify({
-    type: "info",
-    message: "Customer history fetched successfully",
-    position: "top",
-    timeout: 2000,
-  });
-}
-
-function autoFillName() {
-  const fullName = addAppointmentForm.value.customer_service[0].customer_name;
-  if (fullName) {
-    const nameParts = fullName.split(" ");
-    addAppointmentForm.value.customer_first_name = nameParts[0] || "";
-    addAppointmentForm.value.customer_last_name =
-      nameParts.slice(1).join(" ") || "";
-  }
-}
-
-const sendSmsDialog = ref({
-  visible: false,
-  phone: "",
-  message: "",
-  schedule_time: "", // Added schedule_time field
-  is_schedule_time: false,
-});
-
-async function openSendSmsDialog() {
-  editEventDialog.value.visible = false;
-  sendSmsDialog.value.phone = editEventForm.value.customer_phone;
-  sendSmsDialog.value.schedule_time =
-    selectedDate.value + " " + editEventForm.value.booking_time + ":00";
-  sendSmsDialog.value.visible = true;
+async function fetchSystemSetting() {
   const response = await api.get("/api/getSystemSettingByKey", {
     params: {
       key: "booking_reminder_msg",
     },
   });
-  const reminder_msg_template = response.data.value;
-  sendSmsDialog.value.message = formatMassage(
-    reminder_msg_template,
-    editEventForm.value
-  );
+  reminder_msg_template.value = response.data.value;
 }
 
-function formatMassage(
-  template: string,
-  event: typeof editEventForm.value
-): string {
-  const date = new Date(event.booking_date);
-  const formattedDate = date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
-  const formattedTime = event.booking_time
-    ? new Date(`1970-01-01T${event.booking_time}:00`).toLocaleTimeString(
-        "en-US",
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      )
-    : "";
-
-  return template
-    .replace("{first_name}", event.customer_first_name || "")
-    .replace("{last_name}", event.customer_last_name || "")
-    .replace("{date}", formattedDate)
-    .replace("{time}", formattedTime)
-    .replace("{service}", event.service.name || "")
-    .replace("{duration}", `${event.service.duration || 0} minutes`)
-    .replace("{therapist}", event.staff.name || "Any Therapist");
+function openSendSmsDialog() {
+  showEditEventDialog.value = false;
+  showSendSmsDialog.value = true;
 }
 
-function closeSendSmsDialog() {
-  sendSmsDialog.value.visible = false;
-  sendSmsDialog.value.phone = "";
-  sendSmsDialog.value.message = "";
-  sendSmsDialog.value.schedule_time = ""; // Reset schedule_time
-  sendSmsDialog.value.is_schedule_time = false; // Reset schedule_time
-}
-
-function sendSms() {
-  $q.dialog({
-    title: "Confirm Send SMS",
-    message: "Are you sure to send this SMS?",
-    cancel: true,
-    persistent: true,
-  })
-    .onOk(async () => {
-      if (!sendSmsDialog.value.phone || !sendSmsDialog.value.message) {
-        $q.notify({
-          type: "negative",
-          message: "Phone and message cannot be empty.",
-          position: "top",
-          timeout: 2000,
-        });
-        return;
-      }
-      try {
-        const payload = {
-          appointment_id: editEventForm.value.appointment_id,
-          customer_name: editEventForm.value.customer_name,
-          phone_number: sendSmsDialog.value.phone,
-          message: sendSmsDialog.value.message,
-          is_schedule_time: sendSmsDialog.value.is_schedule_time,
-          schedule_time: sendSmsDialog.value.schedule_time, // Include schedule_time in payload
-        };
-        const response = await api.post("/api/sendSms", payload);
-        if (response.status === 200) {
-          $q.notify({
-            type: "positive",
-            message: "SMS sent successfully.",
-            position: "top",
-            timeout: 2000,
-          });
-        } else {
-          $q.notify({
-            type: "negative",
-            message: "Failed to send SMS.",
-            position: "top",
-            timeout: 2000,
-          });
-        }
-        closeSendSmsDialog();
-      } catch (error) {
-        console.error("Error sending SMS:", error);
-        $q.notify({
-          type: "negative",
-          message: "Failed to send SMS. Please try again.",
-          position: "top",
-          timeout: 2000,
-        });
-      }
-    })
-    .onCancel(() => {
-    });
-}
 </script>
 
 <style lang="scss" scoped>
