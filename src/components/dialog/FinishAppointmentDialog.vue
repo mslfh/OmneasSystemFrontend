@@ -366,8 +366,8 @@ async function confirmFinishAppointment() {
         (payment) => payment.method.value === "unpaid"
       );
       finishAppointmentDialog.value.status = hasUnpaid
-        ? "Unsettled"
-        : "Completed";
+        ? "pending"
+        : "paid";
       //paymentAmount is the total paid amount of split payments except unpaid
       finishAppointmentDialog.value.paymentAmount =
         finishAppointmentDialog.value.splitPayments.reduce(
@@ -376,9 +376,9 @@ async function confirmFinishAppointment() {
           0
         );
     } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
-      finishAppointmentDialog.value.status = "Unsettled";
+      finishAppointmentDialog.value.status = "pending";
     } else {
-      finishAppointmentDialog.value.status = "Completed";
+      finishAppointmentDialog.value.status = "paid";
     }
 
     const payload = {

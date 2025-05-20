@@ -1,6 +1,7 @@
 <template>
   <q-dialog
     v-model="editTakeBreakDialog.visible"
+    position="bottom"
     transition-show="scale"
     transition-hide="scale"
     @hide="emit('close')"
@@ -48,9 +49,9 @@
       <q-card-actions align="right">
         <q-btn
           flat
-          label="Cancel"
+          label="Delete"
           color="negative"
-          @click="emit('close');"
+          @click="deleteBreak()"
         />
         <q-btn
           flat
@@ -83,7 +84,7 @@ const editTakeBreakDialog = ref({
   payload: {},
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close","delete"]);
 
 onMounted(() => {
   editTakeBreakDialog.value.visible = true;
@@ -116,5 +117,41 @@ async function saveEditedBreakEvent() {
     payload: {},
   };
   emit("close");
+}
+
+async function deleteBreak() {
+  try {
+    // Show confirmation dialog
+    $q.dialog({
+      title: "Delete Break",
+      message: "Are you sure you want to cancel this break?",
+      cancel: true,
+      persistent: true,
+    })
+      .onOk(async () => {
+        const response = await api.delete(
+          `/api/appointments/${props.editEventForm.appointment_id}`
+        );
+        if (response.status === 200) {
+          $q.notify({
+            type: "positive",
+            message: "Break deleted successfully",
+            position: "top",
+            timeout: 2000,
+          });
+        }
+        emit("delete");
+      })
+      .onCancel(() => {
+      });
+  } catch (error) {
+    console.error("Error deleting Break:", error);
+    $q.notify({
+      type: "negative",
+      message: "Failed to delete the Break. Please try again.",
+      position: "top",
+      timeout: 2000,
+    });
+  }
 }
 </script>

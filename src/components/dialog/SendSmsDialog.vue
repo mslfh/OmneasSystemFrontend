@@ -173,7 +173,6 @@ function formatMassage(
     .replace("{therapist}", event.staff.name || "Any Therapist");
 }
 
-
 function sendSms() {
   $q.dialog({
     title: "Confirm Send SMS",

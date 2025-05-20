@@ -170,11 +170,7 @@
                     <q-icon size="sm" name="o_alarm" /> Select Time
                   </div>
                   <!-- date picker -->
-                  <q-input
-                    readonly
-                    filled
-                    v-model="date"
-                  >
+                  <q-input readonly filled v-model="date">
                     <template v-slot:append>
                       <q-icon name="event" class="cursor-pointer">
                         <q-popup-proxy
@@ -186,7 +182,7 @@
                           <q-date
                             v-model="date"
                             :landscape="$q.screen.gt.xs"
-                             mask="YYYY-MM-DD"
+                            mask="YYYY-MM-DD"
                             @update:model-value="
                               async () => {
                                 await refreshStaff();
@@ -524,7 +520,10 @@
                 :header-nav="step > 4"
               >
                 <div class="row">
-                  <q-card v-if="$q.screen.lt.sm" class="bg-grey-1 no-shadow">
+                  <q-card
+                    v-if="$q.screen.lt.sm"
+                    class="col-12 bg-grey-1 no-shadow"
+                  >
                     <q-card-section horizontal outlined>
                       <q-card-section>
                         <div class="text-subtitle text-weight-bold">
@@ -534,12 +533,18 @@
                           >4.9</q-label
                         >
                         <q-rating
+                          class="q-ml-xs"
                           :value="ratingModel"
                           color="orange-6"
                           readonly
                         />
                         <div class="text-caption text-grey-9 q-mt-xs">
                           Shop 2, 198-216 Charles Street, Launceston
+                        </div>
+                        <div
+                          class=" text-caption text-grey-9 q-mt-xs"
+                        >
+                          +61 466 605 855
                         </div>
                       </q-card-section>
                     </q-card-section>
@@ -739,8 +744,8 @@
     </div>
     <div v-if="!$q.screen.lt.sm" class="col-2"></div>
 
-    <!-- <q-inner-loading :showing="loading_visible">
-    </q-inner-loading> -->
+    <q-inner-loading :showing="loading_visible">
+    </q-inner-loading>
   </div>
 </template>
 
@@ -868,7 +873,7 @@ const fetchAvailableTime = async () => {
             },
           }
         );
-        unavailable_booking_time = response.data.unavilable_time;
+        unavailable_booking_time = response.data.unavailable_time;
         minTime = response.data.start_time;
         maxTime = response.data.end_time;
         available_booking_time = available_booking_time.concat(
@@ -890,7 +895,7 @@ const fetchAvailableTime = async () => {
           },
         }
       );
-      unavailable_booking_time = response.data.unavilable_time;
+      unavailable_booking_time = response.data.unavailable_time;
       minTime = response.data.start_time;
       maxTime = response.data.end_time;
       available_booking_time = getAvailableBookingTime(
@@ -976,7 +981,6 @@ const name = ref({});
 const router = useRouter();
 const tick_group = ref([]);
 
-
 const loading_visible = ref(false);
 const submitAppointment = async () => {
   try {
@@ -1026,10 +1030,30 @@ const submitAppointment = async () => {
         },
       });
     } else {
-      console.error("Failed to create appointment:", response.data);
+      step.value = 1;
+      $q.notify({
+        message: "Sorry! Failed to book appointment, please call us to check.",
+        color: "red",
+        icon: "error",
+        position: "top",
+        timeout: 5000,
+      });
+      router.push({
+        path: "/",
+      });
     }
   } catch (error) {
-    console.error("Error submitting appointment:", error);
+    step.value = 1;
+    $q.notify({
+      message: "Sorry! Failed to book, please call us to check.",
+      color: "red",
+      icon: "error",
+      position: "top",
+      timeout: 5000,
+    });
+    router.push({
+      path: "/",
+    });
   }
 };
 

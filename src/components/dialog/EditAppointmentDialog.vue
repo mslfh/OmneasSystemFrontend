@@ -3,37 +3,36 @@
     v-model="editEventDialog"
     transition-show="scale"
     transition-hide="scale"
-    position="bottom"
     @hide="emit('close')"
   >
     <q-card :style="$q.screen.gt.md ? 'min-width: 850px' : 'min-width: 100%'">
       <q-card-section horizontal class="q-ma-sm">
-        <div class="text-h6">Edit Event</div>
+        <div class="text-h6 text-grey-8">Edit Event</div>
         <q-space />
         <q-btn flat round icon="more_vert" color="grey">
           <q-menu>
             <q-list style="min-width: 100px">
-              <q-item clickable v-close-popup>
-                <q-btn
-                  color="teal-5"
-                  size="sm"
-                  dense
-                  flat
-                  icon="send"
-                  label="Message"
-                  @click="emit('openSms')"
-                />
+              <q-item
+                clickable
+                v-close-popup
+                @click="emit('openSms')"
+                class="text-teal-5"
+              >
+                <q-item-label class="q-ma-sm">
+                  <q-icon size="xs" name="send" />
+                  MESSAGE
+                </q-item-label>
               </q-item>
-              <q-item clickable v-close-popup>
-                <q-btn
-                  size="sm"
-                  dense
-                  flat
-                  color="red-4"
-                  icon="delete"
-                  label="Delete"
-                  @click="deleteAppointment()"
-                />
+              <q-item
+                clickable
+                v-close-popup
+                @click="deleteAppointment()"
+                class="text-red-4"
+              >
+                <q-item-label class="q-ma-sm">
+                  <q-icon size="xs" name="delete" />
+                  DELETE
+                </q-item-label>
               </q-item>
             </q-list>
           </q-menu>
@@ -220,6 +219,7 @@ import { ref, defineProps, onMounted, defineEmits } from "vue";
 import { useQuasar } from "quasar";
 import { api } from "boot/axios";
 import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
+import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBookingTime";
 
 const props = defineProps({
   editEventForm: {
@@ -230,11 +230,11 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  staffOptions: {
-    type: Object,
+  selectedDate: {
+    type: String,
     required: true,
   },
-  available_booking_time: {
+  staffOptions: {
     type: Object,
     required: true,
   },
@@ -251,15 +251,47 @@ const $q = useQuasar();
 const editEventForm = ref(props.editEventForm);
 const selectedStaff = ref(props.selectedStaff);
 const staffOptions = ref(props.staffOptions);
-const available_booking_time = ref(props.available_booking_time);
 const serviceOptions = ref(props.serviceOptions);
 
+const available_booking_time = ref<string[]>([]);
 const user_search = ref("");
 const foundUsers = ref([]);
 const editEventDialog = ref(true);
 
 async function selectUserFromSearch() {
   foundUsers.value = await fetchUserFromSearch(user_search.value);
+}
+
+onMounted(() => {
+  fetchAvailableBookingTime();
+});
+
+async function fetchAvailableBookingTime(date: string) {
+  // try {
+  const duration = editEventForm.value.service.duration;
+
+  // Filter out unavailable times
+  const times = await fetchAvailableBookingTimeSlots({
+    date: props.selectedDate,
+    staffId: selectedStaff.value.id,
+    duration,
+  });
+
+  available_booking_time.value = times;
+  if (times.length === 0) {
+    $q.notify({
+      type: "warning",
+      color: "orange-4",
+      message: "No available booking time found.",
+    });
+  }
+  // } catch (error) {
+  //   available_booking_time.value = [];
+  //   $q.notify({
+  //     type: "negative",
+  //     message: "Failed to load booking time.",
+  //   });
+  // }
 }
 
 async function saveEditedEvent() {
@@ -282,7 +314,7 @@ async function deleteAppointment() {
       cancel: true,
       persistent: true,
     })
-      .onOk( async () => {
+      .onOk(async () => {
         const response = await api.delete(
           `/api/appointments/${editEventForm.value.appointment_id}`
         );

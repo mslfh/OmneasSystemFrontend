@@ -65,9 +65,8 @@ const zoomLeftDrawer = () => {
   <q-layout view="lHh Lpr lFf">
     <q-header
       elevated
-      class="bg-white shadow_custom q-mx-lg q-mt-md q-py-sm"
+      class="bg-white absolute-top q-mx-lg q-mt-md q-py-sm "
       style="right: 8px; border-radius: 4px"
-      v-if="!$q.fullscreen.isActive"
     >
       <q-toolbar>
         <q-btn
@@ -88,7 +87,10 @@ const zoomLeftDrawer = () => {
             flat
             color="grey-8"
             :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
-            @click="$q.fullscreen.toggle()"
+            @click="() => {
+              zoomDrawer = true;
+              $q.fullscreen.toggle();
+            }"
             v-if="$q.screen.gt.sm"
           >
           </q-btn>
@@ -276,7 +278,7 @@ const zoomLeftDrawer = () => {
     </q-drawer>
 
     <q-page-container class="bg-grey-2">
-      <q-page class="q-pa-lg q-mt-md">
+      <q-page :class=" $q.fullscreen.isActive ? 'q-pa-lg ' : 'q-pa-lg q-mt-md'">
         <router-view />
       </q-page>
     </q-page-container>

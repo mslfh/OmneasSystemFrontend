@@ -1,18 +1,13 @@
 <template>
   <div>
     <q-btn
-      class="float-left q-ma-md"
+      :class="$q.screen.gt.md ? 'float-left q-ma-md' : 'q-mb-md'"
       label="Add Appointment"
       :dense="$q.screen.lt.md"
       color="blue-8"
-      @click="
-        addAppointmentForm.booking_date = selectedDate;
-        addAppointmentForm.booking_time = '';
-        addAppointmentForm.customer_service[0].staff = '';
-        addAppointmentForm.customer_service[0].service = '';
-        showAddAppointmentDialog();
-      "
+      @click="showAddAppointmentDialog()"
     />
+
     <!-- hint -->
     <div
       v-if="$q.screen.gt.md"
@@ -55,8 +50,11 @@
       {{ currentMonth }}
     </div>
 
+    <!-- navigation bar -->
+    <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
+
     <!-- zoom controls -->
-    <div class="float-right">
+    <div :class="$q.screen.gt.md ? 'float-right' : 'absolute q-ml-md'">
       <q-icon
         size="sm"
         name="zoom_out"
@@ -73,26 +71,25 @@
       />
     </div>
 
-    <!-- navigation bar -->
-    <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-
     <!-- calendar -->
     <div class="row">
       <!-- Waitting List -->
-      <div class="q-mx-md-sm q-mx-sm-none col-2">
+      <div
+        :class="
+          $q.screen.gt.md
+            ? 'q-mx-md-sm q-mx-sm-none col-2'
+            : 'q-mx-md-sm q-mx-sm-none col-12'
+        "
+      >
         <div
-          :class="
-            $q.screen.gt.md
-              ? 'text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center'
-              : 'text-subtitle3 text-weight-bold q-my-md text-brown-9 text-center'
-          "
+          class="text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center"
         >
           <q-btn dense flat color="grey-8" icon="calendar_month" size="md">
             <q-badge color="deep-orange" text-color="white" floating>
               {{ dragItems.length }}
             </q-badge>
           </q-btn>
-          Waitting List
+          <q-lable> Waitting List </q-lable>
         </div>
         <ul class="column">
           <li
@@ -118,7 +115,10 @@
         </ul>
       </div>
 
-      <div class="col-10" style="display: flex; height: 85vh">
+      <div
+        :class="$q.screen.gt.md ? 'col-10' : 'col-12'"
+        style="display: flex; height: 85vh"
+      >
         <q-calendar-day
           ref="calendar"
           v-model="selectedDate"
@@ -283,7 +283,7 @@
                       >
                         <q-icon
                           size="13px"
-                          v-if="!event.tag && event.status != 'break'"
+                          v-if="!event.tag && event.type != 'break'"
                           color="white"
                           name="loyalty"
                         />
@@ -311,10 +311,7 @@
                     </q-item-label>
                     <q-chip
                       size="10px"
-                      v-if="
-                        event.status === 'booked' ||
-                        event.status === 'unassigned'
-                      "
+                      v-if="event.type != 'break' && event.status === 'booked'"
                       class="shadow-up-1"
                       outline
                       color="white"
@@ -327,9 +324,7 @@
                     </q-chip>
                     <q-chip
                       size="10px"
-                      v-if="
-                        event.status != 'break' && event.status != 'finished'
-                      "
+                      v-if="event.type != 'break' && event.status != 'finished'"
                       class="shadow-up-2"
                       outline
                       text-color="deep-orange-1"
@@ -386,400 +381,43 @@
   </q-dialog>
 
   <!-- Add Appointment Dialog -->
-  <q-dialog v-model="addAppointmentDialog.visible">
-    <q-card :style="$q.screen.gt.md ? 'min-width: 1000px' : 'min-width: 100%'">
-      <div class="row">
-        <!--Events -->
-        <div :class="$q.screen.gt.md ? 'col-2' : 'col-12'">
-          <q-card-section>
-            <q-label style="color: goldenrod" class="text-h5 text-weight-bold">
-              <q-icon name="alarm" size="md" />
-              {{ addAppointmentForm.booking_time }}
-            </q-label>
-            <q-btn
-              v-if="$q.screen.gt.md"
-              dense
-              outline
-              style="color: goldenrod"
-              class="q-ma-md"
-              label="Add Appointment"
-            />
-            <q-btn
-              v-if="
-                addAppointmentForm.booking_time !== '' &&
-                addAppointmentForm.customer_service[0].service == ''
-              "
-              dense
-              outline
-              style="color: teal"
-              class="q-ma-md"
-              label="Take a break"
-              @click="showTakeBreakDialog"
-            />
-          </q-card-section>
-        </div>
-        <div :class="$q.screen.gt.md ? 'col-4 q-pr-md' : 'col-6 q-pl-xs'">
-          <div>
-            <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
-            <q-chip
-              v-for="staff in staffOptions"
-              :key="staff.id"
-              clickable
-              :color="selectedStaff.id === staff.id ? 'orange-2' : 'blue-2'"
-              @click="
-                () => {
-                  selectedStaff.id = staff.id;
-                  selectedStaff.name = staff.name;
-                  fetchAvailableBookingTime(addAppointmentForm.booking_date);
-                }
-              "
-            >
-              {{ staff.name }}
-            </q-chip>
-
-            <q-select
-              v-model="addAppointmentForm.customer_service[0].service"
-              :options="serviceOptions"
-              label="* Service"
-              option-value="id"
-              option-label="name"
-              clearable
-              @update:model-value="
-                fetchAvailableBookingTime(addAppointmentForm.booking_date)
-              "
-            />
-            <q-input
-              v-model="addAppointmentForm.booking_date"
-              label="Select Date"
-              mask="####-##-##"
-            >
-              <template v-slot:prepend>
-                <q-icon name="event" class="cursor-pointer">
-                  <q-popup-proxy
-                    cover
-                    transition-show="scale"
-                    transition-hide="scale"
-                  >
-                    <q-date
-                      v-model="addAppointmentForm.booking_date"
-                      mask="YYYY-MM-DD"
-                      @update:model-value="
-                        fetchAvailableBookingTime(
-                          addAppointmentForm.booking_date
-                        )
-                      "
-                    >
-                      <div class="row items-center justify-end">
-                        <q-btn
-                          v-close-popup
-                          label="Close"
-                          color="primary"
-                          flat
-                        />
-                      </div>
-                    </q-date>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
-            <q-label class="text-subtitle2 text-grey-9"> Booking Time</q-label>
-            <q-input
-              dense
-              v-model="addAppointmentForm.booking_time"
-              outlined
-              type="time"
-            />
-            <q-separator class="q-my-md" />
-            <q-scroll-area style="height: 250px">
-              <q-chip
-                v-for="item in available_booking_time"
-                :key="item"
-                clickable
-                :icon="
-                  addAppointmentForm.booking_time == item
-                    ? 'check_circle'
-                    : 'o_fiber_manual_record'
-                "
-                :dense="$q.screen.lt.md"
-                :color="
-                  addAppointmentForm.booking_time == item
-                    ? 'orange-3'
-                    : 'teal-1'
-                "
-                @click="addAppointmentForm.booking_time = item"
-                >{{ item }}</q-chip
-              >
-            </q-scroll-area>
-          </div>
-        </div>
-        <div :class="$q.screen.gt.md ? 'col-5' : 'col-6'">
-          <q-tabs v-model="addAppointmentDialog.tab" class="text-blue-8">
-            <q-tab name="customer" icon="person_add" label="Client" />
-            <q-tab name="history" icon="schedule" label="History" />
-          </q-tabs>
-          <q-separator />
-          <q-card-section v-if="addAppointmentDialog.tab === 'customer'">
-            <q-input
-              dense
-              rounded
-              v-model="user_search"
-              outlined
-              debounce="500"
-              placeholder="Find User by Name, Phone, or Email"
-              @keyup.enter="selectUserFromSearch"
-            >
-              <template v-slot:append>
-                <q-icon v-if="user_search === ''" name="search" />
-                <q-icon
-                  v-else
-                  name="clear"
-                  class="cursor-pointer"
-                  @click="user_search = ''"
-                />
-              </template>
-            </q-input>
-            <q-item-label
-              v-if="foundUsers.length == 0 && user_search !== ''"
-              class="text-caption"
-              >No data found</q-item-label
-            >
-            <q-scroll-area v-if="user_search !== ''" style="height: 100px">
-              <q-list>
-                <q-item
-                  v-for="user in foundUsers"
-                  :key="user.id"
-                  clickable
-                  @click="
-                    addAppointmentForm.customer_service[0].customer_name =
-                      user.name;
-                    addAppointmentForm.customer_first_name = user.first_name;
-                    addAppointmentForm.customer_last_name = user.last_name;
-                    addAppointmentForm.customer_email = user.email;
-                    addAppointmentForm.customer_phone = user.phone;
-                    user_search = '';
-                  "
-                >
-                  <q-item-section>
-                    <q-item-label>{{ user.name }}</q-item-label>
-                    <q-item-label caption>{{ user.phone }}</q-item-label>
-                    <q-item-label caption>{{ user.email }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-scroll-area>
-            <q-input
-              v-model="addAppointmentForm.customer_service[0].customer_name"
-              label="Customer Name"
-              @change="autoFillName"
-            />
-            <q-input
-              v-model="addAppointmentForm.customer_first_name"
-              label="First Name"
-            />
-            <q-input
-              v-model="addAppointmentForm.customer_last_name"
-              label="Last Name"
-            />
-            <q-input
-              v-model="addAppointmentForm.customer_email"
-              label="Email"
-            />
-            <q-input
-              v-model="addAppointmentForm.customer_phone"
-              label="Phone"
-            />
-            <q-input
-              v-model="addAppointmentForm.customer_service[0].comments"
-              label="Service Comments"
-            />
-            <q-label class="text-subtitle1 text-grey-8 text-weight-bold"
-              >Save Customer</q-label
-            >
-            <q-toggle
-              v-model="addAppointmentForm.is_first"
-              checked-icon="check"
-              color="deep-orange"
-              unchecked-icon="clear"
-            />
-          </q-card-section>
-          <q-card-section v-if="addAppointmentDialog.tab === 'history'">
-            <q-input
-              dense
-              rounded
-              v-model="user_search"
-              outlined
-              placeholder="Find History by Name, Phone, or Email"
-              @keyup.enter="selectUserFromSearch"
-            >
-              <template v-slot:append>
-                <q-icon v-if="user_search === ''" name="search" />
-                <q-icon
-                  v-else
-                  name="clear"
-                  class="cursor-pointer"
-                  @click="user_search = ''"
-                />
-              </template>
-            </q-input>
-            <q-item-label
-              v-if="foundUsers.length == 0 && user_search !== ''"
-              class="text-caption"
-              >No data found</q-item-label
-            >
-            <q-scroll-area v-if="user_search !== ''" style="height: 100px">
-              <q-list>
-                <q-item
-                  v-for="user in foundUsers"
-                  :key="user.id"
-                  clickable
-                  @click="
-                    addAppointmentForm.customer_service[0].customer_name =
-                      user.name;
-                    addAppointmentForm.customer_first_name = user.first_name;
-                    addAppointmentForm.customer_last_name = user.last_name;
-                    addAppointmentForm.customer_email = user.email;
-                    addAppointmentForm.customer_phone = user.phone;
-                    user_search = '';
-                    fetchCustomerHistory(user.id);
-                  "
-                >
-                  <q-item-section>
-                    <q-item-label>{{ user.name }}</q-item-label>
-                    <q-item-label caption>{{ user.phone }}</q-item-label>
-                    <q-item-label caption>{{ user.email }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-scroll-area>
-
-            <q-scroll-area class="q-pa-md" style="height: 420px">
-              <q-timeline
-                class="q-pa-none"
-                color="blue-3"
-                v-if="customerHistory.length > 0"
-              >
-                <q-timeline-entry
-                  v-for="event in customerHistory"
-                  :key="event.id"
-                >
-                  <div class="text-grey-8">
-                    <div>
-                      {{
-                        event.services[0].service_title +
-                        " | " +
-                        event.services[0].service_duration +
-                        " Min"
-                      }}
-                    </div>
-                    <div>{{ event.status }}</div>
-                    <div>{{ event.services[0].customer_name }}</div>
-                    <div>{{ event.services[0].staff_name }}</div>
-                  </div>
-                  <template v-slot:subtitle>
-                    <div class="row q-pa-none">
-                      <q-lable class="col-9">{{
-                        event.booking_time.slice(0, 16)
-                      }}</q-lable>
-                      <!-- <q-lable class="col-3 text-grey-8"> 2 days ago </q-lable> -->
-                    </div>
-                  </template>
-                </q-timeline-entry>
-              </q-timeline>
-            </q-scroll-area>
-          </q-card-section>
-        </div>
-      </div>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="addAppointmentDialog.visible = false"
-        />
-        <q-btn flat label="Add" color="positive" @click="addAppointment" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
-
-  <!-- Add a Break Dialog -->
-  <q-dialog v-model="takeBreakDialog.visible" seamless position="bottom">
-    <q-card>
-      <q-linear-progress :value="1.0" color="pink" />
-      <q-card-section>
-        <div class="text-h6">
-          Take a Break - {{ addAppointmentForm.booking_time }}
-        </div>
-        <q-radio
-          v-model="takeBreakDialog.selectedDuration"
-          val="10"
-          label="10 minutes"
-          @update:model-value="assumeBreakEvent(10)"
-        />
-        <q-radio
-          v-model="takeBreakDialog.selectedDuration"
-          val="20"
-          label="20 minutes"
-          @update:model-value="assumeBreakEvent(20)"
-        />
-        <q-radio
-          v-model="takeBreakDialog.selectedDuration"
-          val="30"
-          label="30 minutes"
-          @update:model-value="assumeBreakEvent(30)"
-        />
-        <q-input
-          v-model="takeBreakDialog.customDuration"
-          label="Custom Duration (minutes)"
-          type="number"
-          outlined
-          dense
-          @change="
-            takeBreakDialog.selectedDuration = null;
-            assumeBreakEvent(takeBreakDialog.customDuration);
-          "
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="
-            assumeBreakEvent(0);
-            takeBreakDialog.visible = false;
-          "
-        />
-        <q-btn
-          flat
-          label="Confirm"
-          color="positive"
-          @click="confirmTakeBreak"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <AddAppointmentDialog
+    v-if="showAddEventDialog"
+    :selectedStaff="selectedStaff"
+    :selectedDate="selectedDate"
+    :selectedTime="selectedTime"
+    :staffOptions="staffOptions"
+    :serviceOptions="serviceOptions"
+    @close="showAddEventDialog = false"
+    @addBreakEvent="handleAddBreakEvent"
+    @save="
+      () => {
+        showAddEventDialog = false;
+        fetchAppointments();
+      }
+    "
+  />
 
   <!-- Edit Event Dialog -->
   <EditAppointmentDialog
     v-if="showEditEventDialog"
     :editEventForm="editEventForm"
-    :selectedStaff = "selectedStaff"
-    :staffOptions = "staffOptions"
-    :available_booking_time = "available_booking_time"
-    @close="
-      showEditEventDialog = false;
-    "
+    :selectedStaff="selectedStaff"
+    :selectedDate="selectedDate"
+    :staffOptions="staffOptions"
+    :serviceOptions="serviceOptions"
+    @close="showEditEventDialog = false"
     @openSms="
       showEditEventDialog = false;
       showSendSmsDialog = true;
     "
-    @delelte = "
-     showEditEventDialog = false;
-      fetchAppointments();
+    @delete="
+      () => {
+        showEditEventDialog = false;
+        fetchAppointments();
+      }
     "
-    @save="
-     editedEvent();
-    "
+    @save="editedEvent()"
   />
 
   <!-- Edit Break Dialog -->
@@ -789,6 +427,12 @@
     @close="
       showEditBreakEventDialog = false;
       fetchAppointments();
+    "
+    @delete="
+      () => {
+        showEditBreakEventDialog = false;
+        fetchAppointments();
+      }
     "
   />
 
@@ -808,7 +452,7 @@
     v-if="showSendSmsDialog"
     :editEventForm="editEventForm"
     :selectedDate="selectedDate"
-    :reminder_msg_template = "reminder_msg_template"
+    :reminder_msg_template="reminder_msg_template"
     @close="showSendSmsDialog = false"
   />
 </template>
@@ -828,12 +472,15 @@ import "@quasar/quasar-ui-qcalendar/index.css";
 import { ref, computed, onMounted } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "components/NavigationBar.vue";
+
 import SendSmsDialog from "components/dialog/SendSmsDialog.vue";
 import EditBreakEventDialog from "components/dialog/EditBreakEventDialog.vue";
 import FinishAppointmentDialog from "components/dialog/FinishAppointmentDialog.vue";
 import EditAppointmentDialog from "components/dialog/EditAppointmentDialog.vue";
+import AddAppointmentDialog from "components/dialog/AddAppointmentDialog.vue";
+
 import { fetchUserFromSearch } from "../composables/useUserFromSearch";
-import { fetchAvailableBookingTimeSlots } from "../composables/useAvailableBookingTime";
+import type { AppointmentEvent } from "../types/appointment";
 
 import {
   useQuasar,
@@ -845,100 +492,24 @@ import {
 } from "quasar";
 
 const $q = useQuasar();
-interface Event {
-  id: number;
-  duration: number;
-  staff_id: number;
-  staff_name: string;
-  date: string;
-  time: string;
-  expected_end_time: string;
-  service_id: number;
-  service_title: string;
-  service_duration: number;
-  service_price: number;
-  customer_name: string;
-  comments: string;
-  bgcolor: string;
-  status: string;
-  appointment_id: number;
-  tag: string;
-  actual_start_time: string;
-  actual_end_time: string;
-}
-
 const calendar = ref<QCalendarDay>();
-const interval = ref(10); // Interval in minutes
-const intervalStart = computed(() =>
-  Math.floor((8 * 60 + 30) / interval.value)
-); // Start at 8:30 AM
-const intervalCount = computed(() => Math.ceil((11 * 60) / interval.value)); // Duration from 8:30 AM to 7:30 PM
-
-function increaseInterval() {
-  interval.value = Math.min(interval.value + 10, 30); // Limit max interval to 60 minutes
-}
-
-function decreaseInterval() {
-  interval.value = Math.max(interval.value - 10, 10); // Limit min interval to 5 minutes
-}
-
 const interval_height = ref(28);
-
-const selectedDate = ref(today());
-const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
 const available_booking_time = ref<string[]>([]);
+const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
+const staffOptions = ref<{ id: number; name: string }[]>([]);
 const serviceOptions = ref<{ id: number; name: string; duration: Number }[]>(
   []
 );
-const staffOptions = ref<{ id: number; name: string }[]>([]);
-
-onMounted(() => {
-  fetchSystemSetting();
-  fetchAppointments();
-  fetchServiceOptions();
-  fetchStaffList();
-  setInterval(() => {
-    fetchAppointments();
-  }, 60000);
+const selectedDate = ref(today());
+const selectedTime = ref("");
+const selectedStaff = ref({
+  id: 0,
+  name: "Any therapist",
 });
 
-const events = ref<Event[]>([]);
-const dragItems = ref<Event[]>([]);
-const defaultEvent = ref<Event[]>([]);
-
-interface CustomDragEvent extends Event {
-  dataTransfer: DataTransfer;
-  preventDefault: () => void;
-}
-
-interface Scope {
-  scope: any;
-}
-
-const confirmDialog = ref({
-  visible: false,
-  staffName: "",
-  resolve: () => {},
-  reject: () => {},
-});
-
-function showConfirmDialog(staffName: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    confirmDialog.value = {
-      visible: true,
-      staffName,
-      resolve: () => {
-        confirmDialog.value.visible = false;
-        resolve(true);
-      },
-      reject: () => {
-        confirmDialog.value.visible = false;
-        resolve(false);
-      },
-    };
-  });
-}
-
+const events = ref<AppintmentEvent[]>([]);
+const dragItems = ref<AppintmentEvent[]>([]);
+const defaultEvent = ref<AppintmentEvent[]>([]);
 const currentMonth = computed(() => {
   const date = new Date(selectedDate.value);
   return date.toLocaleString("default", {
@@ -949,29 +520,14 @@ const currentMonth = computed(() => {
   });
 });
 
-// convert the events into a map of lists keyed by date
-const eventsMap = computed(() => {
-  const map: { [key: string]: Event[] } = {};
-  events.value.forEach((event) => {
-    if (!map[event.date]) {
-      map[event.date] = [];
-    }
-    map[event.date]!.push(event);
-    if (event.days) {
-      let timestamp = parseTimestamp(event.date);
-      let days = event.days;
-      do {
-        if (timestamp) {
-          timestamp = addToDate(timestamp, { day: 1 });
-          if (!map[timestamp.date]) {
-            map[timestamp.date] = [];
-          }
-          map[timestamp.date]!.push(event);
-        }
-      } while (--days > 0);
-    }
-  });
-  return map;
+onMounted(() => {
+  fetchSystemSetting();
+  fetchAppointments();
+  fetchServiceOptions();
+  fetchStaffList();
+  setInterval(() => {
+    fetchAppointments();
+  }, 60000);
 });
 
 async function fetchStaffList() {
@@ -1017,16 +573,18 @@ async function fetchAppointments() {
       staff_id: bookedService.staff_id,
       staff_name: bookedService.staff_name,
       bgcolor:
-        bookedService.status === "break"
+        bookedService.type === "break"
           ? "blue-grey-3"
+          : bookedService.type === "unassigned"
+          ? "peach"
           : bookedService.status === "in_progress"
           ? "light-teal"
-          : bookedService.status === "unassigned"
-          ? "peach"
           : bookedService.status === "finished"
           ? "light-teal"
           : "teal-5",
+
       status: bookedService.status,
+      type: bookedService.type,
       tag: bookedService.tag,
       appointment_id: bookedService.appointment_id,
       customer_first_name: bookedService.customer_first_name,
@@ -1035,8 +593,12 @@ async function fetchAppointments() {
       customer_email: bookedService.customer_email,
       actual_start_time: bookedService.actual_start_time?.slice(11, 16),
     }));
-    events.value = fetchedData.filter((event) => event.staff_id !== 0);
-    dragItems.value = fetchedData.filter((event) => event.staff_id === 0);
+
+    events.value = fetchedData.filter((event) => event.staff_id !== 0 );
+
+    dragItems.value = fetchedData.filter(
+      (event) =>   event.staff_id === 0
+    );
   } catch (error) {
     console.error("Error fetching schedules:", error);
   }
@@ -1055,100 +617,38 @@ async function fetchServiceOptions() {
   }
 }
 
-async function fetchAvailableBookingTime(date: string) {
-  try {
-    let url = "/api/get-unavailable-time-from-date";
-
-    if (selectedStaff.value.id !== 0) {
-      url = "/api/get-unavailable-time-from-staff";
-    }
-    const response = await api.get(url, {
-      params: {
-        date: date,
-        staff_id: selectedStaff.value.id,
-      },
-    });
-
-    if (response.data.no_schedule) {
-      available_booking_time.value = [];
-      return;
-    }
-    const minTime = response.data.start_time;
-    const maxTime = response.data.end_time;
-    const unavailable_booking_time = response.data.unavailable_time;
-    const allTimes = [];
-    const startTime = new Date(`1970-01-01T${minTime}:00`);
-    const endTime = new Date(`1970-01-01T${maxTime}:00`);
-    const timeIncrement = 10;
-    for (
-      let time = startTime;
-      time <= endTime;
-      time.setMinutes(time.getMinutes() + timeIncrement)
-    ) {
-      allTimes.push(time.toTimeString().slice(0, 5)); // Format as HH:mm
-    }
-    // Check the time duration
-    let duration = addAppointmentForm.value.customer_service[0].service
-      ? serviceOptions.value.filter(
-          (service) =>
-            service.id ===
-            addAppointmentForm.value.customer_service[0].service.id
-        )[0].duration
-      : 0;
-    if (duration === 0 && showEditEventDialog.value) {
-      duration = editEventForm.value.service.duration;
-    }
-    // Filter out unavailable times
-    available_booking_time.value = allTimes.filter((time) => {
-      return !unavailable_booking_time.some((timeRange) => {
-        const startTime = time + ":00";
-        let endHour =
-          parseInt(startTime.split(":")[0]) + Math.floor(duration / 60); // Changed to let
-        let endMinute = parseInt(startTime.split(":")[1]) + (duration % 60);
-        if (endMinute >= 60) {
-          endMinute -= 60;
-          endHour += 1;
-        }
-        const endTime =
-          `${endHour.toString().padStart(2, "0")}:${endMinute
-            .toString()
-            .padStart(2, "0")}` + ":00";
-
-        return (
-          (startTime >= timeRange.start_time &&
-            startTime < timeRange.end_time) ||
-          (endTime > timeRange.start_time && endTime <= timeRange.end_time) ||
-          (startTime < timeRange.start_time && endTime > timeRange.end_time) ||
-          endTime > maxTime + ":00"
-        );
-      });
-    });
-    if (available_booking_time.value.length === 0) {
-      $q.notify({
-        type: "warning",
-        color: "orange-4",
-        message: "No available booking time found.",
-      });
-    }
-  } catch (error) {
-    console.log("Error fetching available booking times:", error);
-    available_booking_time.value = [];
-    $q.notify({
-      type: "negative",
-
-      message: "No available booking time for the selected date.",
-    });
-    return;
-  }
-}
-
-function getEventsByStaff(date: string, staffId: number): Event[] {
+function getEventsByStaff(date: string, staffId: number): AppintmentEvent[] {
   return (
     eventsMap.value[date]?.filter((event) => event.staff_id === staffId) || []
   );
 }
 
-function badgeClasses(event: Event, type: string) {
+// convert the events into a map of lists keyed by date
+const eventsMap = computed(() => {
+  const map: { [key: string]: AppintmentEvent[] } = {};
+  events.value.forEach((event) => {
+    if (!map[event.date]) {
+      map[event.date] = [];
+    }
+    map[event.date]!.push(event);
+    if (event.days) {
+      let timestamp = parseTimestamp(event.date);
+      let days = event.days;
+      do {
+        if (timestamp) {
+          timestamp = addToDate(timestamp, { day: 1 });
+          if (!map[timestamp.date]) {
+            map[timestamp.date] = [];
+          }
+          map[timestamp.date]!.push(event);
+        }
+      } while (--days > 0);
+    }
+  });
+  return map;
+});
+
+function badgeClasses(event: AppintmentEvent, type: string) {
   const isHeader = type === "header";
   return {
     [`text-white bg-${event.bgcolor}`]: true,
@@ -1160,7 +660,7 @@ function badgeClasses(event: Event, type: string) {
 }
 
 function badgeStyles(
-  event: Event,
+  event: AppintmentEvent,
   _type: string,
   timeStartPos?: (_time: string) => number,
   timeDurationHeight?: (_minutes: number) => number
@@ -1176,7 +676,7 @@ function badgeStyles(
   return s;
 }
 
-function getEvents(dt: string): Event[] {
+function getEvents(dt: string): AppintmentEvent[] {
   // get all events for the specified date
   const events = eventsMap.value[dt] || [];
 
@@ -1212,7 +712,7 @@ function getEvents(dt: string): Event[] {
   return events;
 }
 
-function scrollToEvent(event: Event) {
+function scrollToEvent(event: AppintmentEvent) {
   if (calendar.value) {
     calendar.value.scrollToTime(event.time, 350);
   }
@@ -1236,31 +736,54 @@ function onNext() {
 function onMoved(data: Timestamp) {
   console.info("onMoved", data);
   selectedDate.value = data.date;
-  addAppointmentForm.value.booking_date = data.date;
   fetchStaffList();
   fetchAppointments();
 }
-
-const selectedStaff = ref({
-  id: 0,
-  name: "Any therapist",
-});
-
-const selectedTime = ref("");
-
 function onClickTime(data: Timestamp) {
   const staff = staffList.value[data.scope.columnIndex];
   selectedStaff.value.id = staff.staff_id;
   selectedStaff.value.name = staff.staff_name;
-
-  selectedTime.value = data.scope.timestamp.time.slice(0, 4);
-  addAppointmentForm.value.booking_date = selectedDate.value;
-  addAppointmentForm.value.booking_time = selectedTime.value + "0";
+  selectedTime.value = data.scope.timestamp.time.slice(0, 4) + "0";
   showAddAppointmentDialog();
 }
 function onClickInterval(data: Timestamp) {
   console.info("onClickInterval", data);
 }
+
+// Drag Event
+interface CustomDragEvent extends AppintmentEvent {
+  dataTransfer: DataTransfer;
+  preventDefault: () => void;
+}
+
+interface Scope {
+  scope: any;
+}
+
+const confirmDialog = ref({
+  visible: false,
+  staffName: "",
+  resolve: () => {},
+  reject: () => {},
+});
+
+function showConfirmDialog(staffName: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    confirmDialog.value = {
+      visible: true,
+      staffName,
+      resolve: () => {
+        confirmDialog.value.visible = false;
+        resolve(true);
+      },
+      reject: () => {
+        confirmDialog.value.visible = false;
+        resolve(false);
+      },
+    };
+  });
+}
+
 function onDragStart(e: DragEvent, item: DragItem) {
   console.info("onDragStart called");
   if (e.dataTransfer) {
@@ -1331,221 +854,42 @@ async function onDrop(
   return false;
 }
 
+//zoom
+const interval = ref(10);
+const intervalStart = computed(() =>
+  Math.floor((8 * 60 + 30) / interval.value)
+); // Start at 8:30 AM
+const intervalCount = computed(() => Math.ceil((11 * 60) / interval.value)); // Duration from 8:30 AM to 7:30 PM
+function increaseInterval() {
+  interval.value = Math.min(interval.value + 10, 40); // Limit max interval to 60 minutes
+}
+function decreaseInterval() {
+  interval.value = Math.max(interval.value - 10, 10); // Limit min interval to 5 minutes
+}
+
 // Add Appointment
-const addAppointmentDialog = ref({ visible: false, tab: "customer" });
-
-const addAppointmentForm = ref({
-  booking_time: "",
-  booking_date: selectedDate.value,
-  customer_first_name: "",
-  customer_last_name: "",
-  is_first: false,
-  customer_email: "",
-  customer_phone: "",
-  comments: "",
-  tag: ["staff_created"],
-  customer_service: [
-    {
-      customer_name: "",
-      service: "",
-      staff: "",
-      comments: "",
-    },
-  ],
-});
-
-const clickTakeBreak = ref(false);
+const showAddEventDialog = ref(false);
 
 function showAddAppointmentDialog() {
-  fetchAvailableBookingTime(selectedDate.value);
-  addAppointmentDialog.value.visible = true;
+  showAddEventDialog.value = true;
 }
 
-async function addAppointment() {
-  try {
-    if (addAppointmentForm.value.customer_service[0]["service"] === "") {
-      $q.notify({
-        type: "negative",
-        message: "Please select a service",
-        position: "top",
-        timeout: 2000,
-      });
-      return;
-    }
-    // Check if booking time is in the available booking time list
-    if (!addAppointmentForm.value.booking_time) {
-      $q.notify({
-        type: "negative",
-        message: "Booking time can not be empty!",
-        position: "top",
-        timeout: 2000,
-      });
-      return;
-    }
-
-    if (addAppointmentForm.value.customer_service[0]["customer_name"] === "") {
-      $q.notify({
-        type: "negative",
-        message: "Customer Name Can not be empty!",
-        position: "top",
-        timeout: 2000,
-      });
-      return;
-    }
-    if (
-      addAppointmentForm.value.is_first &&
-      addAppointmentForm.value.customer_phone === ""
-    ) {
-      $q.notify({
-        type: "negative",
-        message: "Phone Number can not be empty when saving!",
-        position: "top",
-        timeout: 2000,
-      });
-      return;
-    }
-    addAppointmentForm.value.customer_service[0]["staff"] = selectedStaff.value;
-
-    const payload = {
-      ...addAppointmentForm.value,
-    };
-    const response = await api.post("/api/appointments", payload);
-
-    if (response.status === 201) {
-      $q.notify({
-        type: "positive",
-        message: "Appointment added successfully",
-        position: "top",
-        timeout: 2000,
-      });
-    }
-
-    addAppointmentDialog.value.visible = false;
-    addAppointmentForm.value = {
-      booking_time: "",
-      booking_date: selectedDate.value,
-      customer_first_name: "",
-      customer_last_name: "",
-      is_first: false,
-      customer_email: "",
-      customer_phone: "",
-      comments: "",
-      tag: ["staff_created"],
-      customer_service: [
-        {
-          customer_name: "",
-          service: "",
-          staff: "",
-          comments: "",
-        },
-      ],
-    };
-    available_booking_time.value = [];
-    dragItems.value = [];
-
-    fetchAppointments(); // Refresh appointments after adding
-  } catch (error) {
-    console.error("Error adding appointment:", error);
-  }
-}
-
-// Take a Break
-const takeBreakDialog = ref({
-  visible: false,
-  selectedDuration: null as number | null,
-  customDuration: "",
-});
-
-function showTakeBreakDialog() {
-  addAppointmentDialog.value.visible = false;
-  takeBreakDialog.value.visible = true;
-}
-
-const assumeEvent = ref<Event>({
-  id: 0,
-  staff_id: 0,
-  staff_name: "",
-  date: "",
-  time: "",
-  expected_end_time: "",
-  service_id: null,
-  service_title: "Break",
-  service_duration: 0,
-  service_price: 0,
-  customer_name: "",
-  comments: "Scheduled break",
-  bgcolor: "grey-5",
-  status: "break",
-  appointment_id: null,
-});
-
-function assumeBreakEvent(duration: number) {
-  if (assumeEvent.value.id !== 0) {
-    events.value.splice(events.value.indexOf(assumeEvent.value), 1);
-  }
-  if (duration === 0) {
-    return;
-  }
-  const startTime = addAppointmentForm.value.booking_time;
-  let [startHour, startMinute] = startTime.split(":").map(Number);
-  let minutes = Number(startMinute) + Number(duration);
-  if (Number(minutes) >= 60) {
-    startHour += 1;
-    minutes = minutes % 60;
-  }
-  console.log("startMinute", startMinute);
-  const endTime = `${String(startHour).padStart(2, "0")}:${String(
-    minutes
-  ).padStart(2, "0")}`;
-  assumeEvent.value.id = Date.now(); // Temporary unique ID
-  assumeEvent.value.staff_id = selectedStaff.value.id;
-  assumeEvent.value.staff_name = selectedStaff.value.name;
-  assumeEvent.value.customer_name = selectedStaff.value.name;
-
-  assumeEvent.value.date = addAppointmentForm.value.booking_date;
-  assumeEvent.value.time = startTime;
-  assumeEvent.value.expected_end_time = endTime;
-  assumeEvent.value.service_duration = duration;
-  events.value.push(assumeEvent.value);
-}
-
-async function confirmTakeBreak() {
-  const duration =
-    takeBreakDialog.value.selectedDuration ||
-    parseInt(takeBreakDialog.value.customDuration, 10);
-  if (!duration || duration <= 0) {
-    $q.notify({
-      type: "negative",
-      message: "Please select or enter a valid break duration",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-
-  const payload = {
-    ...assumeEvent.value,
-  };
-  const response = await api.post("/api/takeBreakAppointment", payload);
-  if (response.status === 201) {
-    $q.notify({
-      type: "positive",
-      message: `Break scheduled successfully`,
-      position: "top",
-      timeout: 2000,
-    });
-  }
-  //reset the q-radio
-  takeBreakDialog.value.selectedDuration = null;
-
-  takeBreakDialog.value.visible = false;
-  assumeEvent.value.id = 0; // Reset the ID
-  fetchAppointments(); // Refresh appointments after taking a break
+function handleAddBreakEvent({
+  id,
+  event,
+}: {
+  id: number | null;
+  event: AppointmentEvent | null;
+}) {
+  if (!id) return;
+  events.value = events.value.filter((e) => e.id !== id);
+  if (!event) return;
+  events.value.push(event);
 }
 
 // Edit Appointment Event
 const showEditEventDialog = ref(false);
-
+const showEditBreakEventDialog = ref(false);
 const editEventForm = ref({
   id: 0,
   appointment_id: 0,
@@ -1556,13 +900,14 @@ const editEventForm = ref({
   staff: {},
   comments: "",
   status: "",
+  type: "",
   customer_first_name: "",
   customer_last_name: "",
   customer_phone: "",
   customer_email: "",
 });
 
-function openEditEventDialog(event: Event) {
+function openEditEventDialog(event: AppintmentEvent) {
   selectedStaff.value.id = event.staff_id;
   selectedStaff.value.name = event.staff_name;
   editEventForm.value = {
@@ -1586,13 +931,12 @@ function openEditEventDialog(event: Event) {
     customer_phone: event.customer_phone,
     customer_email: event.customer_email,
     status: event.status,
+    type: event.type,
   };
 
-  if (event.status == "break") {
-    openEditTakeBreakDialog();
-  }
-  else {
-    fetchAvailableBookingTime(event.date);
+  if (event.type == "break") {
+    showEditBreakEventDialog.value = true;
+  } else {
     showEditEventDialog.value = true;
   }
 }
@@ -1618,66 +962,14 @@ function editedEvent() {
       id: 0,
       name: "Any therapist",
     };
-    // Refresh appointments after editing
     fetchAppointments();
   } catch (error) {
     console.error("Error saving edited event:", error);
   }
 }
 
-// Edit Break
-const showEditBreakEventDialog = ref(false);
-function openEditTakeBreakDialog() {
-  showEditBreakEventDialog.value  = true;
-}
-
-// Customer History
-const customerHistory = ref([]);
-
-const user_search = ref("");
-const foundUsers = ref<{ id: number; name: string; phone: string }[]>([]);
-
-const selectUserFromSearch = async () => {
-    foundUsers.value = await fetchUserFromSearch(user_search.value);
-};
-
-async function fetchCustomerHistory(userId: number) {
-  const response = await api.get("/api/getUserBookingHistory", {
-    params: { id: userId },
-  });
-  console.log("Customer History:", response.data);
-  customerHistory.value = response.data;
-  console.log("Customer History:", customerHistory);
-  $q.notify({
-    type: "info",
-    message: "Customer history fetched successfully",
-    position: "top",
-    timeout: 2000,
-  });
-}
-
-function autoFillName() {
-  const fullName = addAppointmentForm.value.customer_service[0].customer_name;
-  if (fullName) {
-    const nameParts = fullName.split(" ");
-    addAppointmentForm.value.customer_first_name = nameParts[0] || "";
-    addAppointmentForm.value.customer_last_name =
-      nameParts.slice(1).join(" ") || "";
-  }
-}
-
-function scrollToNow() {
-  if (calendar.value) {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const currentTime = `${hours}:${minutes}`;
-    calendar.value.scrollToTime(currentTime, 350);
-  }
-}
-
 // Start appointment
-async function startAppointment(event: Event)  {
+async function startAppointment(event: AppintmentEvent) {
   // Show confirmation dialog before starting the appointment
   //get the current time
   const start_time = new Date();
@@ -1707,12 +999,13 @@ async function startAppointment(event: Event)  {
       }
     })
     .onCancel(() => {});
-};
+}
 
 // Finish appointment
 const clickedEvent = ref(null);
 const showFinishAppointmentDialog = ref(false);
-function finishAppointment(event: Event) {
+
+function finishAppointment(event: AppintmentEvent) {
   clickedEvent.value = event;
   showFinishAppointmentDialog.value = true;
 }
@@ -1727,7 +1020,9 @@ async function fetchSystemSetting() {
       key: "booking_reminder_msg",
     },
   });
-  reminder_msg_template.value = response.data.value;
+  if (response.data.value) {
+    reminder_msg_template.value = response.data.value;
+  }
 }
 
 function openSendSmsDialog() {
@@ -1735,6 +1030,16 @@ function openSendSmsDialog() {
   showSendSmsDialog.value = true;
 }
 
+// Tool
+function scrollToNow() {
+  if (calendar.value) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const currentTime = `${hours}:${minutes}`;
+    calendar.value.scrollToTime(currentTime, 350);
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1746,8 +1051,5 @@ function openSendSmsDialog() {
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
-}
-.unassigned {
-  background-color: #ffa95d !important;
 }
 </style>

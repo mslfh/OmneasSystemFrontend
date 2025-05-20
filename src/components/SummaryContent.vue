@@ -20,6 +20,7 @@
       <div class="text-subtitle2 text-grey-9 q-mt-xs">
         Shop 2, 198-216 Charles Street, Launceston
       </div>
+      <div class="text-weight-bold  text-caption text-grey-9 q-mt-xs">+61 466 605 855</div>
     </q-card-section>
   </q-card-section>
   <q-separator v-if="selectedService.id" />
@@ -54,7 +55,7 @@
       color="teal"
       text-color="white"
       icon="alarm"
-      :label=" showTime(time) ? showTime(time) + ', ' + showDate() : showDate()"
+      :label="showTime(time) ? showTime(time) + ', ' + showDate() : showDate()"
       clickable
       @click="$emit('editDate')"
     >

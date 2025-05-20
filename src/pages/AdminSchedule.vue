@@ -240,7 +240,7 @@
           />
         </q-card-section>
         <q-card-section>
-          <q-label class="text-grey">
+          <q-label class="text-grey-8">
             <q-icon size="xs" name="access_time" />
             Working Time
           </q-label>
