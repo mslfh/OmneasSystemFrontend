@@ -334,6 +334,9 @@
                     >
                       Done
                     </q-chip>
+                      <q-item-label class="text-subtitle" v-if="event.comments " >
+                     Notes: {{ event.comments }}
+                    </q-item-label>
                   </q-list>
                 </div>
                 <q-tooltip>{{

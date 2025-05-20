@@ -130,25 +130,35 @@
           </div>
         </div>
         <div :class="$q.screen.gt.md ? 'col-5' : 'col-6'">
-
           <q-tabs v-model="addAppointmentDialog.tab" class="text-blue-8">
-            <q-tab name="customer" icon="person_add" label="Client"
-             @click="() => {
-              if(!addAppointmentForm.customer_id){
-                customerHistory = [];
-              }
-            }" />
-            <q-tab name="history" icon="schedule" label="History"
-            @click="() => {
-              if(addAppointmentForm.customer_id){
-                fetchCustomerHistory(addAppointmentForm.customer_id)
-              }
-            }" />
+            <q-tab
+              name="customer"
+              icon="person_add"
+              label="Client"
+              @click="
+                () => {
+                  if (!addAppointmentForm.customer_id) {
+                    customerHistory = [];
+                  }
+                }
+              "
+            />
+            <q-tab
+              name="history"
+              icon="schedule"
+              label="History"
+              @click="
+                () => {
+                  if (addAppointmentForm.customer_id) {
+                    fetchCustomerHistory(addAppointmentForm.customer_id);
+                  }
+                }
+              "
+            />
           </q-tabs>
           <q-separator />
 
           <q-card-section v-if="addAppointmentDialog.tab === 'customer'">
-
             <UserSearch @user-selected="onUserSelectedCustomer" />
 
             <q-input
@@ -188,49 +198,17 @@
           </q-card-section>
 
           <q-card-section v-if="addAppointmentDialog.tab === 'history'">
-
-            <UserSearch @user-selected="onUserSelectedHistory" placeholder="Find Booking History by Name, Phone, or Email" />
-
+            <UserSearch
+              @user-selected="onUserSelectedHistory"
+              placeholder="Find Booking History by Name, Phone, or Email"
+            />
             <q-scroll-area class="q-pa-md" style="height: 420px">
-              <div  v-if="customerHistory.length > 0">
-              <q-timeline
-                class="q-pa-none"
-                color="blue-3"
-              >
-                <q-timeline-entry
-                  v-for="event in customerHistory"
-                  :key="event.id"
-                >
-                  <div class="text-grey-8">
-                    <div>
-                      {{
-                        event.services[0].service_title +
-                        " | " +
-                        event.services[0].service_duration +
-                        " Min"
-                      }}
-                    </div>
-                    <div>{{ event.status }}</div>
-                    <div>{{ event.services[0].customer_name }}</div>
-                    <div>{{ event.services[0].staff_name }}</div>
-                  </div>
-                  <template v-slot:subtitle>
-                    <div class="row q-pa-none">
-                      <q-lable class="col-9">{{
-                        event.booking_time.slice(0, 16)
-                      }}</q-lable>
-                    </div>
-                  </template>
-                </q-timeline-entry>
-              </q-timeline>
-              </div>
-              <q-label v-else class='text-grey'>
+              <CustomerHistoryTimeline v-if="customerHistory.length > 0" :customerHistory="customerHistory" />
+              <q-label v-else class="text-grey">
                 <q-icon name="info" />
                 No available recorded history for this client.
               </q-label>
-
             </q-scroll-area>
-
           </q-card-section>
         </div>
       </div>
@@ -313,7 +291,8 @@ import { api } from "boot/axios";
 import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
 import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBookingTime";
 import type { AppointmentEvent } from "../../types/appointment";
-import UserSearch  from "../UserSearch.vue";
+import UserSearch from "../UserSearch.vue";
+import CustomerHistoryTimeline from "../CustomerHistoryTimeline.vue";
 
 const props = defineProps({
   selectedStaff: {
@@ -461,8 +440,7 @@ async function addAppointment() {
 
     if (selectedStaff.value.id === 0) {
       addAppointmentForm.value.type = "unassigned";
-    }
-    else{
+    } else {
       addAppointmentForm.value.type = "assigned";
     }
 
@@ -481,16 +459,15 @@ async function addAppointment() {
         timeout: 2000,
       });
     }
-    emit('save')
-
+    emit("save");
   } catch (error) {
     console.error("Error adding appointment:", error);
     $q.notify({
-        type: "negetive",
-        message: "Error adding appointment",
-        position: "top",
-        timeout: 2000,
-      });
+      type: "negetive",
+      message: "Error adding appointment",
+      position: "top",
+      timeout: 2000,
+    });
   }
 }
 
@@ -535,7 +512,7 @@ const takeBreakDialog = ref({
 });
 
 const assumeBreakId = ref<number | null>(null);
-const breakEvent = ref<AppointmentEvent>( {
+const breakEvent = ref<AppointmentEvent>({
   id: 0,
   staff_id: selectedStaff.value.id,
   staff_name: selectedStaff.value.name,
@@ -569,8 +546,8 @@ function assumeBreakEvent(duration: number) {
   const endTime = `${String(startHour).padStart(2, "0")}:${String(
     minutes
   ).padStart(2, "0")}`;
-  if(!assumeBreakId.value){
-    breakEvent.value.id = Date.now()
+  if (!assumeBreakId.value) {
+    breakEvent.value.id = Date.now();
     assumeBreakId.value = breakEvent.value.id;
   }
   breakEvent.value.time = startTime;
@@ -605,20 +582,20 @@ async function confirmTakeBreak() {
       timeout: 2000,
     });
   }
-  emit('save')
+  emit("save");
 }
 
 function onUserSelectedCustomer(user) {
   addAppointmentForm.value.customer_service[0].customer_name = user.name;
-  addAppointmentForm.value.customer_first_name = user.name.split(' ')[0] || '';
-  addAppointmentForm.value.customer_last_name = user.name.split(' ').slice(1).join(' ') || '';
-  addAppointmentForm.value.customer_email = user.email || '';
-  addAppointmentForm.value.customer_phone = user.phone || '';
+  addAppointmentForm.value.customer_first_name = user.name.split(" ")[0] || "";
+  addAppointmentForm.value.customer_last_name =
+    user.name.split(" ").slice(1).join(" ") || "";
+  addAppointmentForm.value.customer_email = user.email || "";
+  addAppointmentForm.value.customer_phone = user.phone || "";
   addAppointmentForm.value.customer_id = user.id;
 }
 
 function onUserSelectedHistory(user) {
-
   fetchCustomerHistory(user.id);
 }
 </script>
