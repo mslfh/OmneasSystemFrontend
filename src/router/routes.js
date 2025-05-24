@@ -8,6 +8,7 @@ const routes = [
       { path: '', component: () => import('pages/CustomerBooking.vue') },
       { path: '/old', component: () => import('pages/CustomerBookingSelectTime.vue') },
       { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
+      { path: 'profile', component: () => import('pages/CustomerProfile.vue') },
     ]
   },
 

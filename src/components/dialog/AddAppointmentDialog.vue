@@ -339,7 +339,7 @@ const addAppointmentForm = ref({
   booking_date: props.selectedDate,
   customer_first_name: "",
   customer_last_name: "",
-  is_first: false,
+  is_first: true,
   customer_email: "",
   customer_phone: "",
   comments: "",
