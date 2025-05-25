@@ -124,7 +124,7 @@
           clearable
           rounded
           v-model="filter"
-          placeholder="Search"
+          placeholder="Search by name, phone or date"
         >
           <template v-slot:append>
             <q-icon name="search" />
