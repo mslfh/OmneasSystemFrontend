@@ -124,13 +124,13 @@ function addAppointment(user) {
                 <q-item-label caption>{{ user.phone }}</q-item-label>
                 <q-item-label caption>{{ user.email }}</q-item-label>
                 <q-item-label caption>
-                  <!-- <q-btn
+                  <q-btn
                     flat
                     size="sm"
                     color="primary"
                     label="view history"
                     @click="viewHistory(user)"
-                  /> -->
+                  />
                   <q-btn
                     flat
                     size="sm"
@@ -147,7 +147,7 @@ function addAppointment(user) {
                   /> -->
                 </q-item-label>
               </q-item-section>
-              <q-item-section side>
+              <!-- <q-item-section side>
                 <q-btn
                   flat
                   size="sm"
@@ -155,7 +155,7 @@ function addAppointment(user) {
                   label="view history"
                   @click="viewHistory(user)"
                 />
-              </q-item-section>
+              </q-item-section> -->
             </q-item>
           </q-list>
         </q-menu>
@@ -434,4 +434,18 @@ function addAppointment(user) {
     @close="showAddAppointmentDialog = false"
     @save="showAddAppointmentDialog = false"
   />
+
+  <q-dialog v-model="isHistoryDialogOpen" persistent>
+    <q-card style="min-width: 350px; min-height: 300px">
+      <q-card-section class="text-h6">
+        Customer History
+      </q-card-section>
+      <q-card-section>
+        <CustomerHistoryTimeline :customerHistory="customerHistory" />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat label="Close" @click="isHistoryDialogOpen = false" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>

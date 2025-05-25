@@ -244,7 +244,7 @@
                 color="blue-4"
                 text-color="white"
                 clickable
-                @click.stop="viewAppointmentHistory(event)"
+                @click.stop="viewHistory(editEventForm.customer_phone)"
               >
                 History
               </q-chip>
@@ -263,6 +263,23 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+
+   <q-dialog v-model="isHistoryDialogOpen" persistent>
+    <q-card style="min-width: 350px; min-height: 300px">
+      <q-card-section class="text-h6">
+        Customer History
+      </q-card-section>
+      <q-card-section>
+        <CustomerHistoryTimeline :customerHistory="customerHistory" />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat label="Close" @click="isHistoryDialogOpen = false" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+
 </template>
 
 <script setup lang="ts">
@@ -271,7 +288,7 @@ import { useQuasar } from "quasar";
 import { api } from "boot/axios";
 import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
 import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBookingTime";
-
+import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
 const props = defineProps({
   editEventForm: {
     type: Object,
@@ -469,5 +486,50 @@ async function noShowAppointment() {
       });
     }
   });
+}
+
+const customerHistory = ref([]);
+const isHistoryDialogOpen = ref(false);
+
+async function viewHistory($phone) {
+
+  const userResponse = await api.get("/api/find-user-by-field", {
+      params: {
+        search: $phone,
+        field: "phone"
+       },
+    });
+  if (userResponse.data.length === 0) {
+    $q.notify({
+      type: "warning",
+      message: "No user found with this phone number",
+      position: "top",
+      timeout: 2000,
+    });
+    return;
+  }
+  const userId = userResponse.data[0].id;
+
+  const response = await api.get("/api/getUserBookingHistory", {
+    params: { id: userId },
+  });
+  customerHistory.value = response.data;
+  if (customerHistory.value.length === 0) {
+    $q.notify({
+      type: "warning",
+      message: "No history found for this customer",
+      position: "top",
+      timeout: 2000,
+    });
+    return;
+  }
+  $q.notify({
+    type: "info",
+    message: "Customer history fetched successfully",
+    position: "top",
+    timeout: 2000,
+  });
+  isHistoryDialogOpen.value = true;
+  return;
 }
 </script>
