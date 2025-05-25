@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <q-card v-if="appointment" class="q-pa-md">
-      <q-card-section>
+      <q-card-section horizontal class="q-pl-md q-pt-md">
         <div class="text-h6">Appointment Details</div>
         <q-btn
           flat
@@ -11,7 +11,6 @@
           label="view history"
           @click="fetchCustomerHistory()"
         />
-
         <q-btn
         v-if="appointment.status === 'finished'"
           flat
@@ -57,12 +56,31 @@
               <strong>Status:</strong>
               <q-chip
                 :color="
-                  appointment.status === 'finished' ? 'teal-4' : 'deep-orange-5'
+                appointment.status === 'finished' ? 'teal-4' :
+                appointment.status === 'pending' ? 'red-10' :
+                appointment.status === 'in_progress' ? 'green-4' : 'deep-orange-5'
                 "
                 text-color="white"
                 dense
               >
                 {{ appointment.status }}
+              </q-chip>
+            </q-item-section>
+          </q-item>
+
+                    <q-item>
+            <q-item-section>
+              <strong>Type:</strong>
+              <q-chip
+                :color="
+                  appointment.type === 'no_show' ? 'red-10' :
+                appointment.type === 'break' ? 'grey' :
+                appointment.type === 'assigned' ? 'green-5' : 'deep-orange-5'
+                "
+                text-color="white"
+                dense
+              >
+                {{ appointment.type }}
               </q-chip>
             </q-item-section>
           </q-item>
@@ -76,6 +94,12 @@
             <q-item-section>
               <strong>Actual End Time:</strong>
               {{ appointment.actual_end_time }}
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <strong>Notes:</strong>
+              {{ appointment.comments }}
             </q-item-section>
           </q-item>
         </q-list>

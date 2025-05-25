@@ -8,7 +8,7 @@
         </div>
       </q-card-section>
       <q-card-section v-else-if="users.length === 1">
-        <div class="text-h6">Confirm User</div>
+        <div class="text-h6">Confirm</div>
         <div class="q-mt-xs">Name: {{ users[0].first_name }} {{ users[0].last_name }}</div>
         <div>Phone: {{ users[0].phone }}</div>
       </q-card-section>

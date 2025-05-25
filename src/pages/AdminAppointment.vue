@@ -74,13 +74,7 @@
     <!-- calendar -->
     <div class="row">
       <!-- Waitting List -->
-      <div
-        :class="
-          $q.screen.gt.md
-            ? 'q-mx-md-sm q-mx-sm-none col-2'
-            : 'q-mx-md-sm q-mx-sm-none col-12'
-        "
-      >
+      <div class="col-md-2 col-xs-12">
         <div
           class="text-subtitle1 text-weight-bold q-my-md text-brown-9 text-center"
         >
@@ -117,7 +111,7 @@
 
       <div
         :class="$q.screen.gt.md ? 'col-10' : 'col-12'"
-        style="display: flex; height: 85vh"
+        style="display: flex; height: 80vh"
       >
         <q-calendar-day
           ref="calendar"
@@ -137,7 +131,7 @@
           :interval-minutes="interval"
           :interval-start="intervalStart"
           :interval-count="intervalCount"
-          :interval-height="28"
+          :interval-height="24"
           @moved="onMoved"
           @click-date="onClickDate"
           @click-time="onClickTime"
@@ -149,12 +143,11 @@
                 display: flex;
                 justify-content: center;
                 flex-wrap: wrap;
-                padding: 2px;
               "
               class="row"
             >
               <div
-                class="col-12"
+                class="col-12 text-subtitle2 text-weight-bold text-grey-9"
                 v-if="staffList[columnIndex]"
                 style="text-align: center"
               >
@@ -332,29 +325,26 @@
                       clickable
                       @click.stop="finishAppointment(event)"
                     >
-                      Done
+                      Check Out
                     </q-chip>
-                      <q-item-label class="text-subtitle" v-if="event.comments " >
-                     Notes: {{ event.comments }}
+                    <q-item-label class="text-subtitle" v-if="event.comments">
+                      Notes: {{ event.comments }}
                     </q-item-label>
                   </q-list>
                 </div>
-                <q-tooltip>{{
-                  event.customer_name +
-                  " " +
-                  event.time +
-                  " - " +
-                  event.service_title +
-                  " | " +
-                  event.service_duration +
-                  " min"
-                }}</q-tooltip>
+                <q-tooltip>
+                    <div  >{{ event.service_title + ' - $' + event.service_price   }}</div>
+                    <div  >{{ event.customer_name + ' ' + event.customer_phone}}</div>
+                    <div >{{ event.time + ' | ' + event.service_duration + " min"  }}</div>
+                     <div v-if="event.comments">{{ 'Notes: ' + event.comments}}</div>
+              </q-tooltip>
               </div>
             </template>
           </template>
         </q-calendar-day>
       </div>
     </div>
+    <q-space style="height: 50px" />
   </div>
 
   <!-- Drag Appointment Dialog -->
@@ -420,6 +410,12 @@
         fetchAppointments();
       }
     "
+    @checkOut="
+      (event) => {
+        showEditEventDialog = false;
+        showFinishAppointmentDialog = true;
+      }
+    "
     @save="editedEvent()"
   />
 
@@ -481,6 +477,7 @@ import EditBreakEventDialog from "components/dialog/EditBreakEventDialog.vue";
 import FinishAppointmentDialog from "components/dialog/FinishAppointmentDialog.vue";
 import EditAppointmentDialog from "components/dialog/EditAppointmentDialog.vue";
 import AddAppointmentDialog from "components/dialog/AddAppointmentDialog.vue";
+
 
 import { fetchUserFromSearch } from "../composables/useUserFromSearch";
 import type { AppointmentEvent } from "../types/appointment";
@@ -597,11 +594,9 @@ async function fetchAppointments() {
       actual_start_time: bookedService.actual_start_time?.slice(11, 16),
     }));
 
-    events.value = fetchedData.filter((event) => event.staff_id !== 0 );
+    events.value = fetchedData.filter((event) => event.staff_id !== 0);
 
-    dragItems.value = fetchedData.filter(
-      (event) =>   event.staff_id === 0
-    );
+    dragItems.value = fetchedData.filter((event) => event.staff_id === 0);
   } catch (error) {
     console.error("Error fetching schedules:", error);
   }
@@ -859,15 +854,18 @@ async function onDrop(
 
 //zoom
 const interval = ref(10);
+// Start at 8:30 AMs
 const intervalStart = computed(() =>
   Math.floor((8 * 60 + 30) / interval.value)
-); // Start at 8:30 AM
-const intervalCount = computed(() => Math.ceil((11 * 60) / interval.value)); // Duration from 8:30 AM to 7:30 PM
+);
+// Duration from 8:30 AM to 8:30 PM
+const intervalCount = computed(() => Math.ceil((12 * 60) / interval.value));
+
 function increaseInterval() {
-  interval.value = Math.min(interval.value + 10, 40); // Limit max interval to 60 minutes
+  interval.value = Math.min(interval.value + 10, 30); // Limit max interval to 30 minutes
 }
 function decreaseInterval() {
-  interval.value = Math.max(interval.value - 10, 10); // Limit min interval to 5 minutes
+  interval.value = Math.max(interval.value - 10, 10); // Limit min interval to 10 minutes
 }
 
 // Add Appointment
@@ -911,6 +909,7 @@ const editEventForm = ref({
 });
 
 function openEditEventDialog(event: AppintmentEvent) {
+  clickedEvent.value = event;
   selectedStaff.value.id = event.staff_id;
   selectedStaff.value.name = event.staff_name;
   editEventForm.value = {

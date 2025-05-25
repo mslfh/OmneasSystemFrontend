@@ -112,7 +112,7 @@
                         <q-expansion-item
                           v-for="service in pkg.services"
                           :key="service.id"
-                          :label="`* ${service.title} | ${service.duration} Minutes`"
+                          :label="`* ${service.title}`"
                           expand-icon="add"
                           expanded-icon="keyboard_arrow_up"
                           header-class="text-primary text-subtitle1 text-weight-medium"
@@ -165,7 +165,7 @@
                 :done="step > 2"
                 :header-nav="step > 2"
               >
-                <div class="q-pa-md-md q-pa-none-xs">
+                <div>
                   <div class="text-h6 text-grey-8 q-pb-md">
                     <q-icon size="sm" name="o_alarm" /> Select Time
                   </div>
@@ -206,8 +206,7 @@
                       </q-icon>
                     </template>
                   </q-input>
-
-                  <div class="q-pa-md-md q-pa-none-xs q-gutter-md">
+                  <div class="q-pt-md q-gutter-md">
                     <div class="text-h6 text-grey-8 q-pb-xs">
                       <q-icon size="sm" name="favorite_border" /> Select
                       Therapist
@@ -220,10 +219,7 @@
                         label="No therapist available at this time."
                       />
                     </div>
-                    <div
-                      v-if="availableStaff.length != 0"
-                      class="row q-pa-md-md q-pa-none-xs"
-                    >
+                    <div v-if="availableStaff.length != 0" class="row">
                       <q-chip
                         clickable
                         @click="
@@ -363,7 +359,7 @@
                 :done="step > 3"
                 :header-nav="step > 3"
               >
-                <div class="row q-gutter-md">
+                <div class="row">
                   <div class="col-10 text-h6 text-grey-7">
                     <q-icon name="o_account_circle"></q-icon> Personal
                     Information
@@ -377,7 +373,6 @@
                       color="teal"
                     />
                   </div>
-
                   <!-- <div class="col-10">
                     <q-checkbox
                       keep-color
@@ -387,7 +382,9 @@
                       color="teal"
                     />
                   </div> -->
-                  <div class="col-5">
+
+                  <!-- name -->
+                  <div class="col-6 q-pr-sm">
                     <q-input
                       dense
                       outlined
@@ -397,7 +394,7 @@
                       :rules="[(val) => !!val]"
                     />
                   </div>
-                  <div class="col-5">
+                  <div class="col-6">
                     <q-input
                       dense
                       outlined
@@ -407,8 +404,9 @@
                       :rules="[(val) => !!val]"
                     />
                   </div>
+
                   <!-- phone -->
-                  <div class="col-10 q-mt-xs">
+                  <div class="col-12 q-pt-xs">
                     <q-input
                       outlined
                       v-model="phone"
@@ -427,7 +425,6 @@
                             name="o_phone_iphone"
                           />
                           * Phone Number
-
                           <q-tooltip
                             class="bg-grey-8"
                             anchor="top left"
@@ -440,7 +437,7 @@
                     </q-input>
                   </div>
                   <!-- email -->
-                  <div class="col-10 q-mt-xs">
+                  <div class="col-12 q-pt-xs">
                     <q-input
                       outlined
                       v-model="email"
@@ -462,13 +459,13 @@
                       </template>
                     </q-input>
                   </div>
-                  <div class="col-10"><q-separator /></div>
+                  <div class="col-12"><q-separator /></div>
 
-                  <div class="col-10 text-h6 text-grey-7">
+                  <div class="col-12 text-h6 text-grey-7 q-pt-md">
                     <q-icon name="o_info"></q-icon> Extra Information
                   </div>
 
-                  <div class="col-10">
+                  <div class="col-12 q-pt-sm">
                     <q-input
                       label="Any comments"
                       v-model="comments"
@@ -541,19 +538,18 @@
                         <div class="text-caption text-grey-9 q-mt-xs">
                           Shop 2, 198-216 Charles Street, Launceston
                         </div>
-                        <div
-                          class=" text-caption text-grey-9 q-mt-xs"
-                        >
+                        <div class="text-caption text-grey-9 q-mt-xs">
                           +61 466 605 855
                         </div>
                       </q-card-section>
                     </q-card-section>
                   </q-card>
-                  <div class="col-12 q-pa-md-md q-pa-none-xs">
+                  <div class="col-12">
                     <q-item-label header class="text-h6"
                       >Booking Summary</q-item-label
                     >
-                    <q-item class="full-width q-pa-md-md">
+
+                    <q-item class="full-width q-pa-md">
                       <q-item-section>
                         <q-item-label class="text-subtitle2">
                           <q-icon
@@ -663,6 +659,10 @@
                       </div>
                       <div class="text-subtitle3">Email: {{ email }}</div>
                       <div class="text-subtitle3">Phone: {{ phone }}</div>
+                      <div class="text-caption text-grey">
+                        <q-icon name="info" size="12px" />
+                        The phone number will be used to receive notifications.
+                      </div>
                     </q-card-section>
                   </q-card-section>
                 </q-card>
@@ -694,7 +694,7 @@
           </div>
           <!--summary -->
           <div v-if="!$q.screen.lt.sm" class="col-4">
-            <q-card class="bg-grey-1 no-shadow" bordered>
+
               <SummaryContent
                 :ratingModel="ratingModel"
                 :selectedService="selectedService"
@@ -707,7 +707,7 @@
                 @editDate="step = 2"
                 @editTherapist="step = 2"
               />
-            </q-card>
+
           </div>
         </div>
       </q-page>
@@ -744,8 +744,7 @@
     </div>
     <div v-if="!$q.screen.lt.sm" class="col-2"></div>
 
-    <q-inner-loading :showing="loading_visible">
-    </q-inner-loading>
+    <q-inner-loading :showing="loading_visible"> </q-inner-loading>
   </div>
 </template>
 

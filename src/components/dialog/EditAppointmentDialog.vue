@@ -138,9 +138,45 @@
           <q-separator vertical class="q-my-md" style="height: 90%" />
         </div>
         <div class="col-6">
+           <q-card-section class="q-pa-xs row justify-between">
+            <q-chip
+              size="12px"
+              outline
+              icon="event"
+              color="teal-4"
+              text-color="white"
+              clickable
+              @click.stop="startAppointment()"
+            >
+              Start
+            </q-chip>
+            <q-chip
+              size="12px"
+              outline
+              color="orange-5"
+              text-color="white"
+              icon="o_verified"
+              clickable
+              @click.stop="finishAppointment()"
+            >
+              Check Out
+            </q-chip>
+            <q-chip
+              size="12px"
+              outline
+              color="red-5"
+              text-color="white"
+              icon="visibility_off"
+              clickable
+              @click.stop="noShowAppointment()"
+            >
+              No Show
+            </q-chip>
+          </q-card-section>
           <q-card-section>
             <q-input
               rounded
+              dense
               v-model="user_search"
               outlined
               placeholder="Find User by Name, Phone, or Email"
@@ -183,10 +219,10 @@
                 </q-item>
               </q-list>
             </q-scroll-area>
-            <q-input
-              v-model="editEventForm.customer_name"
-              label="Customer Name"
-            />
+              <q-input
+                v-model="editEventForm.customer_name"
+                label="Customer Name"
+              />
             <q-input
               v-model="editEventForm.customer_first_name"
               label="First Name"
@@ -199,6 +235,21 @@
             <q-input v-model="editEventForm.customer_phone" label="Phone" />
             <q-input v-model="editEventForm.comments" label="Comments" />
           </q-card-section>
+
+           <div class="row justify-end" >
+              <q-chip
+                size="12px"
+                outline
+                icon="history"
+                color="blue-4"
+                text-color="white"
+                clickable
+                @click.stop="viewAppointmentHistory(event)"
+              >
+                History
+              </q-chip>
+            </div>
+
         </div>
       </div>
       <q-card-actions align="right">
@@ -244,7 +295,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["close", "openSms", "save", "delete"]);
+const emit = defineEmits(["close", "openSms", "save", "delete","checkOut"]);
 
 const $q = useQuasar();
 
@@ -341,5 +392,82 @@ async function deleteAppointment() {
       timeout: 2000,
     });
   }
+}
+
+function startAppointment() {
+  // Show confirmation dialog before starting the appointment
+  const start_time = new Date();
+  const hours = String(start_time.getHours()).padStart(2, "0");
+  const minutes = String(start_time.getMinutes()).padStart(2, "0");
+  const formattedTime = `${props.selectedDate} ${hours}:${minutes}`;
+  $q.dialog({
+    title: "Start Appointment",
+    message: `Are you sure you want to start this appointment at ${formattedTime}?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await api.put(`/api/appointments/${editEventForm.value.appointment_id}`, {
+        ...editEventForm.value,
+        actual_start_time: formattedTime,
+        status: "in_progress",
+      });
+      $q.notify({
+        type: "positive",
+        message: "Appointment started.",
+        position: "top",
+        timeout: 2000,
+      });
+      emit("save");
+    } catch (error) {
+      $q.notify({
+        type: "negative",
+        message: "Failed to start appointment.",
+        position: "top",
+        timeout: 2000,
+      });
+    }
+  });
+}
+
+function finishAppointment() {
+  emit("checkOut");
+}
+
+async function noShowAppointment() {
+  $q.dialog({
+    title: "<span style=\"color:red;font-weight:bold;\">Mark No Show</span>",
+    message: ' Are you sure you want to mark this appointment as <b>No Show</b>?',
+    html: true,
+    cancel: {
+      color: 'grey-7',
+      label: 'Cancel'
+    },
+    ok: {
+      color: 'red-5',
+      label: 'Comfirm No Show'
+    },
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await api.post(`/api/appointments/mark-no-show`, {
+        id: editEventForm.value.appointment_id
+      });
+      $q.notify({
+        type: "warning",
+        message: "Appointment has marked as No Show.",
+        position: "top",
+        timeout: 2000,
+      });
+      emit("save");
+    } catch (error) {
+      $q.notify({
+        type: "negative",
+        message: "Failed to mark as No Show.",
+        position: "top",
+        timeout: 2000,
+      });
+    }
+  });
 }
 </script>

@@ -1,7 +1,7 @@
 <template>
   <q-card class="q-pa-md">
     <q-table
-      title="Users"
+      title="Customer"
       no-data-label="No users found"
       :dense="$q.screen.lt.md"
       :rows="users"
@@ -21,7 +21,7 @@
           rounded
           v-model="filter"
           placeholder="Search by name, phone or email"
-          style="width: 280px; "
+          style="width: 280px"
         >
           <template v-slot:append>
             <q-icon name="search" />
@@ -33,24 +33,27 @@
           <q-btn
             flat
             round
-            icon="edit"
-            color="accent"
-            @click="editUser(props.row)"
+            icon="schedule"
+            size="10px"
+            color="grey"
+            @click="fetchCustomerHistory(props.row.id)"
           />
           <q-btn
             flat
             round
-            icon="visibility"
+            size="10px"
+            icon="edit"
             color="accent"
-            @click="fetchCustomerHistory(props.row.id)"
+            @click="editUser(props.row)"
           />
           <!-- <q-btn
-                flat
-                round
-                icon="delete"
-                color="red"
-                @click="deleteUser(props.row)"
-              /> -->
+            flat
+            size="10px"
+            round
+            icon="delete"
+            color="red"
+            @click="deleteUser(props.row)"
+          /> -->
         </q-td>
       </template>
     </q-table>
@@ -220,7 +223,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const $q = useQuasar();
 const users = ref([]);
-const filter  = ref("");
+const filter = ref("");
 const columns = [
   {
     name: "name",

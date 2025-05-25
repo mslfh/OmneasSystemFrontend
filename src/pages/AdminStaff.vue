@@ -8,39 +8,41 @@
       :columns="columns"
       row-key="id"
     >
-    <template v-slot:top-right>
-      <q-btn
-      outlined
-      flat
-      label="Add New Staff"
-      color="accent"
-      @click="openAddStaffDialog"
-    />
+      <template v-slot:top-right>
+        <q-btn
+          flat
+          icon="add_circle"
+          label="New Staff"
+          color="accent"
+          @click="openAddStaffDialog"
+        />
       </template>
       <template v-slot:body-cell-status="props">
         <q-td key="status" :props="props">
-            <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
-              {{ props.row.status }}
-            </q-badge>
-          </q-td>
+          <q-badge :color="props.row.status === 'active' ? 'green' : 'red'">
+            {{ props.row.status }}
+          </q-badge>
+        </q-td>
       </template>
       <template v-slot:body-cell-actions="props">
         <q-td key="actions" :props="props">
-            <q-btn
-              flat
-              round
-              icon="edit"
-              color="accent"
-              @click="editStaff(props.row)"
-            />
-            <q-btn
-              flat
-              round
-              icon="delete"
-              color="red"
-              @click="deleteStaff(props.row)"
-            />
-          </q-td>
+          <q-btn
+            flat
+            size="10px"
+            round
+            icon="edit"
+            color="accent"
+            @click="editStaff(props.row)"
+          />
+          <q-btn
+            size="10px"
+            flat
+            round
+            icon="delete"
+            color="red"
+            @click="deleteStaff(props.row)"
+          />
+        </q-td>
       </template>
     </q-table>
 

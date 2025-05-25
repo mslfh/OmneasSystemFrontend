@@ -4,7 +4,7 @@
       :rows="orders"
       :columns="columns"
       row-key="id"
-      title="Admin Orders"
+      title="Orders"
       v-model:pagination="pagination"
       :loading="loading"
       :filter="filter"
@@ -107,8 +107,8 @@
               v-for="(item, index) in props.row.payment"
               :key="index"
             >
-              <q-label class="q-ma-sm">{{ item.payment_status }}</q-label>
-              <q-label class="q-ma-sm">{{ item.payment_method }}</q-label>
+              <q-label class="q-ma-sm">{{ item.status }}</q-label>
+              <q-label class="q-ma-sm">{{ item.paid_by }}</q-label>
               <q-label class="q-ma-sm">Total:{{ item.total_amount }}</q-label>
               <q-label class="q-ma-sm">Paid:{{ item.paid_amount }}</q-label>
             </q-card-section>
@@ -118,9 +118,11 @@
 
       <template v-slot:top-right>
         <q-input
-          borderless
+          outlined
           dense
           debounce="300"
+          clearable
+          rounded
           v-model="filter"
           placeholder="Search"
         >
@@ -129,9 +131,10 @@
           </template>
         </q-input>
         <q-btn
+        flat
           color="primary"
           icon-right="archive"
-          label="Export to csv"
+          label="Export"
           no-caps
           @click="exportTable"
         />
@@ -199,13 +202,6 @@ const columns = [
     align: "center",
     field: "paid_amount",
     format: (val) => `$${val}`,
-  },
-
-  {
-    name: "operator_name",
-    label: "Staff",
-    align: "left",
-    field: "operator_name",
   },
   {
     name: "created_at",

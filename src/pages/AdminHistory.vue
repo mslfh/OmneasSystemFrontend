@@ -13,7 +13,15 @@
       binary-state-sort
     >
       <template v-slot:top-right>
-        <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
+        <q-input
+          outlined
+          dense
+          debounce="300"
+          clearable
+          rounded
+          v-model="filter"
+          placeholder="Search"
+        >
           <template v-slot:append>
             <q-icon name="search" />
           </template>
@@ -63,37 +71,50 @@
           </q-td>
           <q-td key="status" :props="props">
             <q-chip
-             size="12px"
-            dense
-              :color="props.row.status === 'finished' ? 'teal-4' : 'deep-orange-5'"
-              :label="props.row.status === 'finished' ? 'Finished' : 'Booked'"
+              size="12px"
+              dense
+
+              :color="
+                props.row.status === 'finished' ? 'teal-4' :
+                props.row.status === 'pending' ? 'red-10' :
+                props.row.status === 'in_progress' ? 'green-4' : 'deep-orange-5'
+              "
+              :label="props.row.status"
               text-color="white"
               class="q-mr-sm"
             />
           </q-td>
-          <q-td key="actions" :props="props" >
-            <q-btn
-              flat
-              round
-              icon="delete"
-              color="grey-6"
-              size="10px"
+           <q-td key="type" :props="props">
+            <q-chip
+              size="12px"
+              dense
+              outline
+              :color="
+                props.row.type === 'no_show' ? 'red-10' :
+                props.row.type === 'break' ? 'grey' :
+                props.row.type === 'assigned' ? 'green-5' : 'deep-orange-5'
+              "
+              :label="props.row.type"
+              text-color="white"
+              class="q-mr-sm"
             />
+          </q-td>
+          <q-td key="actions" :props="props">
+            <q-btn flat round icon="delete" color="grey-6" size="10px" />
             <q-btn
               flat
               round
               icon="o_visibility"
               color="grey"
               size="10px"
-              @click="router.push({ path: '/admin/appointment/detail', query: { id: props.row.id } })"
+              @click="
+                router.push({
+                  path: '/admin/appointment/detail',
+                  query: { id: props.row.id },
+                })
+              "
             />
-            <q-btn
-              flat
-              round
-              icon="more_vert"
-              color="grey"
-               size="10px"
-            />
+            <!-- <q-btn flat round icon="more_vert" color="grey" size="10px" /> -->
           </q-td>
         </q-tr>
         <q-tr v-show="props.expand" :props="props">
@@ -102,6 +123,8 @@
               Started at: {{ props.row.actual_start_time }}
               <br />
               Ended at: {{ props.row.actual_end_time }}
+               <br />
+              Comments: {{ props.row.comments }}
             </div>
           </q-td>
         </q-tr>
@@ -111,7 +134,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 
@@ -135,6 +158,7 @@ const columns = [
   },
   { name: "customer_name", label: "Customer Name", align: "left" },
   { name: "status", label: "Status", align: "center" },
+  { name: "type", label: "Type", align: "center" },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
@@ -148,7 +172,13 @@ const pagination = ref({
   rowsNumber: 0,
 });
 
-const fetchAppointments = async (startRow, count, filter, sortBy, descending) => {
+const fetchAppointments = async (
+  startRow,
+  count,
+  filter,
+  sortBy,
+  descending
+) => {
   try {
     loading.value = true;
     const response = await api.get("/api/appointments", {

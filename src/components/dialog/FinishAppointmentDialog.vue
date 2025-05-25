@@ -165,6 +165,52 @@
               />
             </div>
           </q-card-section>
+
+          <!--Voucher Section -->
+          <q-card-section
+            class="q-pa-sm text-grey-7"
+            v-if="finishAppointmentDialog.paymentMethod === 'voucher' || finishAppointmentDialog.splitPayments.some(p => p.method && (p.method.value ? p.method.value : p.method) === 'voucher')"
+          >
+            <div class="row items-center q-gutter-sm">
+              <q-input
+                v-model="voucherCode"
+                label="Voucher Code"
+                outlined
+                dense
+                class="col"
+                :disable="voucherVerified"
+              />
+              <q-btn
+                label="Verify"
+                color="primary"
+                @click="verifyVoucher"
+                :disable="voucherVerified || !voucherCode"
+                class="col-auto"
+              />
+            </div>
+            <div
+              v-if="voucherVerified && voucherInfo"
+              class=" q-mt-sm q-pl-xs"
+            >
+              <div class="text-positive">
+                <q-icon name="check_circle" />
+                Voucher valid.
+                <div :class="voucherInfo.remaining_amount < finishAppointmentDialog.event.service_price ? 'text-red-4' : ''">
+                  Balance: <b >${{ voucherInfo.remaining_amount }}</b>
+                </div>
+              </div>
+              <div v-if="voucherInfo.valid_until" class="text-grey-6">
+                Deadline: {{ voucherInfo.valid_until }}
+              </div>
+              <div v-if="voucherInfo.note" class="text-grey-6">
+                Note: {{ voucherInfo.note }}
+              </div>
+            </div>
+            <div v-if="voucherError" class="text-negative q-mt-sm">
+              {{ voucherError }}
+            </div>
+          </q-card-section>
+
           <q-card-section
             class="q-pa-sm text-grey-7"
             v-if="finishAppointmentDialog.paymentMethod != 'split_payment'"
@@ -182,6 +228,7 @@
               </template>
             </q-input>
           </q-card-section>
+
           <q-card-section class="q-pa-sm text-grey-7">
             Payment Note
             <q-input
@@ -209,7 +256,7 @@
 
 <script setup lang="ts">
 import { today } from "@quasar/quasar-ui-qcalendar";
-import { ref, defineProps, onMounted, defineEmits  } from "vue";
+import { ref, defineProps, onMounted, defineEmits } from "vue";
 import { useQuasar } from "quasar";
 import { api } from "boot/axios";
 
@@ -252,11 +299,11 @@ const paymentMethods = ref([
     value: "bank_transfer",
     icon: "o_paid",
   },
-  // {
-  //   label: "Gift card",
-  //   value: "gift_card",
-  //   icon: "redeem",
-  // },
+  {
+    label: "Voucher",
+    value: "voucher",
+    icon: "redeem",
+  },
   {
     label: "Hicaps",
     value: "hicaps",
@@ -273,6 +320,11 @@ const paymentMethods = ref([
     icon: "money_off",
   },
 ]);
+
+const voucherCode = ref("");
+const voucherVerified = ref(false);
+const voucherInfo = ref(null as null | { remaining_amount: number });
+const voucherError = ref("");
 
 onMounted(() => {
   const start_time = new Date();
@@ -311,6 +363,44 @@ function addSplitPayment() {
 function removeSplitPayment(index: number) {
   finishAppointmentDialog.value.splitPayments.splice(index, 1);
 }
+
+async function verifyVoucher() {
+  voucherError.value = "";
+  voucherVerified.value = false;
+  voucherInfo.value = null;
+  if (!voucherCode.value) return;
+  try {
+    const amount =
+      finishAppointmentDialog.value.paymentAmount ||
+      finishAppointmentDialog.value.event.service_price;
+    const res = await api.post("/api/vouchers/verify", {
+      code: voucherCode.value,
+      amount: amount,
+    });
+    if (res.data.status === "success") {
+      voucherVerified.value = true;
+      voucherInfo.value = res.data.data;
+    } else {
+      voucherError.value = res.data.message || "Voucher verification failed.";
+    }
+  } catch (e) {
+    voucherError.value = "Voucher verification failed.";
+  }
+}
+
+// Watch for payment method change to reset voucher state
+import { watch } from "vue";
+watch(
+  () => finishAppointmentDialog.value.paymentMethod,
+  (val) => {
+    if (val !== "voucher") {
+      voucherCode.value = "";
+      voucherVerified.value = false;
+      voucherInfo.value = null;
+      voucherError.value = "";
+    }
+  }
+);
 
 async function confirmFinishAppointment() {
   if (!finishAppointmentDialog.value.paymentMethod) {
@@ -365,9 +455,7 @@ async function confirmFinishAppointment() {
       const hasUnpaid = finishAppointmentDialog.value.splitPayments.some(
         (payment) => payment.method.value === "unpaid"
       );
-      finishAppointmentDialog.value.status = hasUnpaid
-        ? "pending"
-        : "paid";
+      finishAppointmentDialog.value.status = hasUnpaid ? "pending" : "paid";
       //paymentAmount is the total paid amount of split payments except unpaid
       finishAppointmentDialog.value.paymentAmount =
         finishAppointmentDialog.value.splitPayments.reduce(
@@ -402,8 +490,13 @@ async function confirmFinishAppointment() {
         finishAppointmentDialog.value.paymentMethod === "split_payment"
           ? finishAppointmentDialog.value.splitPayments
           : [],
+      voucher_code:
+        finishAppointmentDialog.value.paymentMethod === "voucher"
+        || finishAppointmentDialog.value.splitPayments.some(p => p.method && (p.method.value ? p.method.value : p.method) === 'voucher')
+          ? voucherCode.value
+          : undefined,
     };
-    await api.post(`/api/orders`, payload);
+    await api.post(`/api/orders/finishOrder`, payload);
     $q.notify({
       type: "positive",
       message: "Appointment Comfirmed Successfully",

@@ -37,6 +37,7 @@
             </div>
           </div>
           <div>{{ event.services[0].customer_name }}</div>
+          <div>{{ event.customer_phone }}</div>
           <div>Therapist: {{ event.services[0].staff_name }}</div>
           <div class="text-grey" v-if="event.comments">
             Notes: {{ event.comments }}
@@ -71,11 +72,14 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
+import { onMounted } from 'vue';
 const props = defineProps({
   customerHistory: {
     type: Array,
     required: true
   }
+});
+onMounted(() => {
+console.log("Customer History:", props.customerHistory);
 });
 </script>

@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <q-card>
-      <q-card-section>
+      <q-card-section  horizontal class="q-pl-md q-pt-md">
         <div class="text-h6">Order Details</div>
         <q-btn
           flat
@@ -49,8 +49,8 @@
             <q-item-section>${{ order.paid_amount }}</q-item-section>
           </q-item>
           <q-item>
-            <q-item-section>Staff:</q-item-section>
-            <q-item-section>{{ order.operator_name }}</q-item-section>
+            <q-item-section>Note:</q-item-section>
+            <q-item-section>{{ order.payment_note }}</q-item-section>
           </q-item>
           <q-item>
             <q-item-section>Created At:</q-item-section>
@@ -66,10 +66,6 @@
                 })
               }}
             </q-item-section>
-          </q-item>
-          <q-item v-if="order.payment_note">
-            <q-item-section>Payment Note:</q-item-section>
-            <q-item-section>{{ order.payment_note }}</q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
@@ -149,8 +145,8 @@
         <q-list bordered>
           <q-item v-for="(payment, index) in order.payment" :key="index">
             <q-item-section>
-              <div>Payment Method: {{ payment.payment_method }}</div>
-              <div>Status: {{ payment.payment_status }}</div>
+              <div>Payment Method: {{ payment.paid_by }}</div>
+              <div>Status: {{ payment.status }}</div>
               <div>Total: ${{ payment.total_amount }}</div>
               <div>Paid: ${{ payment.paid_amount }}</div>
               <div>Remark: {{ payment.remark }}</div>

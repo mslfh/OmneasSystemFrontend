@@ -9,6 +9,7 @@ const routes = [
       { path: '/old', component: () => import('pages/CustomerBookingSelectTime.vue') },
       { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
       { path: 'profile', component: () => import('pages/CustomerProfile.vue') },
+      { path: 'profile/detail', component: () => import('src/pages/CustomerProfileDetail.vue') },
     ]
   },
 
@@ -41,7 +42,10 @@ const routes = [
       { path: 'order', component: () => import('pages/AdminOrder.vue') },
       { path: 'order/detail', component: () => import('pages/AdminOrderDetail.vue') },
       { path: 'invoice', component: () => import('pages/AdminInvoice.vue') },
+      { path: 'profile', component: () => import('pages/AdminProfile.vue') },
+      { path: 'profile/detail', component: () => import('src/pages/AdminProfileDetail.vue') },
       { path: 'history', component: () => import('pages/AdminHistory.vue') },
+      { path: 'voucher', component: () => import('pages/AdminVoucher.vue') },
     ]
   },
   // Always leave this as last one,

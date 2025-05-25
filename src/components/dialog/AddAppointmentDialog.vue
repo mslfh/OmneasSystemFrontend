@@ -80,7 +80,7 @@
                     <q-date
                       v-model="addAppointmentForm.booking_date"
                       mask="YYYY-MM-DD"
-                      @update:model-value="
+                      @update:model-value ="
                         fetchAvailableBookingTime(
                           addAppointmentForm.booking_date
                         )
@@ -285,7 +285,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, onMounted, defineEmits } from "vue";
+import { ref, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import { api } from "boot/axios";
 import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
@@ -315,6 +315,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  selectedUser: {
+    type: Object,
+    required: false,
+  },
 });
 
 const emit = defineEmits<{
@@ -329,8 +333,8 @@ const emit = defineEmits<{
 const $q = useQuasar();
 
 const selectedStaff = ref(props.selectedStaff);
-const staffOptions = ref(props.staffOptions);
-const serviceOptions = ref(props.serviceOptions);
+const staffOptions = ref(props.staffOptions && Array.isArray(props.staffOptions) && props.staffOptions.length > 0 ? props.staffOptions : []);
+const serviceOptions = ref(props.serviceOptions && Array.isArray(props.serviceOptions) && props.serviceOptions.length > 0 ? props.serviceOptions : []);
 
 const addAppointmentDialog = ref({ visible: true, tab: "customer" });
 
@@ -355,7 +359,39 @@ const addAppointmentForm = ref({
   ],
 });
 
-onMounted(() => {
+onMounted(async () => {
+  // 自动填充客户信息
+  if (props.selectedUser) {
+    addAppointmentForm.value.customer_service[0].customer_name = props.selectedUser.name || '';
+    addAppointmentForm.value.customer_first_name = (props.selectedUser.name || '').split(' ')[0] || '';
+    addAppointmentForm.value.customer_last_name = (props.selectedUser.name || '').split(' ').slice(1).join(' ') || '';
+    addAppointmentForm.value.customer_email = props.selectedUser.email || '';
+    addAppointmentForm.value.customer_phone = props.selectedUser.phone || '';
+    addAppointmentForm.value.customer_id = props.selectedUser.id;
+  }
+  // 如果 staffOptions 没有传递，则自动获取
+  if (!staffOptions.value || staffOptions.value.length === 0) {
+    //
+    const staffResponse = await api.get('/api/get-staff-schedule-from-date', {
+      params: {
+        date: addAppointmentForm.value.booking_date,
+      },
+    });
+    staffOptions.value = staffResponse.data.map((staff) => ({
+      id: staff.id,
+      name: staff.name,
+    }));
+    staffOptions.value.unshift({ id: 0, name: 'Any therapist' });
+  }
+  // 如果 serviceOptions 没有传递，则自动获取
+  if (!serviceOptions.value || serviceOptions.value.length === 0) {
+    const response = await api.get('/api/services');
+    serviceOptions.value = response.data.map((service) => ({
+      id: service.id,
+      name: service.title + ' (' + service.duration + ' min)',
+      duration: service.duration,
+    }));
+  }
   fetchAvailableBookingTime();
 });
 
@@ -372,7 +408,7 @@ async function fetchAvailableBookingTime(date: string) {
 
   // Filter out unavailable times
   const times = await fetchAvailableBookingTimeSlots({
-    date: props.selectedDate,
+    date: addAppointmentForm.value.booking_date,
     staffId: selectedStaff.value.id,
     duration,
   });

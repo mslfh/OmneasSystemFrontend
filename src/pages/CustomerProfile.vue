@@ -163,7 +163,9 @@
           </div>
         </div>
       </q-form>
-      <UserSelectDialog ref="userSelectDialogRef" />
+
+      <!-- <UserSelectDialog ref="userSelectDialogRef" /> -->
+
     </q-card>
   </q-page>
 </template>
@@ -208,7 +210,7 @@ const counterLabelFn = ({ totalSize, filesNumber, maxFiles }) => {
 };
 
 const userId = ref(null);
-const userSelectDialogRef = ref(null);
+// const userSelectDialogRef = ref(null);
 
 const onSubmit = async () => {
   // Required field validation
@@ -216,21 +218,12 @@ const onSubmit = async () => {
   //   $q.notify({ type: "negative", message: "Please fill in all required fields" });
   //   return;
   // }
-  // Use UserSelectDialog
-  let user_id = null;
-  if (userSelectDialogRef.value) {
-    user_id = await userSelectDialogRef.value.open(form.value.phone);
-  }
-  if (user_id) {
-    userId.value = user_id;
-  }
   try {
     const formData = new FormData();
     // Append form fields
     Object.entries(form.value).forEach(([key, value]) => {
       formData.append(key, value ?? "");
     });
-    // 如果有userId则加入
     if (userId.value) {
       formData.append('user_id', userId.value);
     }
@@ -250,6 +243,10 @@ const onSubmit = async () => {
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );
     $q.notify({ type: "positive", message: "Saved successfully" });
+    // Route to ProfileDetail after save
+    if (response.data.id) {
+      router.push({ path: "/profile/detail", query: { id: response.data.id } });
+    }
   } catch (e) {
     $q.notify({ type: "negative", message: "Save failed" });
   }

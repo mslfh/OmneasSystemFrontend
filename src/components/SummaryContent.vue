@@ -1,4 +1,5 @@
 <template>
+<q-card class="bg-grey-1 no-shadow" bordered>
   <q-card-section class="text-center text-h6 text-black">
     <q-icon name="shopping_cart" class="q-mr-sm" />
     Summary
@@ -24,8 +25,8 @@
     </q-card-section>
   </q-card-section>
   <q-separator v-if="selectedService.id" />
-  <q-card-section v-if="selectedService.id" horizontal>
-    <q-card-section class="col-10">
+  <q-card-section v-if="selectedService.id" horizontal >
+    <q-card-section class="col-9">
       <div class="text-subtitle1">
         <q-icon q-pt-xs name="check_circle" color="teal-7" />
         {{ selectedService.title }} | {{ selectedService.duration }} min
@@ -84,6 +85,7 @@
       </div>
     </div>
   </q-card-section>
+    </q-card>
 </template>
 
 <script setup>
