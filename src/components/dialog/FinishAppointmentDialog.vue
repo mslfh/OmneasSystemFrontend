@@ -484,8 +484,8 @@ async function confirmFinishAppointment() {
       payment_note: finishAppointmentDialog.value.note,
       payment_method: finishAppointmentDialog.value.paymentMethod,
       paid_amount: finishAppointmentDialog.value.paymentAmount,
-      operator_id: finishAppointmentDialog.value.event.staff_id,
-      operator_name: finishAppointmentDialog.value.event.staff_name,
+      confirmed_by: finishAppointmentDialog.value.event.staff_id,
+      confirmed_staff_name: finishAppointmentDialog.value.event.staff_name,
       split_payment:
         finishAppointmentDialog.value.paymentMethod === "split_payment"
           ? finishAppointmentDialog.value.splitPayments
