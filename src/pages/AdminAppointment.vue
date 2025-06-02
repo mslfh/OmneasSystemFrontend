@@ -98,7 +98,8 @@
               <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }}
               </div>
               <div v-if="item.type === 'no_show'" class="text-caption text-red-6 col-5">
-               <q-icon name="visibility_off" /> No Show
+               <q-icon name="visibility_off" />
+               <span class="text-red-6"> NoShow</span>
               </div>
               </div>
               <q-separator></q-separator>
@@ -329,7 +330,7 @@
                     >
                       Check Out
                     </q-chip>
-                    <q-item-label class="text-subtitle" v-if="event.comments">
+                    <q-item-label class="text-subtitle comment-ellipsis" v-if="event.comments">
                       Notes: {{ event.comments }}
                     </q-item-label>
                   </q-list>
@@ -344,7 +345,7 @@
                   <div>
                     {{ event.time + " | " + event.service_duration + " min" }}
                   </div>
-                  <div v-if="event.comments">
+                  <div v-if="event.comments" class="comment-ellipsis">
                     {{ "Notes: " + event.comments }}
                   </div>
                 </q-tooltip>
@@ -464,6 +465,32 @@
     :reminder_msg_template="reminder_msg_template"
     @close="showSendSmsDialog = false"
   />
+
+  <q-dialog v-model="showScheduleStaffDialog">
+  <q-card style="min-width: 350px; max-width: 90vw;">
+    <q-card-section class="row items-center q-pb-none">
+      <q-icon name="group" color="primary" size="md" class="q-mr-md" />
+      <div class="text-h6">Staff Filter</div>
+    </q-card-section>
+    <q-card-section>
+      <div class="q-mb-md">Would you like to show all staff or only scheduled staff?</div>
+      <q-option-group
+        v-model="showAllStaff"
+        :options="[
+          { label: 'All Staff', value: true },
+          { label: 'Scheduled Staff Only', value: false }
+        ]"
+        type="radio"
+        color="primary"
+        inline
+      />
+    </q-card-section>
+    <q-card-actions align="right">
+      <q-btn flat label="Cancel" color="negative" @click="showScheduleStaffDialog = false" />
+      <q-btn flat label="Apply" color="primary" @click="() => { showScheduleStaffDialog = false; fetchStaffList(showAllStaff); }" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -537,16 +564,24 @@ onMounted(() => {
   setInterval(() => {
     fetchAppointments();
   }, 60000);
+  setInterval(() => {
+     scrollToNow();
+  }, 1800000); // 每半小时（1800000毫秒）scrollToNow
 });
 
-// afterMounted(() => {
-//   scrollToNow();
-// })
+const showAllStaff = ref(false); // false = only scheduled staff
+const showScheduleStaffDialog = ref(false);
 
-async function fetchStaffList() {
+function openScheduleStaffDialog() {
+  showScheduleStaffDialog.value = true;
+}
+
+async function fetchStaffList(showAll = showAllStaff.value) {
+
   const staffResponse = await api.get("/api/get-staff-schedule-from-date", {
     params: {
       date: selectedDate.value,
+      showAll: showAll ? 1 : 0,
     },
   });
   staffList.value = staffResponse.data.map((staff: any) => ({
@@ -825,6 +860,7 @@ interface DropScope extends Scope {
   staff_id: number;
   staff_name: string;
 }
+
 async function onDrop(
   e: DropEvent,
   type: string,
@@ -851,6 +887,7 @@ async function onDrop(
     const payload = {
       staff_id: event.staff_id,
       staff_name: event.staff_name,
+      status : 'booked'
     };
     await api.put("/api/service-appointments/" + event.id, payload);
   } catch (error) {
@@ -862,6 +899,7 @@ async function onDrop(
   }
   dragItems.value = dragItems.value.filter((item) => item.id !== itemID);
   console.log("events.value", events.value);
+  fetchAppointments();
   return false;
 }
 
@@ -1066,5 +1104,11 @@ function scrollToNow() {
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
+}
+.comment-ellipsis {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

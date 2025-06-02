@@ -80,7 +80,7 @@
                     <q-date
                       v-model="addAppointmentForm.booking_date"
                       mask="YYYY-MM-DD"
-                      @update:model-value ="
+                      @update:model-value="
                         fetchAvailableBookingTime(
                           addAppointmentForm.booking_date
                         )
@@ -183,6 +183,7 @@
               label="Phone"
             />
             <q-input
+              autogrow
               v-model="addAppointmentForm.comments"
               label="Service Comments"
             />
@@ -203,7 +204,10 @@
               placeholder="Find Booking History by Name, Phone, or Email"
             />
             <q-scroll-area class="q-pa-md" style="height: 420px">
-              <CustomerHistoryTimeline v-if="customerHistory.length > 0" :customerHistory="customerHistory" />
+              <CustomerHistoryTimeline
+                v-if="customerHistory.length > 0"
+                :customerHistory="customerHistory"
+              />
               <q-label v-else class="text-grey">
                 <q-icon name="info" />
                 No available recorded history for this client.
@@ -333,8 +337,20 @@ const emit = defineEmits<{
 const $q = useQuasar();
 
 const selectedStaff = ref(props.selectedStaff);
-const staffOptions = ref(props.staffOptions && Array.isArray(props.staffOptions) && props.staffOptions.length > 0 ? props.staffOptions : []);
-const serviceOptions = ref(props.serviceOptions && Array.isArray(props.serviceOptions) && props.serviceOptions.length > 0 ? props.serviceOptions : []);
+const staffOptions = ref(
+  props.staffOptions &&
+    Array.isArray(props.staffOptions) &&
+    props.staffOptions.length > 0
+    ? props.staffOptions
+    : []
+);
+const serviceOptions = ref(
+  props.serviceOptions &&
+    Array.isArray(props.serviceOptions) &&
+    props.serviceOptions.length > 0
+    ? props.serviceOptions
+    : []
+);
 
 const addAppointmentDialog = ref({ visible: true, tab: "customer" });
 
@@ -362,17 +378,20 @@ const addAppointmentForm = ref({
 onMounted(async () => {
   // 自动填充客户信息
   if (props.selectedUser) {
-    addAppointmentForm.value.customer_service[0].customer_name = props.selectedUser.name || '';
-    addAppointmentForm.value.customer_first_name = (props.selectedUser.name || '').split(' ')[0] || '';
-    addAppointmentForm.value.customer_last_name = (props.selectedUser.name || '').split(' ').slice(1).join(' ') || '';
-    addAppointmentForm.value.customer_email = props.selectedUser.email || '';
-    addAppointmentForm.value.customer_phone = props.selectedUser.phone || '';
+    addAppointmentForm.value.customer_service[0].customer_name =
+      props.selectedUser.name || "";
+    addAppointmentForm.value.customer_first_name =
+      (props.selectedUser.name || "").split(" ")[0] || "";
+    addAppointmentForm.value.customer_last_name =
+      (props.selectedUser.name || "").split(" ").slice(1).join(" ") || "";
+    addAppointmentForm.value.customer_email = props.selectedUser.email || "";
+    addAppointmentForm.value.customer_phone = props.selectedUser.phone || "";
     addAppointmentForm.value.customer_id = props.selectedUser.id;
   }
   // 如果 staffOptions 没有传递，则自动获取
   if (!staffOptions.value || staffOptions.value.length === 0) {
     //
-    const staffResponse = await api.get('/api/get-staff-schedule-from-date', {
+    const staffResponse = await api.get("/api/get-staff-schedule-from-date", {
       params: {
         date: addAppointmentForm.value.booking_date,
       },
@@ -381,14 +400,14 @@ onMounted(async () => {
       id: staff.id,
       name: staff.name,
     }));
-    staffOptions.value.unshift({ id: 0, name: 'Any therapist' });
+    staffOptions.value.unshift({ id: 0, name: "Any therapist" });
   }
   // 如果 serviceOptions 没有传递，则自动获取
   if (!serviceOptions.value || serviceOptions.value.length === 0) {
-    const response = await api.get('/api/services');
+    const response = await api.get("/api/services");
     serviceOptions.value = response.data.map((service) => ({
       id: service.id,
-      name: service.title + ' (' + service.duration + ' min)',
+      name: service.title + " (" + service.duration + " min)",
       duration: service.duration,
     }));
   }

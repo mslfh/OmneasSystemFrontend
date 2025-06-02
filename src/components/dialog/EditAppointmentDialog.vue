@@ -233,7 +233,7 @@
             />
             <q-input v-model="editEventForm.customer_email" label="Email" />
             <q-input v-model="editEventForm.customer_phone" label="Phone" />
-            <q-input v-model="editEventForm.comments" label="Comments" />
+            <q-input type="textarea" v-model="editEventForm.comments" label="Comments" />
           </q-card-section>
 
            <div class="row justify-end" >
