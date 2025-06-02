@@ -95,12 +95,15 @@
             <q-card class="text-subtitle q-mb-sm bg-amber-11" flat bordered>
               <div class="row">
                 <div class="col-7">
-              <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }}
-              </div>
-              <div v-if="item.type === 'no_show'" class="text-caption text-red-6 col-5">
-               <q-icon name="visibility_off" />
-               <span class="text-red-6"> NoShow</span>
-              </div>
+                  <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }}
+                </div>
+                <div
+                  v-if="item.type === 'no_show'"
+                  class="text-caption text-red-6 col-5"
+                >
+                  <q-icon name="visibility_off" />
+                  <span class="text-red-6"> NoShow</span>
+                </div>
               </div>
               <q-separator></q-separator>
               <q-card-section class="q-pt-none q-pb-none">
@@ -330,7 +333,10 @@
                     >
                       Check Out
                     </q-chip>
-                    <q-item-label class="text-subtitle comment-ellipsis" v-if="event.comments">
+                    <q-item-label
+                      class="text-subtitle comment-ellipsis"
+                      v-if="event.comments"
+                    >
                       Notes: {{ event.comments }}
                     </q-item-label>
                   </q-list>
@@ -467,30 +473,47 @@
   />
 
   <q-dialog v-model="showScheduleStaffDialog">
-  <q-card style="min-width: 350px; max-width: 90vw;">
-    <q-card-section class="row items-center q-pb-none">
-      <q-icon name="group" color="primary" size="md" class="q-mr-md" />
-      <div class="text-h6">Staff Filter</div>
-    </q-card-section>
-    <q-card-section>
-      <div class="q-mb-md">Would you like to show all staff or only scheduled staff?</div>
-      <q-option-group
-        v-model="showAllStaff"
-        :options="[
-          { label: 'All Staff', value: true },
-          { label: 'Scheduled Staff Only', value: false }
-        ]"
-        type="radio"
-        color="primary"
-        inline
-      />
-    </q-card-section>
-    <q-card-actions align="right">
-      <q-btn flat label="Cancel" color="negative" @click="showScheduleStaffDialog = false" />
-      <q-btn flat label="Apply" color="primary" @click="() => { showScheduleStaffDialog = false; fetchStaffList(showAllStaff); }" />
-    </q-card-actions>
-  </q-card>
-</q-dialog>
+    <q-card style="min-width: 350px; max-width: 90vw">
+      <q-card-section class="row items-center q-pb-none">
+        <q-icon name="group" color="primary" size="md" class="q-mr-md" />
+        <div class="text-h6">Staff Filter</div>
+      </q-card-section>
+      <q-card-section>
+        <div class="q-mb-md">
+          Would you like to show all staff or only scheduled staff?
+        </div>
+        <q-option-group
+          v-model="showAllStaff"
+          :options="[
+            { label: 'All Staff', value: true },
+            { label: 'Scheduled Staff Only', value: false },
+          ]"
+          type="radio"
+          color="primary"
+          inline
+        />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="negative"
+          @click="showScheduleStaffDialog = false"
+        />
+        <q-btn
+          flat
+          label="Apply"
+          color="primary"
+          @click="
+            () => {
+              showScheduleStaffDialog = false;
+              fetchStaffList(showAllStaff);
+            }
+          "
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -565,7 +588,7 @@ onMounted(() => {
     fetchAppointments();
   }, 60000);
   setInterval(() => {
-     scrollToNow();
+    scrollToNow();
   }, 1800000); // 每半小时（1800000毫秒）scrollToNow
 });
 
@@ -577,18 +600,30 @@ function openScheduleStaffDialog() {
 }
 
 async function fetchStaffList(showAll = showAllStaff.value) {
-
   const staffResponse = await api.get("/api/get-staff-schedule-from-date", {
     params: {
       date: selectedDate.value,
-      showAll: showAll ? 1 : 0,
+      showAll: 1,
     },
   });
-  staffList.value = staffResponse.data.map((staff: any) => ({
-    staff_id: staff.id,
-    staff_name: staff.name,
-    schedule: staff.schedules,
-  }));
+  if (showAll) {
+    staffList.value = staffResponse.data.map((staff: any) => ({
+      staff_id: staff.id,
+      staff_name: staff.name,
+      schedule: staff.schedules,
+    }));
+  }
+  else{
+    // filter staff who has no schedule and no booking_services
+    staffList.value = staffResponse.data
+    .filter((staff: any) => staff.schedules && staff.schedules.length > 0 || staff.booking_services.length > 0)
+    .map((staff: any) => ({
+      staff_id: staff.id,
+      staff_name: staff.name,
+      schedule: staff.schedules,
+    }));
+  }
+
   staffOptions.value = staffResponse.data.map((staff: any) => ({
     id: staff.id,
     name: staff.name,
@@ -887,7 +922,7 @@ async function onDrop(
     const payload = {
       staff_id: event.staff_id,
       staff_name: event.staff_name,
-      status : 'booked'
+      status: "booked",
     };
     await api.put("/api/service-appointments/" + event.id, payload);
   } catch (error) {
