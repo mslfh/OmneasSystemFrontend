@@ -67,7 +67,7 @@
         <template v-slot:body-cell-attachment="props">
           <q-td class="text-center">
             <AttachmentViewer
-              :attachments="parseAttachment(props.row.medical_attachment_path)"
+              :attachments="props.row.medical_attachment_path "
             />
           </q-td>
         </template>
@@ -157,25 +157,6 @@ const onRequest = (props) => {
   const count = rowsPerPage === 0 ? pagination.value.rowsNumber : rowsPerPage;
   fetchProfiles(startRow, count, filterValue, sortBy, descending);
 };
-
-function parseAttachment(str) {
-  console.log("str:", str);
-  if (!str) return [];
-  // try {
-  const arr = str ? JSON.parse(str) : [];
-  const attachments = arr.map(
-    (p) => `${VITE_API_URL}/storage/${p.replace(/^[\\/]+/, "")}`
-  );
-  console.log("Parsed attachments:", attachments);
-  if (attachments.length > 0) {
-    return attachments;
-  } else {
-    return [];
-  }
-  // } catch (e) {
-  //   return [];
-  // }
-}
 
 function formatCreatedAt(dateStr) {
   if (!dateStr) return "";

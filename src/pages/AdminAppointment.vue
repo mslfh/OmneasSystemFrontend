@@ -83,9 +83,9 @@
               {{ dragItems.length }}
             </q-badge>
           </q-btn>
-          <q-lable> Waitting List </q-lable>
+          <q-label> Waitting List </q-label>
         </div>
-        <ul class="column">
+        <ul class="column q-pr-xs">
           <li
             v-for="item in dragItems"
             :key="item.id"
@@ -93,16 +93,21 @@
             @dragstart="onDragStart($event, item)"
           >
             <q-card class="text-subtitle q-mb-sm bg-amber-11" flat bordered>
-              <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }} ({{
-                item.service_duration
-              }}
-              min)
+              <div class="row">
+                <div class="col-7">
+              <q-icon name="drag_indicator"></q-icon>Time: {{ item.time }}
+              </div>
+              <div v-if="item.type === 'no_show'" class="text-caption text-red-6 col-5">
+               <q-icon name="visibility_off" /> No Show
+              </div>
+              </div>
               <q-separator></q-separator>
               <q-card-section class="q-pt-none q-pb-none">
                 Name: {{ item.customer_name }}
               </q-card-section>
               <q-card-section class="q-pt-none q-pb-none text-caption">
-                * {{ item.service_title }}
+                * {{ item.service_title }} ({{ item.service_duration }}
+                min)
               </q-card-section>
             </q-card>
           </li>
@@ -139,11 +144,7 @@
         >
           <template #head-day="{ scope: { timestamp, columnIndex } }">
             <div
-              style="
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-              "
+              style="display: flex; justify-content: center; flex-wrap: wrap"
               class="row"
             >
               <div
@@ -151,7 +152,8 @@
                 v-if="staffList[columnIndex]"
                 style="text-align: center"
               >
-                <div @click="scrollToNow()">
+                <!-- staff list -->
+                <div @click="openScheduleStaffDialog(staffList[columnIndex])">
                   {{ staffList[columnIndex].staff_name }}
                   <div
                     v-for="schedule in staffList[columnIndex].schedule"
@@ -333,11 +335,19 @@
                   </q-list>
                 </div>
                 <q-tooltip>
-                    <div  >{{ event.service_title + ' - $' + event.service_price   }}</div>
-                    <div  >{{ event.customer_name + ' ' + event.customer_phone}}</div>
-                    <div >{{ event.time + ' | ' + event.service_duration + " min"  }}</div>
-                     <div v-if="event.comments">{{ 'Notes: ' + event.comments}}</div>
-              </q-tooltip>
+                  <div>
+                    {{ event.service_title + " - $" + event.service_price }}
+                  </div>
+                  <div>
+                    {{ event.customer_name + " " + event.customer_phone }}
+                  </div>
+                  <div>
+                    {{ event.time + " | " + event.service_duration + " min" }}
+                  </div>
+                  <div v-if="event.comments">
+                    {{ "Notes: " + event.comments }}
+                  </div>
+                </q-tooltip>
               </div>
             </template>
           </template>
@@ -478,7 +488,6 @@ import FinishAppointmentDialog from "components/dialog/FinishAppointmentDialog.v
 import EditAppointmentDialog from "components/dialog/EditAppointmentDialog.vue";
 import AddAppointmentDialog from "components/dialog/AddAppointmentDialog.vue";
 
-
 import { fetchUserFromSearch } from "../composables/useUserFromSearch";
 import type { AppointmentEvent } from "../types/appointment";
 
@@ -529,6 +538,10 @@ onMounted(() => {
     fetchAppointments();
   }, 60000);
 });
+
+// afterMounted(() => {
+//   scrollToNow();
+// })
 
 async function fetchStaffList() {
   const staffResponse = await api.get("/api/get-staff-schedule-from-date", {

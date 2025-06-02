@@ -5,11 +5,11 @@
         {{ customerHistory.length }}
       </q-badge>
     </q-btn>
-    <!-- <q-btn label="No show" flat color="grey ">
+    <q-btn label="No show" flat color="grey ">
       <q-badge color="deep-orange-4" text-color="white" floating>
-        {{ customerHistory.filter(event => event.status === 'pending').length }}
+        {{ customerHistory.filter(event => event.type === 'no_show').length }}
       </q-badge>
-    </q-btn> -->
+    </q-btn>
     <q-timeline class="q-pa-none" color="">
       <q-timeline-entry
         v-for="event in customerHistory"

@@ -11,6 +11,7 @@
       :loading="loading"
       :filter="filter"
       @request="onRequest"
+      binary-state-sort
     >
       <template v-slot:top-right>
         <q-input
@@ -55,6 +56,16 @@
             @click="deleteUser(props.row)"
           /> -->
         </q-td>
+      </template>
+
+      <template v-slot:body-cell-profile="props">
+          <q-td >
+            <AttachmentViewer
+              :attachments="
+                  props.row.user_profile[0]?props.row.user_profile[0].medical_attachment_path:  ''
+              "
+            />
+          </q-td>
       </template>
     </q-table>
     <q-btn
@@ -219,9 +230,12 @@ import { onMounted, ref, watch } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
+import AttachmentViewer from "components/AttachmentViewer.vue";
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 const router = useRouter();
 const $q = useQuasar();
+
 const users = ref([]);
 const filter = ref("");
 const columns = [
@@ -254,6 +268,13 @@ const columns = [
     align: "left",
     field: "email",
   },
+  {
+    name: "profile",
+    required: true,
+    label: "Profile",
+    align: "left",
+    field: "user_profile",
+  },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
@@ -278,19 +299,14 @@ const fetchUsers = async (startRow, count, filter, sortBy, descending) => {
         descending,
       },
     });
+    users.value = response.data.rows.map((user) => ({
+      ...user,
+      first_name: user.first_name || "N/A",
+      last_name: user.last_name || "N/A",
+    }));
+    pagination.value.rowsNumber = response.data?.total || 0;
+    loading.value = false;
 
-    if (response.data && Array.isArray(response.data.rows)) {
-      users.value = response.data.rows.map((user) => ({
-        ...user,
-        first_name: user.first_name || "N/A",
-        last_name: user.last_name || "N/A",
-      }));
-      pagination.value.rowsNumber = response.data.total || 0;
-    } else {
-      console.error("Unexpected API response structure:", response.data);
-      users.value = [];
-      pagination.value.rowsNumber = 0;
-    }
   } catch (error) {
     console.error("Error fetching users:", error);
     users.value = [];
@@ -302,26 +318,10 @@ const fetchUsers = async (startRow, count, filter, sortBy, descending) => {
 
 const onRequest = (props) => {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
-  const searchValue = props.filter || filter.value;
-
-  loading.value = true;
-
-  // Calculate starting row and fetch count
+  const filterValue = props.filter;
   const startRow = (page - 1) * rowsPerPage;
   const count = rowsPerPage === 0 ? pagination.value.rowsNumber : rowsPerPage;
-
-  // Fetch data from server
-  fetchUsers(startRow, count, searchValue, sortBy, descending)
-    .then(() => {
-      // Update pagination object
-      pagination.value.page = page;
-      pagination.value.rowsPerPage = rowsPerPage;
-      pagination.value.sortBy = sortBy;
-      pagination.value.descending = descending;
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+  fetchUsers(startRow, count, filterValue, sortBy, descending);
 };
 
 onMounted(() => {
@@ -358,11 +358,11 @@ const updateUser = async () => {
     });
     await api.post(`/api/user/${editForm.value.id}`, formData);
 
-    const index = users.value.findIndex((u) => u.id === editForm.value.id);
-    if (index !== -1) {
-      users.value[index] = { ...editForm.value };
-    }
-    fetchUsers();
+    // Instead of updating users.value directly, refresh table via onRequest
+    onRequest({
+      pagination: pagination.value,
+      filter: filter.value,
+    });
     editForm.value = {
       id: null,
       name: "",
@@ -419,7 +419,11 @@ const importUsers = async (event) => {
       },
       timeout: 10000 * 300, // Increase timeout to 10 seconds
     });
-    fetchUsers();
+    // Refresh table via onRequest
+    onRequest({
+      pagination: pagination.value,
+      filter: filter.value,
+    });
     isSuccessDialogOpen.value = true; // Show success dialog
   } catch (error) {
     console.error("Error importing users:", error);
@@ -445,4 +449,5 @@ const fetchCustomerHistory = async (userId) => {
   });
   isHistoryDialogOpen.value = true;
 };
+
 </script>

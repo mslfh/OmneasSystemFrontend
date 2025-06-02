@@ -3,6 +3,7 @@
     <q-table
       title="Appointment History"
       no-data-label="No appointments found"
+      :dense="$q.screen.lt.md"
       :rows="appointments"
       :columns="columns"
       row-key="id"
@@ -204,9 +205,9 @@ const fetchAppointments = async (
 const onRequest = (props) => {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
   const filterValue = props.filter;
-
   const startRow = (page - 1) * rowsPerPage;
-  fetchAppointments(startRow, rowsPerPage, filterValue, sortBy, descending);
+  const count = rowsPerPage === 0 ? pagination.value.rowsNumber : rowsPerPage;
+  fetchAppointments(startRow, count, filterValue, sortBy, descending);
 };
 
 onMounted(() => {

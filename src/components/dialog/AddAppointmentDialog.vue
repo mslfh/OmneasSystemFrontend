@@ -183,7 +183,7 @@
               label="Phone"
             />
             <q-input
-              v-model="addAppointmentForm.customer_service[0].comments"
+              v-model="addAppointmentForm.comments"
               label="Service Comments"
             />
             <q-label class="text-subtitle1 text-grey-8 text-weight-bold"
