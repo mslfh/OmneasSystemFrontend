@@ -414,7 +414,9 @@
                       label-slot
                       clearable
                       mask="##########"
-                      :rules="[(val) => !!val || 'Phone Number is required']"
+                      :rules="[
+                        (val) => !!val || 'Phone number is required',
+                      ]"
                     >
                       <template v-slot:label>
                         <div class="row items-center all-pointer-events">
@@ -490,6 +492,17 @@
                           });
                           return;
                         }
+                        if(phone.replace(/\D/g, '').length != 10){
+                           $q.notify({
+                            message: 'Phone number must be 10 digits',
+                            color: 'red-4',
+                            icon: 'error',
+                            position: 'top',
+                            timeout: 3000,
+                          });
+                          return;
+                        }
+
                         done3 = true;
                         step = 4;
                       }
@@ -694,20 +707,18 @@
           </div>
           <!--summary -->
           <div v-if="!$q.screen.lt.sm" class="col-4">
-
-              <SummaryContent
-                :ratingModel="ratingModel"
-                :selectedService="selectedService"
-                :selectedStaff="selectedStaff"
-                :time="time"
-                :showDate="showDate"
-                :showTime="showTime"
-                :availableStaff="availableStaff"
-                @editService="step = 1"
-                @editDate="step = 2"
-                @editTherapist="step = 2"
-              />
-
+            <SummaryContent
+              :ratingModel="ratingModel"
+              :selectedService="selectedService"
+              :selectedStaff="selectedStaff"
+              :time="time"
+              :showDate="showDate"
+              :showTime="showTime"
+              :availableStaff="availableStaff"
+              @editService="step = 1"
+              @editDate="step = 2"
+              @editTherapist="step = 2"
+            />
           </div>
         </div>
       </q-page>
@@ -1027,18 +1038,6 @@ const submitAppointment = async () => {
         query: {
           id: response.data.id,
         },
-      });
-    } else {
-      step.value = 1;
-      $q.notify({
-        message: "Sorry! Failed to book appointment, please call us to check.",
-        color: "red",
-        icon: "error",
-        position: "top",
-        timeout: 5000,
-      });
-      router.push({
-        path: "/",
       });
     }
   } catch (error) {

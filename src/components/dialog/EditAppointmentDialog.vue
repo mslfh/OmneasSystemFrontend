@@ -366,7 +366,22 @@ async function saveEditedEvent() {
   try {
     editEventForm.value.staff = selectedStaff.value;
     const payload = { ...editEventForm.value };
-    await api.put(`/api/appointments/${payload.appointment_id}`, payload);
+    const response = await api.put(`/api/appointments/${payload.appointment_id}`, payload);
+    if( response.status === 200) {
+      $q.notify({
+        type: "positive",
+        message: "Appointment updated successfully",
+        position: "top",
+        timeout: 2000,
+      });
+    } else {
+      $q.notify({
+        type: "negative",
+        message: response.data.message,
+        position: "top",
+        timeout: 2000,
+      });
+    }
     emit("save");
   } catch (error) {
     console.error("Error saving edited event:", error);
