@@ -337,7 +337,7 @@ function addAppointment(user) {
               <q-icon name="payments" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Bill</q-item-label>
+              <q-item-label>Invoice</q-item-label>
             </q-item-section>
           </q-item>
 

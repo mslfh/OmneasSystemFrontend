@@ -218,7 +218,7 @@ onMounted(async () => {
     };
     time.value = service.booking_time.split(" ")[1]; // Extract time from booking_time
     date.value = service.booking_time.split(" ")[0]; // Extract date from booking_time
-    comments.value = data.comments || "";
+    comments.value = service.comments || "";
     name.value = {
       first_name: data.customer_first_name,
       last_name: data.customer_last_name,

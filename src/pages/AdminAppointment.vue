@@ -209,22 +209,27 @@
                     "
                     @click="scrollToEvent(event)"
                   >
-                    <q-tooltip>{{
-                      event.customer_name +
-                      " " +
-                      event.time +
-                      " - " +
-                      event.service_title +
-                      " | " +
-                      event.service_duration +
-                      " min"
-                    }}</q-tooltip>
+                    <q-tooltip>
+                      <div>
+                        {{ event.customer_name + " " + event.customer_phone }}
+                      </div>
+                      <div>
+                        {{ event.service_title + " - $" + event.service_price }}
+                      </div>
+                      <div>
+                        {{
+                          event.time + " | " + event.service_duration + " min"
+                        }}
+                      </div>
+                      <div v-if="event.comments" class="comment-ellipsis">
+                        {{ "Notes: " + event.comments }}
+                      </div>
+                    </q-tooltip>
                   </q-badge>
                 </template>
               </div>
             </div>
           </template>
-
           <template
             #day-body="{
               scope: {
@@ -472,48 +477,17 @@
     @close="showSendSmsDialog = false"
   />
 
-  <q-dialog v-model="showScheduleStaffDialog">
-    <q-card style="min-width: 350px; max-width: 90vw">
-      <q-card-section class="row items-center q-pb-none">
-        <q-icon name="group" color="primary" size="md" class="q-mr-md" />
-        <div class="text-h6">Staff Filter</div>
-      </q-card-section>
-      <q-card-section>
-        <div class="q-mb-md">
-          Would you like to show all staff or only scheduled staff?
-        </div>
-        <q-option-group
-          v-model="showAllStaff"
-          :options="[
-            { label: 'All Staff', value: true },
-            { label: 'Scheduled Staff Only', value: false },
-          ]"
-          type="radio"
-          color="primary"
-          inline
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="negative"
-          @click="showScheduleStaffDialog = false"
-        />
-        <q-btn
-          flat
-          label="Apply"
-          color="primary"
-          @click="
-            () => {
-              showScheduleStaffDialog = false;
-              fetchStaffList(showAllStaff);
-            }
-          "
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+  <EditStaffScheduleDialog
+    v-if="showScheduleStaffDialog.visible"
+    :staffSchedule="showScheduleStaffDialog.staffSchedule"
+    :isShowAllStaff="isShowAllStaff"
+    @close="showScheduleStaffDialog.visible = false;
+    fetchStaffList()"
+    @switch-show-staff="
+    isShowAllStaff = !isShowAllStaff;
+    switchShowAllStaff()
+    "
+  />
 </template>
 
 <script setup lang="ts">
@@ -537,6 +511,7 @@ import EditBreakEventDialog from "components/dialog/EditBreakEventDialog.vue";
 import FinishAppointmentDialog from "components/dialog/FinishAppointmentDialog.vue";
 import EditAppointmentDialog from "components/dialog/EditAppointmentDialog.vue";
 import AddAppointmentDialog from "components/dialog/AddAppointmentDialog.vue";
+import EditStaffScheduleDialog from "components/dialog/EditStaffScheduleDialog.vue";
 
 import { fetchUserFromSearch } from "../composables/useUserFromSearch";
 import type { AppointmentEvent } from "../types/appointment";
@@ -592,39 +567,26 @@ onMounted(() => {
   }, 1800000); // 每半小时（1800000毫秒）scrollToNow
 });
 
-const showAllStaff = ref(false); // false = only scheduled staff
-const showScheduleStaffDialog = ref(false);
+const showScheduleStaffDialog = ref({
+  visible: false,
+  staffSchedule: {},
+});
+const staffSchedule = ref([]);
 
-function openScheduleStaffDialog() {
-  showScheduleStaffDialog.value = true;
+function openScheduleStaffDialog(staffSchedule) {
+  showScheduleStaffDialog.value.visible = true;
+  showScheduleStaffDialog.value.staffSchedule = staffSchedule;
 }
 
-async function fetchStaffList(showAll = showAllStaff.value) {
+async function fetchStaffList() {
   const staffResponse = await api.get("/api/get-staff-schedule-from-date", {
     params: {
       date: selectedDate.value,
       showAll: 1,
     },
   });
-  if (showAll) {
-    staffList.value = staffResponse.data.map((staff: any) => ({
-      staff_id: staff.id,
-      staff_name: staff.name,
-      schedule: staff.schedules,
-    }));
-  }
-  else{
-    // filter staff who has no schedule and no booking_services
-    staffList.value = staffResponse.data
-    .filter((staff: any) => staff.schedules && staff.schedules.length > 0 || staff.booking_services.length > 0)
-    .map((staff: any) => ({
-      staff_id: staff.id,
-      staff_name: staff.name,
-      schedule: staff.schedules,
-    }));
-  }
-
-  staffOptions.value = staffResponse.data.map((staff: any) => ({
+  staffSchedule.value = staffResponse.data;
+  staffOptions.value = staffSchedule.value.map((staff: any) => ({
     id: staff.id,
     name: staff.name,
   }));
@@ -632,6 +594,32 @@ async function fetchStaffList(showAll = showAllStaff.value) {
     id: 0,
     name: "Any therapist ",
   });
+  // filter staff who has no schedule and no booking_services
+  switchShowAllStaff()
+}
+
+const isShowAllStaff = ref(false);
+
+function switchShowAllStaff() {
+  if (isShowAllStaff.value) {
+    staffList.value = staffSchedule.value.map((staff: any) => ({
+      staff_id: staff.id,
+      staff_name: staff.name,
+      schedule: staff.schedules,
+    }));
+  } else {
+    staffList.value = staffSchedule.value
+      .filter(
+        (staff: any) =>
+          (staff.schedules && staff.schedules.length > 0) ||
+          staff.booking_services.length > 0
+      )
+      .map((staff: any) => ({
+        staff_id: staff.id,
+      staff_name: staff.name,
+      schedule: staff.schedules,
+    }));
+  }
 }
 
 async function fetchAppointments() {
