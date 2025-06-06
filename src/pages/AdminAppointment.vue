@@ -662,6 +662,7 @@ async function fetchAppointments() {
       type: bookedService.type,
       tag: bookedService.tag,
       appointment_id: bookedService.appointment_id,
+      customer_id: bookedService.customer_id,
       customer_first_name: bookedService.customer_first_name,
       customer_last_name: bookedService.customer_last_name,
       customer_phone: bookedService.customer_phone,
@@ -972,6 +973,7 @@ const showEditBreakEventDialog = ref(false);
 const editEventForm = ref({
   id: 0,
   appointment_id: 0,
+  customer_id: 0,
   booking_date: "",
   booking_time: "",
   customer_name: "",
@@ -993,6 +995,7 @@ function openEditEventDialog(event: AppintmentEvent) {
   editEventForm.value = {
     id: event.id,
     appointment_id: event.appointment_id,
+    customer_id: event.customer_id,
     booking_date: event.date,
     booking_time: event.time,
     customer_name: event.customer_name,

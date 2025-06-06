@@ -257,7 +257,7 @@
                 color="blue-4"
                 text-color="white"
                 clickable
-                @click.stop="viewHistory(editEventForm.customer_phone)"
+                @click.stop=" isHistoryDialogOpen = true"
               >
                 History
               </q-chip>
@@ -283,7 +283,10 @@
         Customer History
       </q-card-section>
       <q-card-section>
-        <CustomerHistoryTimeline :customerHistory="customerHistory" />
+        <CustomerHistoryTimeline
+          :user_Id="editEventForm.customer_id"
+          :customer_phone="editEventForm.customer_phone"
+        />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Back" color="positive" @click="isHistoryDialogOpen = false" />
@@ -325,7 +328,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close", "openSms", "save", "delete","checkOut","openInvoice"]);
-
 const $q = useQuasar();
 
 const editEventForm = ref(props.editEventForm);
@@ -515,49 +517,6 @@ async function noShowAppointment() {
   });
 }
 
-const customerHistory = ref([]);
 const isHistoryDialogOpen = ref(false);
-
-async function viewHistory(phone) {
-
-  const userResponse = await api.get("/api/find-user-by-field", {
-      params: {
-        search: phone,
-        field: "phone"
-       },
-    });
-  if (userResponse.data.length === 0) {
-    $q.notify({
-      type: "warning",
-      message: "No user found with this phone number",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-  const userId = userResponse.data[0].id;
-
-  const response = await api.get("/api/getUserBookingHistory", {
-    params: { id: userId },
-  });
-  customerHistory.value = response.data;
-  if (customerHistory.value.length === 0) {
-    $q.notify({
-      type: "warning",
-      message: "No history found for this customer",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-  $q.notify({
-    type: "info",
-    message: "Customer history fetched successfully",
-    position: "top",
-    timeout: 2000,
-  });
-  isHistoryDialogOpen.value = true;
-  return;
-}
 
 </script>

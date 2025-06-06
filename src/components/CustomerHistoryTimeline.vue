@@ -31,9 +31,10 @@
             *
             {{ event.services[0].customer_name + ", " + event.customer_phone }}
           </div>
-          <div>* Therapist : {{ event.services[0].staff_name }}
+          <div>
+            * Therapist : {{ event.services[0].staff_name }}
 
-             <q-badge
+            <q-badge
               outline
               size="12px"
               dense
@@ -51,8 +52,16 @@
           </div>
           <div class="row q-pa-none">
             <span>
-              * Duration: {{ event.actual_start_time ? event.actual_start_time.slice(10, 16) : '' }} ~
-              {{ event.actual_end_time ? event.actual_end_time.slice(10, 16) : '' }}
+              * Duration:
+              {{
+                event.actual_start_time
+                  ? event.actual_start_time.slice(10, 16)
+                  : ""
+              }}
+              ~
+              {{
+                event.actual_end_time ? event.actual_end_time.slice(10, 16) : ""
+              }}
             </span>
           </div>
           <div
@@ -92,14 +101,45 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
+import { api } from "boot/axios";
+import { useQuasar } from "quasar";
+
+const $q = useQuasar();
 const props = defineProps({
-  customerHistory: {
-    type: Array,
-    required: true,
+  customer_phone: {
+    type: String,
+    default: "",
+    required: false,
+  },
+  user_Id: {
+    type: Number,
+    default: 0,
+    required: false,
   },
 });
-onMounted(() => {
-  console.log("Customer History:", props.customerHistory);
+const customerHistory = ref([]);
+
+onMounted(async () => {
+  const response = await api.get("/api/getUserBookingHistory", {
+    params: { id: props.user_Id, phone: props.customer_phone },
+  });
+
+  customerHistory.value = response.data;
+  if (customerHistory.value.length === 0) {
+    $q.notify({
+      type: "warning",
+      message: "No booking history found for this user",
+      position: "top",
+      timeout: 2000,
+    });
+    return;
+  }
+  $q.notify({
+    type: "info",
+    message: "Customer history fetched successfully",
+    position: "top",
+    timeout: 2000,
+  });
 });
 </script>

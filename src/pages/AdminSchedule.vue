@@ -54,7 +54,7 @@
         </template>
       </template>
     </q-calendar-month>
-
+<!-- Set Staff Schedule -->
     <q-dialog v-model="scheduleDialog">
       <q-card>
         <q-card-section>
@@ -78,7 +78,6 @@
                 label="Schedule Type"
                 :options="['Every week']"
             /></q-card-section>
-
 
             <q-card-section>
               <q-input v-model="startDate" label="Start Date" mask="####-##-##">
@@ -214,7 +213,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-
+    <!-- Add Day Schedule -->
     <q-dialog v-model="dayScheduleDialog">
       <q-card style="width: 100%">
         <q-card-section>
@@ -635,7 +634,7 @@ async function saveDaySchedule() {
     schedule.value.end_time = "0" + schedule.value.end_time;
   }
 
-  schedule.value.status = 'active';
+  schedule.value.status = "active";
   try {
     const payload = {
       staff_id: selectedStaff.value.id,

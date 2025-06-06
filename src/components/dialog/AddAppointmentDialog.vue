@@ -10,7 +10,8 @@
     <q-card :style="$q.screen.gt.md ? 'min-width: 1000px' : 'min-width: 100%'">
       <div class="row">
         <!--Events -->
-        <div :class="$q.screen.gt.md ? 'col-2' : 'col-12'">
+        <!-- <div :class="$q.screen.gt.md ? 'col-2-md ' : 'col-12'"> -->
+        <div  class="col-md-2 col-xs-12">
           <q-card-section>
             <q-label style="color: goldenrod" class="text-h5 text-weight-bold">
               <q-icon name="alarm" size="md" />
@@ -35,7 +36,8 @@
             />
           </q-card-section>
         </div>
-        <div :class="$q.screen.gt.md ? 'col-4 q-pr-md' : 'col-6 q-pl-xs'">
+        <!-- Select Therapist -->
+        <div  class=" col-md-4 q-pa-md-md col-xs-5 q-ma-xs-xs">
           <div>
             <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
             <q-chip
@@ -129,38 +131,10 @@
             </q-scroll-area>
           </div>
         </div>
-        <div :class="$q.screen.gt.md ? 'col-5' : 'col-6'">
-          <q-tabs v-model="addAppointmentDialog.tab" class="text-blue-8">
-            <q-tab
-              name="customer"
-              icon="person_add"
-              label="Client"
-              @click="
-                () => {
-                  if (!addAppointmentForm.customer_id) {
-                    customerHistory = [];
-                  }
-                }
-              "
-            />
-            <q-tab
-              name="history"
-              icon="schedule"
-              label="History"
-              @click="
-                () => {
-                  if (addAppointmentForm.customer_id) {
-                    fetchCustomerHistory(addAppointmentForm.customer_id);
-                  }
-                }
-              "
-            />
-          </q-tabs>
-          <q-separator />
-
-          <q-card-section v-if="addAppointmentDialog.tab === 'customer'">
+        <!-- Select UserSearch -->
+        <div class="col-md-5 q-pa-md-md col-xs-6">
+          <q-card-section>
             <UserSearch @user-selected="onUserSelectedCustomer" />
-
             <q-input
               v-model="addAppointmentForm.customer_service[0].customer_name"
               label="Customer Name"
@@ -187,32 +161,29 @@
               v-model="addAppointmentForm.comments"
               label="Service Comments"
             />
-            <q-label class="text-subtitle1 text-grey-8 text-weight-bold"
-              >Save Customer</q-label
-            >
-            <q-toggle
-              v-model="addAppointmentForm.is_first"
-              checked-icon="check"
-              color="deep-orange"
-              unchecked-icon="clear"
-            />
-          </q-card-section>
-
-          <q-card-section v-if="addAppointmentDialog.tab === 'history'">
-            <UserSearch
-              @user-selected="onUserSelectedHistory"
-              placeholder="Find Booking History by Name, Phone, or Email"
-            />
-            <q-scroll-area class="q-pa-md" style="height: 420px">
-              <CustomerHistoryTimeline
-                v-if="customerHistory.length > 0"
-                :customerHistory="customerHistory"
+            <div class="text-subtitle1 text-grey-7 text-weight-bold">
+              Save Customer
+              <q-toggle
+                v-model="addAppointmentForm.is_first"
+                checked-icon="check"
+                color="deep-orange-6"
+                unchecked-icon="clear"
               />
-              <q-label v-else class="text-grey">
-                <q-icon name="info" />
-                No available recorded history for this client.
-              </q-label>
-            </q-scroll-area>
+            </div>
+            <div class="row justify-end">
+              <q-chip
+                v-if="addAppointmentForm.customer_phone"
+                size="12px"
+                outline
+                icon="history"
+                color="blue-4"
+                text-color="white"
+                clickable
+                @click.stop="isHistoryDialogOpen = true"
+              >
+                History
+              </q-chip>
+            </div>
           </q-card-section>
         </div>
       </div>
@@ -282,6 +253,27 @@
           label="Confirm"
           color="positive"
           @click="confirmTakeBreak"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- Customer History -->
+  <q-dialog v-model="isHistoryDialogOpen">
+    <q-card style="min-width: 350px; min-height: 300px">
+      <q-card-section class="text-h6"> Customer History </q-card-section>
+      <q-card-section>
+        <CustomerHistoryTimeline
+          :user_Id="addAppointmentForm.customer_id"
+          :customer_phone="addAppointmentForm.customer_phone"
+        />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Back"
+          color="positive"
+          @click="isHistoryDialogOpen = false"
         />
       </q-card-actions>
     </q-card>
@@ -526,24 +518,6 @@ async function addAppointment() {
   }
 }
 
-// Customer History
-const customerHistory = ref([]);
-
-async function fetchCustomerHistory(userId: number) {
-  const response = await api.get("/api/getUserBookingHistory", {
-    params: { id: userId },
-  });
-  console.log("Customer History:", response.data);
-  customerHistory.value = response.data;
-  console.log("Customer History:", customerHistory);
-  $q.notify({
-    type: "info",
-    message: "Customer history fetched successfully",
-    position: "top",
-    timeout: 2000,
-  });
-}
-
 function autoFillName() {
   const fullName = addAppointmentForm.value.customer_service[0].customer_name;
   if (fullName) {
@@ -650,7 +624,6 @@ function onUserSelectedCustomer(user) {
   addAppointmentForm.value.customer_id = user.id;
 }
 
-function onUserSelectedHistory(user) {
-  fetchCustomerHistory(user.id);
-}
+// Customer History
+const isHistoryDialogOpen = ref(false);
 </script>

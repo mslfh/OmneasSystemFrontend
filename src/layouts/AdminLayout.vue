@@ -30,32 +30,7 @@ async function onSearch() {
   foundUsers.value = await fetchUserFromSearch(searchField.value);
   loading.value = false;
 }
-const customerHistory = ref([]);
 const isHistoryDialogOpen = ref(false);
-
-async function viewHistory(user: any) {
-  const response = await api.get("/api/getUserBookingHistory", {
-    params: { id: user.id },
-  });
-  customerHistory.value = response.data;
-  if (customerHistory.value.length === 0) {
-    $q.notify({
-      type: "warning",
-      message: "No history found for this customer",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-  $q.notify({
-    type: "info",
-    message: "Customer history fetched successfully",
-    position: "top",
-    timeout: 2000,
-  });
-  isHistoryDialogOpen.value = true;
-  return;
-}
 
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -71,6 +46,11 @@ const selectedUser = ref(null);
 function addAppointment(user) {
   selectedUser.value = user;
   showAddAppointmentDialog.value = true;
+}
+
+function viewHistory(user) {
+  selectedUser.value = user;
+  isHistoryDialogOpen.value = true;
 }
 </script>
 
@@ -91,7 +71,6 @@ function addAppointment(user) {
           aria-label="Menu"
           color="grey"
         />
-
         <q-input
           borderless
           :dense="$q.screen.lt.sm"
@@ -111,13 +90,7 @@ function addAppointment(user) {
           </template>
         </q-input>
 
-        <q-item-label
-          v-if="searchField !== '' && !loading && foundUsers.length == 0"
-          class="text-caption"
-        >
-          No data found
-        </q-item-label>
-        <q-menu v-if="searchField !== '' && foundUsers.length > 0">
+        <q-menu v-if="searchField !== ''&& !loading && foundUsers.length > 0">
           <q-list>
             <q-item v-for="user in foundUsers" :key="user.id">
               <q-item-section>
@@ -160,7 +133,6 @@ function addAppointment(user) {
             </q-item>
           </q-list>
         </q-menu>
-        <q-space />
 
         <div class="q-gutter-sm row items-center no-wrap">
           <q-btn
@@ -178,7 +150,6 @@ function addAppointment(user) {
             v-if="$q.screen.gt.sm"
           >
           </q-btn>
-
           <q-btn round dense flat color="grey-8" icon="notifications">
             <q-badge color="red" text-color="white" floating> 5 </q-badge>
             <q-menu>
@@ -436,13 +407,15 @@ function addAppointment(user) {
     @save="showAddAppointmentDialog = false"
   />
 
-  <q-dialog v-model="isHistoryDialogOpen" persistent>
+  <q-dialog v-model="isHistoryDialogOpen" >
     <q-card style="min-width: 350px; min-height: 300px">
       <q-card-section class="text-h6">
         Customer History
       </q-card-section>
       <q-card-section>
-        <CustomerHistoryTimeline :customerHistory="customerHistory" />
+        <CustomerHistoryTimeline
+          :user_Id="selectedUser ? selectedUser.id : 0"
+        />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Close" @click="isHistoryDialogOpen = false" />
