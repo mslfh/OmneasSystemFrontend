@@ -110,6 +110,7 @@ function addAppointment(user) {
             <q-icon name="search" />
           </template>
         </q-input>
+
         <q-item-label
           v-if="searchField !== '' && !loading && foundUsers.length == 0"
           class="text-caption"

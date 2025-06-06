@@ -20,13 +20,52 @@
           debounce="300"
           clearable
           rounded
-          v-model="filter"
-          placeholder="Search by name, phone or date"
+          v-model="filter.value"
+          :placeholder="`Search by ${filterFields.find(f => f.value === filter.field)?.label || 'field'}`"
+          class="q-mr-sm"
         >
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
+
+        <q-btn flat dense round icon="o_filter_alt" color="grey-6" >
+          <q-menu >
+            <q-list dense>
+              <q-item
+                v-ripple
+                clickable
+                v-for="(filterField, index) in filterFields"
+                :key="index"
+                @click="filter.field = filterField.value"
+                :class="{'bg-grey-3': filter.field === filterField.value}"
+              >
+                <q-item-section>
+                  <q-item-label class="text-grey-8 text-caption">{{ filterField.label }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+
+        <q-btn flat round icon="o_sort" color="grey-6">
+          <q-menu  auto-close>
+            <q-list>
+              <q-item
+                v-ripple
+                clickable
+                v-for="(filterField, index) in filterFields"
+                :key="index"
+                @click="filter.field = filterField.value"
+              >
+                <q-item-section>
+                  <q-item-label>{{ filterField.label }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+
       </template>
 
       <template v-slot:header="props">
@@ -74,26 +113,33 @@
             <q-chip
               size="12px"
               dense
-
               :color="
-                props.row.status === 'finished' ? 'teal-4' :
-                props.row.status === 'pending' ? 'red-10' :
-                props.row.status === 'in_progress' ? 'green-4' : 'deep-orange-5'
+                props.row.status === 'finished'
+                  ? 'teal-4'
+                  : props.row.status === 'pending'
+                  ? 'red-10'
+                  : props.row.status === 'in_progress'
+                  ? 'green-4'
+                  : 'deep-orange-5'
               "
               :label="props.row.status"
               text-color="white"
               class="q-mr-sm"
             />
           </q-td>
-           <q-td key="type" :props="props">
+          <q-td key="type" :props="props">
             <q-chip
               size="12px"
               dense
               outline
               :color="
-                props.row.type === 'no_show' ? 'red-10' :
-                props.row.type === 'break' ? 'grey' :
-                props.row.type === 'assigned' ? 'green-5' : 'deep-orange-5'
+                props.row.type === 'no_show'
+                  ? 'red-10'
+                  : props.row.type === 'break'
+                  ? 'grey'
+                  : props.row.type === 'assigned'
+                  ? 'green-5'
+                  : 'deep-orange-5'
               "
               :label="props.row.type"
               text-color="white"
@@ -124,7 +170,7 @@
               Started at: {{ props.row.actual_start_time }}
               <br />
               Ended at: {{ props.row.actual_end_time }}
-               <br />
+              <br />
               Comments: {{ props.row.comments }}
             </div>
           </q-td>
@@ -163,7 +209,18 @@ const columns = [
   { name: "actions", label: "Actions", align: "center" },
 ];
 
-const filter = ref("");
+const filterFields = [
+  { label: "Phone Number", value: "phone" },
+  { label: "Customer Name", value: "customer_name" },
+  { label: "Booking Date", value: "booking_date" },
+  { label: "Therapist", value: "therapist" },
+
+  // Add more fields as needed
+];
+const filter = ref({
+  field: "customer_name",
+  value: "",
+});
 const loading = ref(false);
 const pagination = ref({
   sortBy: "id",
@@ -186,13 +243,13 @@ const fetchAppointments = async (
       params: {
         start: startRow,
         count,
-        filter,
+        filter: filter && filter.value ? JSON.stringify(filter) : undefined,
         sortBy,
         descending,
       },
     });
-    appointments.value = response.data?.rows || []; // Fallback to an empty array if rows is undefined
-    pagination.value.rowsNumber = response.data?.total || 0; // Fallback to 0 if total is undefined
+    appointments.value = response.data?.rows || [];
+    pagination.value.rowsNumber = response.data?.total || 0;
     loading.value = false;
   } catch (error) {
     console.error("Error fetching appointments:", error);
@@ -204,7 +261,8 @@ const fetchAppointments = async (
 
 const onRequest = (props) => {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
-  const filterValue = props.filter;
+  // Only send filter if value is not empty, and pass a plain object
+  const filterValue = filter.value ? { ...filter.value } : undefined;
   const startRow = (page - 1) * rowsPerPage;
   const count = rowsPerPage === 0 ? pagination.value.rowsNumber : rowsPerPage;
   fetchAppointments(startRow, count, filterValue, sortBy, descending);

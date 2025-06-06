@@ -426,6 +426,7 @@
       showEditEventDialog = false;
       showSendSmsDialog = true;
     "
+    @openInvoice="routeIntoInvoice(editEventForm.appointment_id)"
     @delete="
       () => {
         showEditEventDialog = false;
@@ -481,11 +482,13 @@
     v-if="showScheduleStaffDialog.visible"
     :staffSchedule="showScheduleStaffDialog.staffSchedule"
     :isShowAllStaff="isShowAllStaff"
-    @close="showScheduleStaffDialog.visible = false;
-    fetchStaffList()"
+    @close="
+      showScheduleStaffDialog.visible = false;
+      fetchStaffList();
+    "
     @switch-show-staff="
-    isShowAllStaff = !isShowAllStaff;
-    switchShowAllStaff()
+      isShowAllStaff = !isShowAllStaff;
+      switchShowAllStaff();
     "
   />
 </template>
@@ -503,6 +506,7 @@ import {
 } from "@quasar/quasar-ui-qcalendar";
 import "@quasar/quasar-ui-qcalendar/index.css";
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 import NavigationBar from "components/NavigationBar.vue";
 
@@ -595,7 +599,7 @@ async function fetchStaffList() {
     name: "Any therapist ",
   });
   // filter staff who has no schedule and no booking_services
-  switchShowAllStaff()
+  switchShowAllStaff();
 }
 
 const isShowAllStaff = ref(false);
@@ -616,9 +620,9 @@ function switchShowAllStaff() {
       )
       .map((staff: any) => ({
         staff_id: staff.id,
-      staff_name: staff.name,
-      schedule: staff.schedules,
-    }));
+        staff_name: staff.name,
+        schedule: staff.schedules,
+      }));
   }
 }
 
@@ -1075,6 +1079,21 @@ async function startAppointment(event: AppintmentEvent) {
       }
     })
     .onCancel(() => {});
+}
+
+const router = useRouter();
+async function routeIntoInvoice(appointmentId) {
+  //Get order Id from appointmentId
+  const response = await api.get(`/api/getOrderByAppointment/${appointmentId}`);
+  const orderId = response.data.id;
+
+  // Navigate to the invoice page with the appointment ID
+  router.push({
+    path: "/admin/invoice",
+    query: {
+      id: orderId,
+    },
+  });
 }
 
 // Finish appointment

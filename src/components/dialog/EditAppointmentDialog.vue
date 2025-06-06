@@ -7,11 +7,11 @@
   >
     <q-card :style="$q.screen.gt.md ? 'min-width: 850px' : 'min-width: 100%'">
       <q-card-section horizontal class="q-ma-sm">
-        <div class="text-h6 text-grey-8">Edit Event</div>
+        <div class="text-h6 text-grey-8">Booking Details</div>
         <q-space />
-        <q-btn flat round icon="more_vert" color="grey">
-          <q-menu>
-            <q-list style="min-width: 100px">
+        <q-btn flat round  icon="more_vert" color="grey">
+          <q-menu >
+            <q-list dense class="text-caption">
               <q-item
                 clickable
                 v-close-popup
@@ -23,6 +23,19 @@
                   MESSAGE
                 </q-item-label>
               </q-item>
+
+               <q-item
+                clickable
+                v-close-popup
+                @click="emit('openInvoice')"
+                class="text-orange-6"
+              >
+                <q-item-label class="q-ma-sm">
+                  <q-icon size="xs" name="receipt_long" />
+                  INVOICE
+                </q-item-label>
+              </q-item>
+
               <q-item
                 clickable
                 v-close-popup
@@ -264,7 +277,6 @@
     </q-card>
   </q-dialog>
 
-
    <q-dialog v-model="isHistoryDialogOpen" persistent>
     <q-card style="min-width: 350px; min-height: 300px">
       <q-card-section class="text-h6">
@@ -274,7 +286,7 @@
         <CustomerHistoryTimeline :customerHistory="customerHistory" />
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Close" @click="isHistoryDialogOpen = false" />
+        <q-btn flat label="Back" color="positive" @click="isHistoryDialogOpen = false" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -312,7 +324,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["close", "openSms", "save", "delete","checkOut"]);
+const emit = defineEmits(["close", "openSms", "save", "delete","checkOut","openInvoice"]);
 
 const $q = useQuasar();
 
@@ -506,11 +518,11 @@ async function noShowAppointment() {
 const customerHistory = ref([]);
 const isHistoryDialogOpen = ref(false);
 
-async function viewHistory($phone) {
+async function viewHistory(phone) {
 
   const userResponse = await api.get("/api/find-user-by-field", {
       params: {
-        search: $phone,
+        search: phone,
         field: "phone"
        },
     });
@@ -547,4 +559,5 @@ async function viewHistory($phone) {
   isHistoryDialogOpen.value = true;
   return;
 }
+
 </script>
