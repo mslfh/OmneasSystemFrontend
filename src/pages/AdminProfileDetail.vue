@@ -42,7 +42,7 @@
         </q-card-section>
       </q-card>
     </q-dialog>
-      <q-space style="height: 50px" />
+    <q-space style="height: 50px" />
   </q-page>
 </template>
 
@@ -61,7 +61,6 @@ const profile = ref({});
 const painPoints = ref([]);
 const attachments = ref([]);
 const showAttachmentDialog = ref(false);
-const carouselIndex = ref(null);
 const zoomDialog = ref(false);
 const zoomImg = ref("");
 
@@ -88,19 +87,8 @@ onMounted(async () => {
       painPoints.value = [];
     }
     // Parse attachments
-    try {
-      const arr = data.medical_attachment_path
-        ? JSON.parse(data.medical_attachment_path)
-        : [];
-      attachments.value = arr.map(
-        (p) => `${VITE_API_URL}/storage/${p.replace(/^[\\/]+/, "")}`
-      );
-      if (attachments.value.length > 0) {
-        carouselIndex.value = attachments.value[0];
-      }
-    } catch (e) {
-      attachments.value = [];
-    }
+    attachments.value = data.medical_attachment_path;
+
   } catch (e) {
     $q.notify({ type: "negative", message: "Failed to load profile" });
   }

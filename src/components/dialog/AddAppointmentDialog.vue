@@ -170,9 +170,19 @@
                 unchecked-icon="clear"
               />
             </div>
-            <div class="row justify-end">
+            <div class="row justify-end" v-if="addAppointmentForm.customer_phone">
+               <q-chip
+                size="12px"
+                outline
+                icon="attachment"
+                color="blue-4"
+                text-color="white"
+                clickable
+                @click.stop="isProfileDialogOpen = true"
+              >
+                Profile
+              </q-chip>
               <q-chip
-                v-if="addAppointmentForm.customer_phone"
                 size="12px"
                 outline
                 icon="history"
@@ -274,6 +284,27 @@
           label="Back"
           color="positive"
           @click="isHistoryDialogOpen = false"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+   <!-- Customer Profile -->
+  <q-dialog v-model="isProfileDialogOpen">
+    <q-card style="min-width: 350px; min-height: 300px">
+      <q-card-section class="text-h6"> Customer Profile</q-card-section>
+      <q-card-section>
+        <CustomerHistoryTimeline
+          :user_Id="addAppointmentForm.customer_id"
+          :customer_phone="addAppointmentForm.customer_phone"
+        />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Back"
+          color="positive"
+          @click="isProfileDialogOpen = false"
         />
       </q-card-actions>
     </q-card>
@@ -626,4 +657,6 @@ function onUserSelectedCustomer(user) {
 
 // Customer History
 const isHistoryDialogOpen = ref(false);
+//Profile
+const isProfileDialogOpen = ref(false);
 </script>

@@ -9,8 +9,8 @@
       <q-card-section horizontal class="q-ma-sm">
         <div class="text-h6 text-grey-8">Booking Details</div>
         <q-space />
-        <q-btn flat round  icon="more_vert" color="grey">
-          <q-menu >
+        <q-btn flat round icon="more_vert" color="grey">
+          <q-menu>
             <q-list dense class="text-caption">
               <q-item
                 clickable
@@ -24,7 +24,7 @@
                 </q-item-label>
               </q-item>
 
-               <q-item
+              <q-item
                 clickable
                 v-close-popup
                 @click="emit('openInvoice')"
@@ -151,7 +151,7 @@
           <q-separator vertical class="q-my-md" style="height: 90%" />
         </div>
         <div class="col-6">
-           <q-card-section class="q-pa-xs row justify-between">
+          <q-card-section class="q-pa-xs row justify-between">
             <q-chip
               size="12px"
               outline
@@ -232,10 +232,10 @@
                 </q-item>
               </q-list>
             </q-scroll-area>
-              <q-input
-                v-model="editEventForm.customer_name"
-                label="Customer Name"
-              />
+            <q-input
+              v-model="editEventForm.customer_name"
+              label="Customer Name"
+            />
             <q-input
               v-model="editEventForm.customer_first_name"
               label="First Name"
@@ -246,23 +246,53 @@
             />
             <q-input v-model="editEventForm.customer_email" label="Email" />
             <q-input v-model="editEventForm.customer_phone" label="Phone" />
-            <q-input type="textarea" v-model="editEventForm.comments" label="Comments" />
+            <q-input
+              type="textarea"
+              v-model="editEventForm.comments"
+              label="Comments"
+            />
           </q-card-section>
 
-           <div class="row justify-end" >
-              <q-chip
-                size="12px"
-                outline
-                icon="history"
-                color="blue-4"
-                text-color="white"
-                clickable
-                @click.stop=" isHistoryDialogOpen = true"
-              >
-                History
-              </q-chip>
-            </div>
-
+          <div class="row justify-end">
+            <q-chip
+              size="12px"
+              outline
+              icon="o_sticky_note_2"
+              color="blue-4"
+              text-color="white"
+              clickable
+              @click.stop="isProfileDialogOpen = true"
+            >
+              Profile
+              <!-- <q-badge  floating-right rounded color="blue" transparent> -->
+              <q-icon
+                v-if="hasProfile"
+                size="15px"
+                name="done_all"
+                color="blue"
+                class="q-ml-sm"
+              />
+              <q-icon
+                v-if="!hasProfile"
+                size="15px"
+                name="add"
+                color="blue"
+                class="q-ml-sm"
+              />
+              <!-- </q-badge> -->
+            </q-chip>
+            <q-chip
+              size="12px"
+              outline
+              icon="history"
+              color="blue-4"
+              text-color="white"
+              clickable
+              @click.stop="isHistoryDialogOpen = true"
+            >
+              History
+            </q-chip>
+          </div>
         </div>
       </div>
       <q-card-actions align="right">
@@ -277,11 +307,9 @@
     </q-card>
   </q-dialog>
 
-   <q-dialog v-model="isHistoryDialogOpen" persistent>
+  <q-dialog v-model="isHistoryDialogOpen" persistent>
     <q-card style="min-width: 350px; min-height: 300px">
-      <q-card-section class="text-h6">
-        Customer History
-      </q-card-section>
+      <q-card-section class="text-h6"> Customer History </q-card-section>
       <q-card-section>
         <CustomerHistoryTimeline
           :user_Id="editEventForm.customer_id"
@@ -289,12 +317,25 @@
         />
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Back" color="positive" @click="isHistoryDialogOpen = false" />
+        <q-btn
+          flat
+          label="Back"
+          color="positive"
+          @click="isHistoryDialogOpen = false"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 
-
+  <!-- Customer Profile -->
+  <q-dialog v-model="isProfileDialogOpen">
+    <ConfidentialClientCard
+      style="width: 700px"
+      :profile="profile"
+      :painPoints="painPoints"
+      :attachments="attachments"
+    />
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -304,6 +345,8 @@ import { api } from "boot/axios";
 import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
 import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBookingTime";
 import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
+import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
+
 const props = defineProps({
   editEventForm: {
     type: Object,
@@ -327,7 +370,14 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["close", "openSms", "save", "delete","checkOut","openInvoice"]);
+const emit = defineEmits([
+  "close",
+  "openSms",
+  "save",
+  "delete",
+  "checkOut",
+  "openInvoice",
+]);
 const $q = useQuasar();
 
 const editEventForm = ref(props.editEventForm);
@@ -346,7 +396,34 @@ async function selectUserFromSearch() {
 
 onMounted(() => {
   fetchAvailableBookingTime();
+  fetchUserProfile();
 });
+
+// UserProfile
+const profile = ref({});
+const painPoints = ref([]);
+const attachments = ref([]);
+const hasProfile = ref(false);
+
+async function fetchUserProfile() {
+  hasProfile.value = false;
+  const user_id = editEventForm.value.customer_id;
+  if (!user_id) {
+    return;
+  }
+  const { data } = await api.get(`/api/get-profile-by-userId`, {
+    params: {
+      user_id: user_id,
+    },
+  });
+  if (!data.id) {
+    return;
+  }
+  hasProfile.value = true;
+  profile.value = data;
+  painPoints.value = data.pain_points ? JSON.parse(data.pain_points) : [];
+  attachments.value = data.medical_attachment_path;
+}
 
 async function fetchAvailableBookingTime(date: string) {
   // try {
@@ -380,8 +457,11 @@ async function saveEditedEvent() {
   try {
     editEventForm.value.staff = selectedStaff.value;
     const payload = { ...editEventForm.value };
-    const response = await api.put(`/api/appointments/${payload.appointment_id}`, payload);
-    if( response.status === 200) {
+    const response = await api.put(
+      `/api/appointments/${payload.appointment_id}`,
+      payload
+    );
+    if (response.status === 200) {
       $q.notify({
         type: "positive",
         message: "Appointment updated successfully",
@@ -482,22 +562,23 @@ function finishAppointment() {
 
 async function noShowAppointment() {
   $q.dialog({
-    title: "<span style=\"color:red;font-weight:bold;\">Mark No Show</span>",
-    message: ' Are you sure you want to mark this appointment as <b>No Show</b>?',
+    title: '<span style="color:red;font-weight:bold;">Mark No Show</span>',
+    message:
+      " Are you sure you want to mark this appointment as <b>No Show</b>?",
     html: true,
     cancel: {
-      color: 'grey-7',
-      label: 'Cancel'
+      color: "grey-7",
+      label: "Cancel",
     },
     ok: {
-      color: 'red-5',
-      label: 'Comfirm No Show'
+      color: "red-5",
+      label: "Comfirm No Show",
     },
     persistent: true,
   }).onOk(async () => {
     try {
       await api.post(`/api/appointments/mark-no-show`, {
-        id: editEventForm.value.appointment_id
+        id: editEventForm.value.appointment_id,
       });
       $q.notify({
         type: "warning",
@@ -519,4 +600,5 @@ async function noShowAppointment() {
 
 const isHistoryDialogOpen = ref(false);
 
+const isProfileDialogOpen = ref(false);
 </script>

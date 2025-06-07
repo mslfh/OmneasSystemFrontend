@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { computed,ref, onMounted, watch } from "vue";
 import Konva from "konva";
 import { QBtn, QSelect, QInput, QSlider } from "quasar";
 
@@ -123,7 +123,11 @@ let stage, layer, backgroundImage, pointsLayer;
 
 const bodyFrontSrc = new URL("../assets/body.png", import.meta.url).href;
 
-const painPoints = ref(props.painPoints ? [...props.painPoints] : []);
+const painPoints = computed({
+  get: () => props.painPoints,
+  set: (val) => emit("update:painPoints", val),
+});
+
 const selectedPoint = ref(null);
 const scaleRatio = ref(1);
 const zoomed = ref(false);
@@ -135,19 +139,8 @@ const noteTooltip = ref({ show: false, text: "", x: 0, y: 0 });
 
 watch(
   () => props.painPoints,
-  (val) => {
-    if (val && JSON.stringify(val) !== JSON.stringify(painPoints.value)) {
-      painPoints.value = [...val];
-      drawPoints();
-    }
-  },
-  { deep: true }
-);
-
-watch(
-  painPoints,
-  (val) => {
-    emit("update:painPoints", val);
+  () => {
+    drawPoints();
   },
   { deep: true }
 );
@@ -506,6 +499,7 @@ onMounted(async () => {
       });
     }
   }
+  drawPoints();
 });
 </script>
 

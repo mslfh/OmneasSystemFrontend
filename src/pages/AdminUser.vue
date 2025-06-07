@@ -62,7 +62,7 @@
           <q-td >
             <AttachmentViewer
               :attachments="
-                  props.row.user_profile[0]?props.row.user_profile[0].medical_attachment_path:  ''
+                  props.row.user_profile ?props.row.user_profile.medical_attachment_path:  ''
               "
             />
           </q-td>

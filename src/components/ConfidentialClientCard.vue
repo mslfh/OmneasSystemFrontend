@@ -2,7 +2,7 @@
   <q-card ref="captureArea" class="q-pa-lg q-mx-auto" style="max-width: 700px">
     <q-toolbar-title class="text-weight-bold text-blue-4">
       <q-icon name="privacy_tip" size="md" />
-        Confidential Client Information
+      Confidential Client Information
       <q-btn
         class="float-right"
         icon="download"
@@ -104,10 +104,10 @@
         type="textarea"
       />
       <div class="row">
-        <div class="col-sm-7 col-xs-12 q-pl-sm-md">
+        <div class="col-md-7 col-xs-12 q-pl-sm-md">
           <PainPointMarker :painPoints="painPoints" :readonly="true" />
         </div>
-        <div class="col-sm-5 col-xs-12">
+        <div class="col-md-5 col-xs-12">
           <q-input
             :model-value="profile.areas_of_soreness"
             label="Areas of Soreness"
@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted, watch } from "vue";
 import { useQuasar } from "quasar";
 import PainPointMarker from "components/PainPointMarker.vue";
 import AttachmentViewer from "./AttachmentViewer.vue";
@@ -196,9 +196,3 @@ const exportAsImage = async () => {
   loading.value = false;
 };
 </script>
-
-<style scoped>
-.q-card {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-</style>
