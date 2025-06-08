@@ -2,9 +2,8 @@
   <q-page class="bg-grey-1">
     <q-card-section class="q-pa-md text-center"> </q-card-section>
     <ConfidentialClientCard
-      :profile="profile"
-      :painPoints="painPoints"
-      :attachments="attachments"
+      :profileId="profile_id"
+      :editable="false"
     />
     <q-dialog v-model="zoomDialog">
       <q-card
@@ -55,58 +54,18 @@ import { useRoute } from "vue-router";
 import PainPointMarker from "components/PainPointMarker.vue";
 import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
 
-const VITE_API_URL = import.meta.env.VITE_API_URL;
 const $q = useQuasar();
 const route = useRoute();
+const profile_id = route.query.id;
 
 const profile = ref({});
-const painPoints = ref([]);
-const attachments = ref([]);
-const showAttachmentDialog = ref(false);
-const carouselIndex = ref(null);
 const zoomDialog = ref(false);
 const zoomImg = ref("");
-
-const id = route.query.id;
 
 function openZoom(img) {
   zoomImg.value = img;
   zoomDialog.value = true;
 }
-
-onMounted(async () => {
-  const id = route.query.id;
-  if (!id) {
-    $q.notify({ type: "negative", message: "Profile ID is required" });
-    return;
-  }
-  try {
-    const { data } = await axios.get(`${VITE_API_URL}/api/user-profile/${id}`);
-    profile.value = data;
-    // Parse pain points
-    try {
-      painPoints.value = data.pain_points ? JSON.parse(data.pain_points) : [];
-    } catch (e) {
-      painPoints.value = [];
-    }
-    // Parse attachments
-    try {
-      const arr = data.medical_attachment_path
-        ? JSON.parse(data.medical_attachment_path)
-        : [];
-      attachments.value = arr.map(
-        (p) => `${VITE_API_URL}/storage/${p.replace(/^[\\/]+/, "")}`
-      );
-      if (attachments.value.length > 0) {
-        carouselIndex.value = attachments.value[0];
-      }
-    } catch (e) {
-      attachments.value = [];
-    }
-  } catch (e) {
-    $q.notify({ type: "negative", message: "Failed to load profile" });
-  }
-});
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <template>
   <div class="relative-position">
     <div class="q-pb-xs text-grey text-italic info-tip">
-      <div v-if="!props.readonly">
+      <div v-if="!readonly">
         <q-icon name="info" /> Please click to add your pain point (double-click
         to zoom in).
       </div>
@@ -27,7 +27,7 @@
       }"
     ></div>
     <div
-      v-if="noteTooltip.show && props.readonly"
+      v-if="noteTooltip.show && readonly"
       :style="{
         position: 'absolute',
         left: noteTooltip.x + 'px',
@@ -47,7 +47,7 @@
     </div>
 
     <div
-      v-if="selectedPoint !== null"
+      v-if="selectedPoint !== null && !readonly"
       :style="{
         width: containerWidth + 'px',
       }"
@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { computed,ref, onMounted, watch } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import Konva from "konva";
 import { QBtn, QSelect, QInput, QSlider } from "quasar";
 
@@ -116,6 +116,7 @@ const props = defineProps({
     default: false,
   },
 });
+
 const emit = defineEmits(["update:painPoints"]);
 
 const container = ref(null);
@@ -124,8 +125,13 @@ let stage, layer, backgroundImage, pointsLayer;
 const bodyFrontSrc = new URL("../assets/body.png", import.meta.url).href;
 
 const painPoints = computed({
-  get: () => props.painPoints,
-  set: (val) => emit("update:painPoints", val),
+  get: () => {
+    return props.painPoints || [];
+  },
+});
+
+const readonly = computed({
+  get: () => props.readonly,
 });
 
 const selectedPoint = ref(null);
@@ -136,14 +142,6 @@ const containerWidth = 320;
 const containerHeight = 320;
 
 const noteTooltip = ref({ show: false, text: "", x: 0, y: 0 });
-
-watch(
-  () => props.painPoints,
-  () => {
-    drawPoints();
-  },
-  { deep: true }
-);
 
 // yellow → orange → orange-red → red → dark red
 const colors = ref([
@@ -182,6 +180,7 @@ function getColorByLevel(level) {
 }
 
 function drawPoints() {
+  console.log("drawPoints-readonly", readonly.value);
   pointsLayer.destroyChildren();
   painPoints.value.forEach((pt, idx) => {
     const isSelected = selectedPoint.value === idx;
@@ -192,13 +191,14 @@ function drawPoints() {
       fill: getColorByLevel(pt.level),
       stroke: isSelected ? "blue" : "white",
       strokeWidth: 2,
-      draggable: !props.readonly,
+      draggable: isSelected,
       id: `point-${idx}`,
     });
-    if (!props.readonly) {
+    if (!readonly.value) {
       circle.on("dragmove", (e) => {
         pt.x = Number((e.target.x() / scaleRatio.value).toFixed(2));
         pt.y = Number((e.target.y() / scaleRatio.value).toFixed(2));
+        emit("update:painPoints", painPoints.value.slice());
       });
       circle.on("click tap", () => {
         selectedPoint.value = idx;
@@ -237,8 +237,9 @@ function drawPoints() {
 }
 
 function addPoint(pos) {
-  if (props.readonly) return;
-  // Keep x and y to 2 decimal places
+  if (readonly.value) {
+    return;
+  }
   painPoints.value.push({
     x: Number(pos.x.toFixed(2)),
     y: Number(pos.y.toFixed(2)),
@@ -246,8 +247,7 @@ function addPoint(pos) {
     note: "",
     size: 10,
   });
-  emit("update:painPoints", painPoints.value);
-  drawPoints();
+  emit("update:painPoints", painPoints.value.slice());
 }
 
 function deselectPoint() {
@@ -256,11 +256,11 @@ function deselectPoint() {
 }
 
 function deletePoint() {
-  if (props.readonly) return;
+  if (readonly.value) return;
   if (selectedPoint.value !== null) {
     painPoints.value.splice(selectedPoint.value, 1);
     selectedPoint.value = null;
-    emit("update:painPoints", painPoints.value);
+    emit("update:painPoints", painPoints.value.slice());
     drawPoints();
   }
 }
@@ -311,13 +311,34 @@ onMounted(async () => {
 
   layer.draw();
 
+  setupStageListeners();
+  drawPoints();
+});
+
+watch(
+  () => props.painPoints,
+  () => {
+      drawPoints();
+  },
+);
+
+watch(readonly, () => {
+  if (stage) {
+    stage.off();
+    deselectPoint();
+    setupStageListeners();
+  }
+  drawPoints();
+});
+
+function setupStageListeners() {
   let justZoomed = false;
   let lastAddTime = 0;
   const ADD_POINT_COOLDOWN = 300;
   let justAddedPoint = false;
   let isPinching = false;
 
-  if (!props.readonly) {
+  if (!readonly.value) {
     stage.on("click tap", (e) => {
       if (justZoomed) {
         justZoomed = false;
@@ -499,8 +520,7 @@ onMounted(async () => {
       });
     }
   }
-  drawPoints();
-});
+}
 </script>
 
 <style scoped>

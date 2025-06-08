@@ -171,17 +171,33 @@
               />
             </div>
             <div class="row justify-end" v-if="addAppointmentForm.customer_phone">
-               <q-chip
-                size="12px"
-                outline
-                icon="attachment"
-                color="blue-4"
-                text-color="white"
-                clickable
-                @click.stop="isProfileDialogOpen = true"
-              >
-                Profile
-              </q-chip>
+              <q-chip
+              size="12px"
+              outline
+              icon="o_sticky_note_2"
+              color="blue-4"
+              text-color="white"
+              clickable
+              @click.stop="isProfileDialogOpen = true"
+            >
+              Profile
+              <!-- <q-badge  floating-right rounded color="blue" transparent> -->
+              <q-icon
+                v-if="hasProfile"
+                size="15px"
+                name="done_all"
+                color="blue"
+                class="q-ml-sm"
+              />
+              <q-icon
+                v-if="!hasProfile"
+                size="15px"
+                name="add"
+                color="blue"
+                class="q-ml-sm"
+              />
+              <!-- </q-badge> -->
+            </q-chip>
               <q-chip
                 size="12px"
                 outline
@@ -291,23 +307,22 @@
 
    <!-- Customer Profile -->
   <q-dialog v-model="isProfileDialogOpen">
-    <q-card style="min-width: 350px; min-height: 300px">
-      <q-card-section class="text-h6"> Customer Profile</q-card-section>
-      <q-card-section>
-        <CustomerHistoryTimeline
-          :user_Id="addAppointmentForm.customer_id"
-          :customer_phone="addAppointmentForm.customer_phone"
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Back"
-          color="positive"
-          @click="isProfileDialogOpen = false"
-        />
-      </q-card-actions>
-    </q-card>
+    <ConfidentialClientCard
+      v-if="hasProfile"
+      style="width: 700px"
+      :profileId="profile_id"
+      :editable="true"
+    />
+     <CustomerProfileCard v-if="!hasProfile" style="width: 700px"
+        :first_name="addAppointmentForm.customer_first_name "
+        :last_name="addAppointmentForm.customer_last_name "
+        :phone="addAppointmentForm.customer_phone "
+        @save="(id) => {
+          isProfileDialogOpen = false;
+          profile_id =id ;
+          hasProfile = true;
+        }"
+     />
   </q-dialog>
 </template>
 
@@ -320,6 +335,9 @@ import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBo
 import type { AppointmentEvent } from "../../types/appointment";
 import UserSearch from "../UserSearch.vue";
 import CustomerHistoryTimeline from "../CustomerHistoryTimeline.vue";
+import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
+import CustomerProfileCard from "components/CustomerProfileCard.vue";
+
 
 const props = defineProps({
   selectedStaff: {
@@ -380,6 +398,7 @@ const addAppointmentDialog = ref({ visible: true, tab: "customer" });
 const addAppointmentForm = ref({
   booking_time: props.selectedTime,
   booking_date: props.selectedDate,
+  customer_id:0,
   customer_first_name: "",
   customer_last_name: "",
   is_first: true,
@@ -397,6 +416,28 @@ const addAppointmentForm = ref({
     },
   ],
 });
+
+// UserProfile
+const profile_id = ref(0);
+const hasProfile = ref(false);
+
+async function fetchUserProfile() {
+  hasProfile.value = false;
+  const user_id = addAppointmentForm.value.customer_id;
+  if (!user_id) {
+    return;
+  }
+  const { data } = await api.get(`/api/get-profile-by-userId`, {
+    params: {
+      user_id: user_id,
+    },
+  });
+  if (!data.id) {
+    return;
+  }
+  hasProfile.value = true;
+  profile_id.value = data.id;
+}
 
 onMounted(async () => {
   // 自动填充客户信息
@@ -653,6 +694,7 @@ function onUserSelectedCustomer(user) {
   addAppointmentForm.value.customer_email = user.email || "";
   addAppointmentForm.value.customer_phone = user.phone || "";
   addAppointmentForm.value.customer_id = user.id;
+  fetchUserProfile()
 }
 
 // Customer History

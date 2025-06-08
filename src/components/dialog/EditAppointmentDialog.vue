@@ -330,11 +330,21 @@
   <!-- Customer Profile -->
   <q-dialog v-model="isProfileDialogOpen">
     <ConfidentialClientCard
+      v-if="hasProfile"
       style="width: 700px"
-      :profile="profile"
-      :painPoints="painPoints"
-      :attachments="attachments"
+      :profileId="profile_id"
+      :editable="true"
     />
+     <CustomerProfileCard v-if="!hasProfile" style="width: 700px"
+        :first_name="editEventForm.customer_first_name "
+        :last_name="editEventForm.customer_last_name "
+        :phone="editEventForm.customer_phone "
+        @save="(id) => {
+          isProfileDialogOpen = false;
+          profile_id =id ;
+          hasProfile = true;
+        }"
+     />
   </q-dialog>
 </template>
 
@@ -346,6 +356,7 @@ import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
 import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBookingTime";
 import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
 import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
+import CustomerProfileCard from "components/CustomerProfileCard.vue";
 
 const props = defineProps({
   editEventForm: {
@@ -400,9 +411,7 @@ onMounted(() => {
 });
 
 // UserProfile
-const profile = ref({});
-const painPoints = ref([]);
-const attachments = ref([]);
+const profile_id = ref(0);
 const hasProfile = ref(false);
 
 async function fetchUserProfile() {
@@ -420,9 +429,7 @@ async function fetchUserProfile() {
     return;
   }
   hasProfile.value = true;
-  profile.value = data;
-  painPoints.value = data.pain_points ? JSON.parse(data.pain_points) : [];
-  attachments.value = data.medical_attachment_path;
+  profile_id.value = data.id;
 }
 
 async function fetchAvailableBookingTime(date: string) {
