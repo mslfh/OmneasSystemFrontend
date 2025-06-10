@@ -175,6 +175,7 @@
               v-if="addAppointmentForm.customer_phone"
             >
               <q-chip
+              v-if="profile"
                 size="12px"
                 outline
                 icon="perm_media"
@@ -342,10 +343,33 @@
       "
     />
   </q-dialog>
+
   <!-- Customer Attachemnt -->
-  <!-- <q-dialog v-model="isAttachmentDialogOpen">
-    <AttachmentViewer  :attachments="profile.medical_attachment_path" />
-  </q-dialog> -->
+  <q-dialog v-model="isAttachmentDialogOpen">
+    <q-table
+      :rows="profile.medical_attachment_path"
+      :columns="[
+        {
+          name: 'file',
+          label: 'Attachment',
+          field: 'file',
+          align: 'center',
+          sortable: false,
+        },
+      ]"
+      style="width: 300px"
+    >
+      <template v-slot:body-cell-file="props">
+        <q-img
+          class="q-ma-md"
+          :src="props.row"
+          :ratio="1"
+          style="width: 250px"
+        />
+        <AttachmentViewer :attachments="[props.row]" />
+      </template>
+    </q-table>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">

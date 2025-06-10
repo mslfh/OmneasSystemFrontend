@@ -254,14 +254,15 @@
           </q-card-section>
 
           <div class="row justify-end">
-             <q-chip
+            <q-chip
+              v-if="profile"
               size="12px"
               outline
               icon="o_attachment"
               color="blue-4"
               text-color="white"
               clickable
-              @click.stop="isProfileDialogOpen = true"
+              @click.stop="isAttachmentDialogOpen = true"
             >
               Attachments
             </q-chip>
@@ -346,17 +347,29 @@
       :profileId="profile_id"
       :editable="true"
     />
-     <CustomerProfileCard v-if="!hasProfile" style="width: 700px"
-        :first_name="editEventForm.customer_first_name "
-        :last_name="editEventForm.customer_last_name "
-        :phone="editEventForm.customer_phone "
-        @save="(id) => {
+    <CustomerProfileCard
+      v-if="!hasProfile"
+      style="width: 700px"
+      :first_name="editEventForm.customer_first_name"
+      :last_name="editEventForm.customer_last_name"
+      :phone="editEventForm.customer_phone"
+      @save="
+        (id) => {
           isProfileDialogOpen = false;
-          profile_id =id ;
+          profile_id = id;
           hasProfile = true;
-        }"
-     />
+        }
+      "
+    />
   </q-dialog>
+
+  <!-- Customer Attachemnt -->
+
+  <ProfileAttachmentDialog
+    v-if="isAttachmentDialogOpen"
+    :profile="profile"
+    @close="isAttachmentDialogOpen = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -368,6 +381,7 @@ import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBo
 import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
 import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
 import CustomerProfileCard from "components/CustomerProfileCard.vue";
+import ProfileAttachmentDialog from "components/dialog/ProfileAttachmentDialog.vue";
 
 const props = defineProps({
   editEventForm: {
@@ -423,6 +437,7 @@ onMounted(() => {
 
 // UserProfile
 const profile_id = ref(0);
+const profile = ref(null);
 const hasProfile = ref(false);
 
 async function fetchUserProfile() {
@@ -441,6 +456,7 @@ async function fetchUserProfile() {
   }
   hasProfile.value = true;
   profile_id.value = data.id;
+  profile.value = data;
 }
 
 async function fetchAvailableBookingTime(date: string) {
@@ -619,4 +635,6 @@ async function noShowAppointment() {
 const isHistoryDialogOpen = ref(false);
 
 const isProfileDialogOpen = ref(false);
+
+const isAttachmentDialogOpen = ref(false);
 </script>
