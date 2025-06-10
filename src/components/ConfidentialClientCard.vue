@@ -216,8 +216,6 @@ const counterLabelFn = ({ totalSize, filesNumber, maxFiles }) => {
 onMounted(async () => {
   const id = props.profileId;
   if (!id) {
-    //add profile
-
     return;
   }
   try {

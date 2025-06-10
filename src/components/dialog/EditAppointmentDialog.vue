@@ -254,6 +254,17 @@
           </q-card-section>
 
           <div class="row justify-end">
+             <q-chip
+              size="12px"
+              outline
+              icon="o_attachment"
+              color="blue-4"
+              text-color="white"
+              clickable
+              @click.stop="isProfileDialogOpen = true"
+            >
+              Attachments
+            </q-chip>
             <q-chip
               size="12px"
               outline

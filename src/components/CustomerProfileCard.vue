@@ -118,7 +118,7 @@
           <div class="col-12">
             <q-input
               v-model="form.medical_history"
-              label="* Medical History"
+              label="Medical History"
               outlined
               dense
               type="textarea"

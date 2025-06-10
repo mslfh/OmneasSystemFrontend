@@ -11,7 +11,7 @@
       <div class="row">
         <!--Events -->
         <!-- <div :class="$q.screen.gt.md ? 'col-2-md ' : 'col-12'"> -->
-        <div  class="col-md-2 col-xs-12">
+        <div class="col-md-2 col-xs-12">
           <q-card-section>
             <q-label style="color: goldenrod" class="text-h5 text-weight-bold">
               <q-icon name="alarm" size="md" />
@@ -37,7 +37,7 @@
           </q-card-section>
         </div>
         <!-- Select Therapist -->
-        <div  class=" col-md-4 q-pa-md-md col-xs-5 q-ma-xs-xs">
+        <div class="col-md-4 q-pa-md-md col-xs-5 q-ma-xs-xs">
           <div>
             <div class="text-h6 text-grey-8 q-pa-xs">Select Therapist</div>
             <q-chip
@@ -170,34 +170,48 @@
                 unchecked-icon="clear"
               />
             </div>
-            <div class="row justify-end" v-if="addAppointmentForm.customer_phone">
-              <q-chip
-              size="12px"
-              outline
-              icon="o_sticky_note_2"
-              color="blue-4"
-              text-color="white"
-              clickable
-              @click.stop="isProfileDialogOpen = true"
+            <div
+              class="row justify-end"
+              v-if="addAppointmentForm.customer_phone"
             >
-              Profile
-              <!-- <q-badge  floating-right rounded color="blue" transparent> -->
-              <q-icon
-                v-if="hasProfile"
-                size="15px"
-                name="done_all"
-                color="blue"
-                class="q-ml-sm"
-              />
-              <q-icon
-                v-if="!hasProfile"
-                size="15px"
-                name="add"
-                color="blue"
-                class="q-ml-sm"
-              />
-              <!-- </q-badge> -->
-            </q-chip>
+              <q-chip
+                size="12px"
+                outline
+                icon="perm_media"
+                color="blue-4"
+                text-color="white"
+                clickable
+                @click.stop="isAttachmentDialogOpen = true"
+              >
+                Files
+              </q-chip>
+              <q-chip
+                size="12px"
+                outline
+                icon="o_sticky_note_2"
+                color="blue-4"
+                text-color="white"
+                clickable
+                @click.stop="isProfileDialogOpen = true"
+              >
+                Profile
+                <!-- <q-badge  floating-right rounded color="blue" transparent> -->
+                <q-icon
+                  v-if="hasProfile"
+                  size="15px"
+                  name="done_all"
+                  color="blue"
+                  class="q-ml-sm"
+                />
+                <q-icon
+                  v-if="!hasProfile"
+                  size="15px"
+                  name="add"
+                  color="blue"
+                  class="q-ml-sm"
+                />
+                <!-- </q-badge> -->
+              </q-chip>
               <q-chip
                 size="12px"
                 outline
@@ -305,7 +319,7 @@
     </q-card>
   </q-dialog>
 
-   <!-- Customer Profile -->
+  <!-- Customer Profile -->
   <q-dialog v-model="isProfileDialogOpen">
     <ConfidentialClientCard
       v-if="hasProfile"
@@ -313,17 +327,25 @@
       :profileId="profile_id"
       :editable="true"
     />
-     <CustomerProfileCard v-if="!hasProfile" style="width: 700px"
-        :first_name="addAppointmentForm.customer_first_name "
-        :last_name="addAppointmentForm.customer_last_name "
-        :phone="addAppointmentForm.customer_phone "
-        @save="(id) => {
+    <CustomerProfileCard
+      v-if="!hasProfile"
+      style="width: 700px"
+      :first_name="addAppointmentForm.customer_first_name"
+      :last_name="addAppointmentForm.customer_last_name"
+      :phone="addAppointmentForm.customer_phone"
+      @save="
+        (id) => {
           isProfileDialogOpen = false;
-          profile_id =id ;
+          profile_id = id;
           hasProfile = true;
-        }"
-     />
+        }
+      "
+    />
   </q-dialog>
+  <!-- Customer Attachemnt -->
+  <!-- <q-dialog v-model="isAttachmentDialogOpen">
+    <AttachmentViewer  :attachments="profile.medical_attachment_path" />
+  </q-dialog> -->
 </template>
 
 <script setup lang="ts">
@@ -337,7 +359,7 @@ import UserSearch from "../UserSearch.vue";
 import CustomerHistoryTimeline from "../CustomerHistoryTimeline.vue";
 import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
 import CustomerProfileCard from "components/CustomerProfileCard.vue";
-
+import AttachmentViewer from "components/AttachmentViewer.vue";
 
 const props = defineProps({
   selectedStaff: {
@@ -398,7 +420,7 @@ const addAppointmentDialog = ref({ visible: true, tab: "customer" });
 const addAppointmentForm = ref({
   booking_time: props.selectedTime,
   booking_date: props.selectedDate,
-  customer_id:0,
+  customer_id: 0,
   customer_first_name: "",
   customer_last_name: "",
   is_first: true,
@@ -419,6 +441,7 @@ const addAppointmentForm = ref({
 
 // UserProfile
 const profile_id = ref(0);
+const profile = ref(null);
 const hasProfile = ref(false);
 
 async function fetchUserProfile() {
@@ -437,6 +460,7 @@ async function fetchUserProfile() {
   }
   hasProfile.value = true;
   profile_id.value = data.id;
+  profile.value =  data;
 }
 
 onMounted(async () => {
@@ -694,11 +718,12 @@ function onUserSelectedCustomer(user) {
   addAppointmentForm.value.customer_email = user.email || "";
   addAppointmentForm.value.customer_phone = user.phone || "";
   addAppointmentForm.value.customer_id = user.id;
-  fetchUserProfile()
+  fetchUserProfile();
 }
 
 // Customer History
 const isHistoryDialogOpen = ref(false);
 //Profile
 const isProfileDialogOpen = ref(false);
+const isAttachmentDialogOpen = ref(false);
 </script>
