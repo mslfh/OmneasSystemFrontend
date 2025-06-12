@@ -364,10 +364,13 @@
   </q-dialog>
 
   <!-- Customer Attachemnt -->
-
   <ProfileAttachmentDialog
     v-if="isAttachmentDialogOpen"
     :profile="profile"
+    @update="
+      fetchUserProfile();
+      isAttachmentDialogOpen = false;
+    "
     @close="isAttachmentDialogOpen = false"
   />
 </template>

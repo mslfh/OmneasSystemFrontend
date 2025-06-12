@@ -175,7 +175,7 @@
               v-if="addAppointmentForm.customer_phone"
             >
               <q-chip
-              v-if="profile"
+                v-if="profile"
                 size="12px"
                 outline
                 icon="perm_media"
@@ -184,7 +184,7 @@
                 clickable
                 @click.stop="isAttachmentDialogOpen = true"
               >
-                Files
+                Attachment
               </q-chip>
               <q-chip
                 size="12px"
@@ -345,31 +345,14 @@
   </q-dialog>
 
   <!-- Customer Attachemnt -->
-  <q-dialog v-model="isAttachmentDialogOpen">
-    <q-table
-      :rows="profile.medical_attachment_path"
-      :columns="[
-        {
-          name: 'file',
-          label: 'Attachment',
-          field: 'file',
-          align: 'center',
-          sortable: false,
-        },
-      ]"
-      style="width: 300px"
-    >
-      <template v-slot:body-cell-file="props">
-        <q-img
-          class="q-ma-md"
-          :src="props.row"
-          :ratio="1"
-          style="width: 250px"
-        />
-        <AttachmentViewer :attachments="[props.row]" />
-      </template>
-    </q-table>
-  </q-dialog>
+  <ProfileAttachmentDialog
+    v-if="isAttachmentDialogOpen"
+    :profile="profile"
+    @close="
+    fetchUserProfile();
+    isAttachmentDialogOpen = false;
+    "
+  />
 </template>
 
 <script setup lang="ts">
@@ -383,7 +366,7 @@ import UserSearch from "../UserSearch.vue";
 import CustomerHistoryTimeline from "../CustomerHistoryTimeline.vue";
 import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
 import CustomerProfileCard from "components/CustomerProfileCard.vue";
-import AttachmentViewer from "components/AttachmentViewer.vue";
+import ProfileAttachmentDialog from "components/dialog/ProfileAttachmentDialog.vue";
 
 const props = defineProps({
   selectedStaff: {
@@ -484,7 +467,7 @@ async function fetchUserProfile() {
   }
   hasProfile.value = true;
   profile_id.value = data.id;
-  profile.value =  data;
+  profile.value = data;
 }
 
 onMounted(async () => {
@@ -749,5 +732,6 @@ function onUserSelectedCustomer(user) {
 const isHistoryDialogOpen = ref(false);
 //Profile
 const isProfileDialogOpen = ref(false);
+
 const isAttachmentDialogOpen = ref(false);
 </script>
