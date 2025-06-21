@@ -169,7 +169,14 @@
           <!--Voucher Section -->
           <q-card-section
             class="q-pa-sm text-grey-7"
-            v-if="finishAppointmentDialog.paymentMethod === 'voucher' || finishAppointmentDialog.splitPayments.some(p => p.method && (p.method.value ? p.method.value : p.method) === 'voucher')"
+            v-if="
+              finishAppointmentDialog.paymentMethod === 'voucher' ||
+              finishAppointmentDialog.splitPayments.some(
+                (p) =>
+                  p.method &&
+                  (p.method.value ? p.method.value : p.method) === 'voucher'
+              )
+            "
           >
             <div class="row items-center q-gutter-sm">
               <q-input
@@ -188,15 +195,19 @@
                 class="col-auto"
               />
             </div>
-            <div
-              v-if="voucherVerified && voucherInfo"
-              class=" q-mt-sm q-pl-xs"
-            >
+            <div v-if="voucherVerified && voucherInfo" class="q-mt-sm q-pl-xs">
               <div class="text-positive">
                 <q-icon name="check_circle" />
                 Voucher valid.
-                <div :class="voucherInfo.remaining_amount < finishAppointmentDialog.event.service_price ? 'text-red-4' : ''">
-                  Balance: <b >${{ voucherInfo.remaining_amount }}</b>
+                <div
+                  :class="
+                    voucherInfo.remaining_amount <
+                    finishAppointmentDialog.event.service_price
+                      ? 'text-red-4'
+                      : ''
+                  "
+                >
+                  Balance: <b>${{ voucherInfo.remaining_amount }}</b>
                 </div>
               </div>
               <div v-if="voucherInfo.valid_until" class="text-grey-6">
@@ -412,107 +423,121 @@ async function confirmFinishAppointment() {
     });
     return;
   }
+
   //check if the selected date is not today
   if (props.selectedDate != today()) {
-    $q.notify({
-      type: "negative",
-      message: "You can only finish the appointment on today.",
-      position: "top",
-      timeout: 2000,
-    });
-    return;
-  }
-  try {
-    // Check if payment method is split_payment
-    if (finishAppointmentDialog.value.paymentMethod === "split_payment") {
-      // Check if all split payments have a method and amount
-      for (const payment of finishAppointmentDialog.value.splitPayments) {
-        if (!payment.method || payment.amount <= 0) {
+    $q.dialog({
+      title: "Confirm Checkout",
+      message: "The appointment is not on today. Are you sure to check out?",
+      cancel: true,
+      persistent: true,
+      })
+      .onOk(async () => {
+        try {
+          // Check if payment method is split_payment
+          if (finishAppointmentDialog.value.paymentMethod === "split_payment") {
+            // Check if all split payments have a method and amount
+            for (const payment of finishAppointmentDialog.value.splitPayments) {
+              if (!payment.method || payment.amount <= 0) {
+                $q.notify({
+                  type: "negative",
+                  message: "Please fill in all split payment details.",
+                  position: "top",
+                  timeout: 2000,
+                });
+                return;
+              }
+            }
+            if (
+              finishAppointmentDialog.value.splitPayments.reduce(
+                (sum, payment) => sum + payment.amount,
+                0
+              ) !== finishAppointmentDialog.value.event.service_price
+            ) {
+              $q.notify({
+                type: "negative",
+                message: "Split payments do not match the total amount.",
+                position: "top",
+                timeout: 2000,
+              });
+              return;
+            }
+            // Check if split_payment has unpaid method
+            const hasUnpaid = finishAppointmentDialog.value.splitPayments.some(
+              (payment) => payment.method.value === "unpaid"
+            );
+            finishAppointmentDialog.value.status = hasUnpaid
+              ? "pending"
+              : "paid";
+            //paymentAmount is the total paid amount of split payments except unpaid
+            finishAppointmentDialog.value.paymentAmount =
+              finishAppointmentDialog.value.splitPayments.reduce(
+                (sum, payment) =>
+                  payment.method.value !== "unpaid"
+                    ? sum + payment.amount
+                    : sum,
+                0
+              );
+          } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
+            finishAppointmentDialog.value.status = "pending";
+          } else {
+            finishAppointmentDialog.value.status = "paid";
+          }
+
+          const payload = {
+            appointment_id: finishAppointmentDialog.value.event.appointment_id,
+            order_status: finishAppointmentDialog.value.status,
+            total_amount: finishAppointmentDialog.value.event.service_price,
+            actual_start_time:
+              props.selectedDate +
+              " " +
+              finishAppointmentDialog.value.actual_start_time,
+            actual_end_time:
+              props.selectedDate +
+              " " +
+              finishAppointmentDialog.value.actual_end_time,
+            payment_note: finishAppointmentDialog.value.note,
+            payment_method: finishAppointmentDialog.value.paymentMethod,
+            paid_amount: finishAppointmentDialog.value.paymentAmount,
+            confirmed_by: finishAppointmentDialog.value.event.staff_id,
+            confirmed_staff_name:
+              finishAppointmentDialog.value.event.staff_name,
+            split_payment:
+              finishAppointmentDialog.value.paymentMethod === "split_payment"
+                ? finishAppointmentDialog.value.splitPayments
+                : [],
+            voucher_code:
+              finishAppointmentDialog.value.paymentMethod === "voucher" ||
+              finishAppointmentDialog.value.splitPayments.some(
+                (p) =>
+                  p.method &&
+                  (p.method.value ? p.method.value : p.method) === "voucher"
+              )
+                ? voucherCode.value
+                : undefined,
+          };
+          await api.post(`/api/orders/finishOrder`, payload);
           $q.notify({
-            type: "negative",
-            message: "Please fill in all split payment details.",
+            type: "positive",
+            message: "Appointment Comfirmed Successfully",
             position: "top",
             timeout: 2000,
           });
-          return;
+          finishAppointmentDialog.value.visible = false;
+          emit("close");
+        } catch (error) {
+          console.error("Error finishing appointment:", error);
+          $q.notify({
+            type: "negative",
+            message: "Failed to finish the appointment. Please try again.",
+            position: "top",
+            timeout: 2000,
+          });
         }
-      }
-      if (
-        finishAppointmentDialog.value.splitPayments.reduce(
-          (sum, payment) => sum + payment.amount,
-          0
-        ) !== finishAppointmentDialog.value.event.service_price
-      ) {
-        $q.notify({
-          type: "negative",
-          message: "Split payments do not match the total amount.",
-          position: "top",
-          timeout: 2000,
-        });
-        return;
-      }
-      // Check if split_payment has unpaid method
-      const hasUnpaid = finishAppointmentDialog.value.splitPayments.some(
-        (payment) => payment.method.value === "unpaid"
-      );
-      finishAppointmentDialog.value.status = hasUnpaid ? "pending" : "paid";
-      //paymentAmount is the total paid amount of split payments except unpaid
-      finishAppointmentDialog.value.paymentAmount =
-        finishAppointmentDialog.value.splitPayments.reduce(
-          (sum, payment) =>
-            payment.method.value !== "unpaid" ? sum + payment.amount : sum,
-          0
-        );
-    } else if (finishAppointmentDialog.value.paymentMethod === "unpaid") {
-      finishAppointmentDialog.value.status = "pending";
-    } else {
-      finishAppointmentDialog.value.status = "paid";
-    }
-
-    const payload = {
-      appointment_id: finishAppointmentDialog.value.event.appointment_id,
-      order_status: finishAppointmentDialog.value.status,
-      total_amount: finishAppointmentDialog.value.event.service_price,
-      actual_start_time:
-        props.selectedDate +
-        " " +
-        finishAppointmentDialog.value.actual_start_time,
-      actual_end_time:
-        props.selectedDate +
-        " " +
-        finishAppointmentDialog.value.actual_end_time,
-      payment_note: finishAppointmentDialog.value.note,
-      payment_method: finishAppointmentDialog.value.paymentMethod,
-      paid_amount: finishAppointmentDialog.value.paymentAmount,
-      confirmed_by: finishAppointmentDialog.value.event.staff_id,
-      confirmed_staff_name: finishAppointmentDialog.value.event.staff_name,
-      split_payment:
-        finishAppointmentDialog.value.paymentMethod === "split_payment"
-          ? finishAppointmentDialog.value.splitPayments
-          : [],
-      voucher_code:
-        finishAppointmentDialog.value.paymentMethod === "voucher"
-        || finishAppointmentDialog.value.splitPayments.some(p => p.method && (p.method.value ? p.method.value : p.method) === 'voucher')
-          ? voucherCode.value
-          : undefined,
-    };
-    await api.post(`/api/orders/finishOrder`, payload);
-    $q.notify({
-      type: "positive",
-      message: "Appointment Comfirmed Successfully",
-      position: "top",
-      timeout: 2000,
-    });
-    finishAppointmentDialog.value.visible = false;
-    emit("close");
-  } catch (error) {
-    console.error("Error finishing appointment:", error);
-    $q.notify({
-      type: "negative",
-      message: "Failed to finish the appointment. Please try again.",
-      position: "top",
-      timeout: 2000,
-    });
+     })
+     .onCancel(() => {
+        console.log("User cancelled the dialog.");
+      });
   }
 }
 </script>

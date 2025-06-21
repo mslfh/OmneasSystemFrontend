@@ -90,7 +90,7 @@ function viewHistory(user) {
           </template>
         </q-input>
 
-        <q-menu v-if="searchField !== ''&& !loading && foundUsers.length > 0">
+        <q-menu v-if="searchField !== '' && !loading && foundUsers.length > 0">
           <q-list>
             <q-item v-for="user in foundUsers" :key="user.id">
               <q-item-section>
@@ -116,8 +116,8 @@ function viewHistory(user) {
                     flat
                     size="sm"
                     color="primary"
-                    label="see profile"
-                    @click="seeProfile(user)"
+                    label="View Profile"
+                    @click="viewProfile(user)"
                   /> -->
                 </q-item-label>
               </q-item-section>
@@ -200,7 +200,13 @@ function viewHistory(user) {
         "
       >
         <q-list>
-          <q-item active-class="q-item-no-link-highlighting">
+          <!-- <q-item
+            to="/admin/dashboard"
+            active-class="q-item-no-link-highlighting"
+          > -->
+          <q-item
+            active-class="q-item-no-link-highlighting"
+          >
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
@@ -231,6 +237,7 @@ function viewHistory(user) {
               <q-item-label>History</q-item-label>
             </q-item-section>
           </q-item>
+
           <q-item
             to="/admin/schedule"
             active-class="q-item-no-link-highlighting"
@@ -242,6 +249,7 @@ function viewHistory(user) {
               <q-item-label>Schedule</q-item-label>
             </q-item-section>
           </q-item>
+
           <q-item to="/admin/staff" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="storefront" />
@@ -251,31 +259,32 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
-
           <q-expansion-item icon="supervisor_account" label="Customer">
-             <q-list class="q-pl-lg">
-            <q-item to="/admin/user" active-class="q-item-no-link-highlighting">
-              <q-item-section avatar>
-                <q-icon name="person" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>User</q-item-label>
-              </q-item-section>
-            </q-item>
-            <q-item
-              to="/admin/profile"
-              active-class="q-item-no-link-highlighting"
-            >
-              <q-item-section avatar>
-                <q-icon name="description" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>Profile</q-item-label>
-              </q-item-section>
-            </q-item>
+            <q-list class="q-pl-lg">
+              <q-item
+                to="/admin/user"
+                active-class="q-item-no-link-highlighting"
+              >
+                <q-item-section avatar>
+                  <q-icon name="person" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>User</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item
+                to="/admin/profile"
+                active-class="q-item-no-link-highlighting"
+              >
+                <q-item-section avatar>
+                  <q-icon name="description" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Profile</q-item-label>
+                </q-item-section>
+              </q-item>
             </q-list>
           </q-expansion-item>
-
 
           <q-expansion-item icon="pages" label="Services">
             <q-list class="q-pl-lg">
@@ -313,7 +322,10 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
-          <q-item to="/admin/voucher" active-class="q-item-no-link-highlighting">
+          <q-item
+            to="/admin/voucher"
+            active-class="q-item-no-link-highlighting"
+          >
             <q-item-section avatar>
               <q-icon name="redeem" />
             </q-item-section>
@@ -407,11 +419,9 @@ function viewHistory(user) {
     @save="showAddAppointmentDialog = false"
   />
 
-  <q-dialog v-model="isHistoryDialogOpen" >
+  <q-dialog v-model="isHistoryDialogOpen">
     <q-card style="min-width: 350px; min-height: 300px">
-      <q-card-section class="text-h6">
-        Customer History
-      </q-card-section>
+      <q-card-section class="text-h6"> Customer History </q-card-section>
       <q-card-section>
         <CustomerHistoryTimeline
           :user_Id="selectedUser ? selectedUser.id : 0"

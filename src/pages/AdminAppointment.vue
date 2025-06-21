@@ -520,6 +520,7 @@ import EditStaffScheduleDialog from "components/dialog/EditStaffScheduleDialog.v
 import { fetchUserFromSearch } from "../composables/useUserFromSearch";
 import type { AppointmentEvent } from "../types/appointment";
 
+
 import {
   useQuasar,
   QDialog,
@@ -535,9 +536,8 @@ const interval_height = ref(28);
 const available_booking_time = ref<string[]>([]);
 const staffList = ref<{ staff_id: number; staff_name: string }[]>([]);
 const staffOptions = ref<{ id: number; name: string }[]>([]);
-const serviceOptions = ref<{ id: number; name: string; duration: Number }[]>(
-  []
-);
+const serviceOptions = ref<{ id: number; name: string; duration: Number }[]>([]);
+
 const selectedDate = ref(today());
 const selectedTime = ref("");
 const selectedStaff = ref({

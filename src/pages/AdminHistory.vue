@@ -217,6 +217,7 @@ const filterFields = [
 
   // Add more fields as needed
 ];
+
 const filter = ref({
   field: "customer_name",
   value: "",

@@ -228,6 +228,11 @@ const counterLabelFn = ({ totalSize, filesNumber, maxFiles }) => {
 const onSubmit = async () => {
   try {
     const formData = new FormData();
+    if(!form.value.first_name || !form.value.last_name || !form.value.phone) {
+      $q.notify({ type: "negative", message: "Please fill in first name, last name and phone number." });
+      return;
+    }
+
     Object.entries(form.value).forEach(([key, value]) => {
       formData.append(key, value ?? "");
     });

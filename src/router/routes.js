@@ -36,6 +36,7 @@ const routes = [
       { path: 'package', component: () => import('pages/AdminPackage.vue') },
       { path: 'service', component: () => import('pages/AdminService.vue') },
       { path: 'schedule', component: () => import('pages/AdminSchedule.vue') },
+      { path: 'schedule/week', component: () => import('pages/AdminScheduleWeek.vue') },
       { path: 'appointment', component: () => import('pages/AdminAppointment.vue') },
       { path: 'appointment/detail', component: () => import('pages/AdminHistoryDetail.vue') },
       { path: 'setting', component: () => import('pages/AdminSetting.vue') },
@@ -46,10 +47,9 @@ const routes = [
       { path: 'profile/detail', component: () => import('src/pages/AdminProfileDetail.vue') },
       { path: 'history', component: () => import('pages/AdminHistory.vue') },
       { path: 'voucher', component: () => import('pages/AdminVoucher.vue') },
+      { path: 'dashboard', component: () => import('pages/AdminDashboard.vue') },
     ]
   },
-  // Always leave this as last one,
-  // but you can also remove it
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')
