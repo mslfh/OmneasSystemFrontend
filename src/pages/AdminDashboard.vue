@@ -2,54 +2,41 @@
   <div class="q-pa-md q-pt-lg">
     <!-- first row -->
     <div class="row q-col-gutter-lg">
-
       <!-- Income Earned -->
       <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
         <q-card class="fit bg-white q-pa-lg shadow-1">
           <div class="row q-mb-md">
             <div
-              class="bg-orange-1 flex flex-center q-mr-md "
+              class="bg-orange-1 flex flex-center q-mr-md"
               style="width: 40px; height: 40px; border-radius: 50%"
             >
               <q-icon name="o_analytics" color="green-5" size="25px" />
             </div>
 
-            <div class="col-7 ">
-              <div class="text-h5 text-weight-bold text-grey-7"> 16</div>
-              <div class="text-subtitle2 text-grey-5 q-mb-md">Appointment Booked</div>
+            <div class="col-7">
+              <div class="text-h5 text-weight-bold text-grey-8">87.50</div>
+              <div class="text-subtitle2 text-grey-5 q-mb-md">
+                Income Earned
+              </div>
             </div>
 
             <div class="col-auto text-subtitle2 text-grey-4">
-               <q-icon
-                name="circle"
-                size="15px"
-                class="text-grey-4 "
-              />
-               Today
+              <q-icon name="circle" size="15px" class="text-green-2" />
+              Today
             </div>
           </div>
-          <div class="text-h5 text-weight-bold text-grey-8">87.5k</div>
-          <div class="text-subtitle2 text-grey-5 q-mb-md">Income Earned</div>
 
-          <div style="height: 60px">
-            <svg width="100%" height="60" viewBox="0 0 200 60">
-              <defs>
-                <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#4cd964" stop-opacity="0.3" />
-                  <stop offset="100%" stop-color="#4cd964" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M0,40 Q30,10 50,30 Q70,50 90,30 Q110,10 130,30 Q150,50 200,40"
-                fill="none"
-                stroke="#4cd964"
-                stroke-width="3"
-              />
-              <path
-                d="M0,40 Q30,10 50,30 Q70,50 90,30 Q110,10 130,30 Q150,50 200,40 L200,60 L0,60 Z"
-                fill="url(#lineGradient)"
-              />
-            </svg>
+          <div class="text-h5 text-weight-bold text-grey-7">16</div>
+          <div class="text-subtitle2 text-grey-5 q-mb-md">
+            Appointment Booked
+          </div>
+          <div style="height: 160px">
+            <!-- Appointments line chart in this week -->
+            <ApexCharts
+              type="line"
+              :options="AppointmentWeekChartOptions"
+              :series="AppointmentWeekSeries"
+            />
           </div>
         </q-card>
       </div>
@@ -96,7 +83,7 @@
         </q-card>
       </div>
 
-       <!-- Statistics Card -->
+      <!-- Statistics Card -->
       <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card class="fit bg-white q-pa-lg shadow-1">
           <div class="row items-center q-mb-md">
@@ -140,7 +127,7 @@
               <div class="text-h5 text-weight-bold text-grey-4 q-mt-sm">
                 1.869k
               </div>
-              <div class="text-subtitle2 text-grey-6">Product Inventory</div>
+              <div class="text-subtitle2 text-grey-6">Vourcher</div>
             </div>
             <div class="col-auto flex column items-center">
               <div
@@ -213,54 +200,20 @@
                 </div>
               </div>
             </div>
-            <!-- Right: Circular Progress -->
+
+
             <div class="col-6 flex flex-center">
-              <div style="width: 260px; height: 220px; position: relative">
-                <svg width="220" height="220" viewBox="0 0 220 220">
-                  <g>
-                    <template v-for="i in 24">
-                      <rect
-                        :x="
-                          110 +
-                          90 *
-                            Math.cos(((i - 1) * Math.PI) / 24 - Math.PI / 2) -
-                          8
-                        "
-                        :y="
-                          110 +
-                          90 *
-                            Math.sin(((i - 1) * Math.PI) / 24 - Math.PI / 2) -
-                          16
-                        "
-                        width="16"
-                        height="32"
-                        rx="8"
-                        :fill="i <= 16 ? '#7B6FFB' : '#E6E4FB'"
-                        :transform="
-                          'rotate(' + ((i - 1) * 360) / 24 + ' 110 110)'
-                        "
-                      />
-                    </template>
-                  </g>
-                </svg>
-                <div
-                  style="
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    text-align: center;
-                  "
-                >
-                  <div class="text-grey-5">Completed Issues</div>
-                  <div class="text-h3 text-grey-7">65%</div>
-                </div>
+              <div >
+                <!-- Right: Appointment Tracker Chart -->
+                <ApexCharts type="radialBar"
+                :options="AppointmentTrackerchartOptions"
+                :series="AppointmentTrackerSeries"
+                 />
               </div>
             </div>
           </div>
         </q-card>
       </div>
-
       <!-- Summary of Weekly Earnings -->
       <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card class="q-pa-md shadow-1">
@@ -285,20 +238,13 @@
             Provide a comparison of this week to the previous week
           </div>
           <div class="q-mb-lg">
-            <q-bar style="height: 160px">
-              <div class="row items-end" style="height: 100%">
-                <div
-                  v-for="(val, idx) in barData"
-                  :key="idx"
-                  class="col flex flex-center"
-                >
-                  <div :style="barStyle(idx, val)" />
-                  <div class="text-caption text-grey-5 q-mt-xs">
-                    {{ days[idx] }}
-                  </div>
-                </div>
-              </div>
-            </q-bar>
+            <!-- Staff Earnings Column Charts -->
+            <ApexCharts
+              type="bar"
+              :options="StaffEarningsBarOptions"
+              :series="StaffEarningsBarSeries"
+              height="180"
+            />
           </div>
           <q-separator />
           <div class="row q-mt-md q-gutter-md">
@@ -453,6 +399,23 @@
 
 <script setup>
 import { ref } from "vue";
+import ApexCharts from "vue3-apexcharts";
+
+const AppointmentWeekChartOptions = {
+  chart: {
+    type: "line",
+  },
+  xaxis: {
+    categories: ["Jan", "Feb", "Mar", "Apr"],
+  },
+};
+const AppointmentWeekSeries = [
+  {
+    name: "Sales",
+    data: [10, 41, 35, 51],
+  },
+];
+
 
 const days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const barData = [4, 7, 5, 4, 10, 6, 7]; // Example data, Friday is highest
@@ -558,6 +521,98 @@ const marketing = [
     bg: "bg-orange-1",
   },
 ];
+
+const AppointmentTrackerchartOptions = {
+  chart: {
+    height: 220,
+    type: 'radialBar',
+    offsetY: 0,
+    background: 'transparent',
+    sparkline: { enabled: false },
+    dropShadow: { enabled: false }
+  },
+  plotOptions: {
+    radialBar: {
+      startAngle: -135,
+      endAngle: 135,
+      hollow: {
+        margin: 0,
+        size: '70%',
+        background: 'transparent',
+        image: undefined,
+      },
+      track: {
+        background: 'transparent',
+        strokeWidth: '100%',
+        margin: 0,
+        dashArray: 0,
+      },
+      dataLabels: {
+        name: {
+          offsetY: -20,
+          show: true,
+          color: '#bdbacb',
+          fontSize: '18px',
+          fontWeight: 500,
+        },
+        value: {
+          offsetY: 20,
+          color: '#6C5DD3',
+          fontSize: '48px',
+          fontWeight: 700,
+          show: true,
+          formatter: function (val) {
+            return val + "%";
+          }
+        }
+      }
+    }
+  },
+  fill: {
+    type: 'gradient',
+    gradient: {
+      shade: 'light',
+      type: 'horizontal',
+      gradientToColors: ['#7367f0'],
+      stops: [0, 100],
+      shadeIntensity: 1,
+      opacityFrom: 1,
+      opacityTo: 1,
+    },
+    colors: ['#cdc9fa'],
+  },
+  stroke: {
+    lineCap: 'butt',
+    dashArray: 6,
+  },
+  labels: ['Completed Issues'],
+};
+const AppointmentTrackerSeries = [65]; // or use a ref for dynamic value
+
+const StaffEarningsBarOptions = {
+  chart: {
+    type: 'bar',
+    toolbar: { show: false },
+    height: 180,
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 8,
+      columnWidth: '40%',
+      distributed: true,
+    },
+  },
+  dataLabels: { enabled: false },
+  xaxis: {
+    categories: days,
+    labels: { style: { colors: '#bdbacb', fontSize: '14px' } },
+  },
+  yaxis: { show: false },
+  grid: { show: false },
+  tooltip: { enabled: false },
+  colors: days.map((_, idx) => idx === 4 ? '#5B4FE9' : '#E6E4FB'),
+};
+const StaffEarningsBarSeries = [{ data: barData }];
 </script>
 
 <style scoped>
