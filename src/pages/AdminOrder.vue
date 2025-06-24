@@ -79,23 +79,11 @@
                 </q-menu>
               </q-btn>
             </template>
-            <template v-else-if="col.name === 'created_at'">
-              {{
-                new Date(props.row[col.field]).toLocaleDateString("en-AU", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })
-              }}
-            </template>
             <template v-else-if="col.format">
-              {{ col.format(props.row[col.field]) }}
+              {{ col.format(typeof col.field === 'function' ? col.field(props.row) : props.row[col.field]) }}
             </template>
             <template v-else>
-              {{ props.row[col.field] }}
+              {{ typeof col.field === 'function' ? col.field(props.row) : props.row[col.field] }}
             </template>
           </q-td>
         </q-tr>
@@ -131,7 +119,7 @@
           </template>
         </q-input>
         <q-btn
-        flat
+          flat
           color="primary"
           icon-right="archive"
           label="Export"
@@ -163,12 +151,12 @@ const pagination = ref({
 });
 
 const columns = [
-  { name: "id", required: true, label: "ID", align: "left", field: "id" },
   {
-    name: "appointment_id",
-    label: "Appointment ID",
+    name: "id",
+    required: true,
+    label: "No",
     align: "left",
-    field: "appointment_id",
+    field: "id",
   },
   {
     name: "order_status",
@@ -204,10 +192,30 @@ const columns = [
     format: (val) => `$${val}`,
   },
   {
-    name: "created_at",
-    label: "Created At",
+    name: "customer_name",
+    label: "Customer Name",
     align: "left",
-    field: "created_at",
+    field: row => row.appointment ? `${row.appointment.customer_first_name || ''} ${row.appointment.customer_last_name || ''}`.trim() : '',
+  },
+  {
+    name: "customer_phone",
+    label: "Customer Phone",
+    align: "left",
+    field: row => row.appointment?.customer_phone || '',
+  },
+  {
+    name: "booking_time",
+    label: "Booking Time",
+    align: "left",
+    field: row => row.appointment?.booking_time || '',
+    format: val => val ? new Date(val).toLocaleString("en-AU", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }) : '',
   },
   { name: "actions", label: "Actions", align: "center", field: "actions" },
 ];

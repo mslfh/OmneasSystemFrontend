@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <q-card>
-      <q-card-section  horizontal class="q-pl-md q-pt-md">
+      <q-card-section horizontal class="q-pl-md q-pt-md">
         <div class="text-h6">Order Details</div>
         <q-btn
           flat
@@ -53,17 +53,38 @@
             <q-item-section>{{ order.payment_note }}</q-item-section>
           </q-item>
           <q-item>
-            <q-item-section>Created At:</q-item-section>
+            <q-item-section>Booking Time:</q-item-section>
             <q-item-section>
               {{
-                new Date(order.created_at).toLocaleDateString("en-AU", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })
+                new Date(order.appointment.booking_time).toLocaleDateString(
+                  "en-AU",
+                  {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  }
+                )
+              }}
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>Submitted at:</q-item-section>
+            <q-item-section>
+              {{
+                new Date(order.appointment.booking_time).toLocaleDateString(
+                  "en-AU",
+                  {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  }
+                )
               }}
             </q-item-section>
           </q-item>
@@ -105,6 +126,7 @@
               order.appointment.booking_time
             }}</q-item-section>
           </q-item>
+
           <q-item>
             <q-item-section>Actual Start Time:</q-item-section>
             <q-item-section>{{
@@ -127,7 +149,12 @@
           >
             <q-item-section>Service:</q-item-section>
             <q-item-section>
+              <div>
               {{ service.service_title }} - ${{ service.service_price }}
+              </div>
+              <q-chip size="sm" style="width:60px;">
+                {{ service.staff_name }}
+              </q-chip>
             </q-item-section>
           </q-item>
         </q-list>
@@ -151,7 +178,7 @@
               <div>Paid: ${{ payment.paid_amount }}</div>
               <div>Remark: {{ payment.remark }}</div>
               <div>
-                Created At:
+                Paid At:
                 {{
                   new Date(payment.created_at).toLocaleDateString("en-AU", {
                     year: "numeric",
@@ -174,7 +201,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { api } from "boot/axios";
-import { useRouter,useRoute } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();

@@ -29,7 +29,7 @@
       </q-card-section>
       <q-card-section class="text-center">
         <div class="text-h6">Tax Invoice {{ '1' + no }}</div>
-        <div>{{ formattedDate(order.created_at) }}</div>
+        <div>{{ formattedDate(new Date()) }}</div>
       </q-card-section>
       <q-separator />
       <q-card-section class="text-subtitle1">
