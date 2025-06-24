@@ -106,13 +106,14 @@
 
       <template v-slot:top-right>
         <q-input
+          style="width: 300px"
           outlined
           dense
           debounce="300"
           clearable
           rounded
           v-model="filter"
-          placeholder="Search by name, phone or date"
+          placeholder="Search by name, phone or therapist"
         >
           <template v-slot:append>
             <q-icon name="search" />
@@ -122,7 +123,6 @@
           flat
           color="primary"
           icon-right="archive"
-          label="Export"
           no-caps
           @click="exportTable"
         />
@@ -216,6 +216,12 @@ const columns = [
       minute: "2-digit",
       hour12: true,
     }) : '',
+  },
+  {
+    name: "staff_name",
+    label: "Therapist",
+    align: "left",
+    field: row => row.appointment?.services[0].staff_name || '',
   },
   { name: "actions", label: "Actions", align: "center", field: "actions" },
 ];
