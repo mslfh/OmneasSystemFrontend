@@ -74,7 +74,7 @@
             <q-item-section>Submitted at:</q-item-section>
             <q-item-section>
               {{
-                new Date(order.appointment.booking_time).toLocaleDateString(
+                new Date(order.created_at).toLocaleDateString(
                   "en-AU",
                   {
                     year: "numeric",
