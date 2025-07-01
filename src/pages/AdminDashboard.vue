@@ -2,30 +2,241 @@
   <div class="q-pa-md q-pt-lg">
     <!-- first row -->
     <div class="row q-col-gutter-lg">
-      <!-- Statistics Card -->
+      <!-- Statistics Card with Carousel -->
       <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
-        <q-card class="fit q-pa-lg shadow-1" style="background: #7367f0;">
-          <div class="row items-center q-mb-md">
-            <div class="col text-h5 text-white  ">Statistics</div>
-            <div class="col-auto text-subtitle2 text-white">
-              Updated 1 month ago
+        <q-card
+          class="fit shadow-1 overflow-hidden"
+        >
+          <q-carousel
+            v-model="currentStatSlide"
+            transition-prev="slide-right"
+            transition-next="slide-left"
+            swipeable
+            animated
+            control-color="white"
+            navigation
+            infinite
+            :autoplay="5000"
+            height="100%"
+            class="text-white rounded-borders"
+            style=" background: #7165ec;"
+          >
+            <!-- Slide 1: Site Performance -->
+            <q-carousel-slide name="performance" class="column no-wrap q-pa-none">
+              <div class="q-pa-lg fit">
+                <div class="row fit">
+                  <div class="col-7 column justify-between">
+                    <div>
+                      <div class="text-h4 text-white q-mb-xs">
+                        Service Performance
+                      </div>
+                      <div class="text-subtitle1 text-white" style="opacity: 0.8;">
+                        The conversion rate is a total of {{ appointmentConversionRate }}%.
+                      </div>
+                    </div>
+
+                    <div class="q-mt-md">
+                      <div class="text-h5 text-white q-mb-md">Spending</div>
+                      <div class="row q-gutter-lg">
+                        <div class="col">
+                          <div class="text-h6 text-white">
+                            {{ todayStatistics.total_appointments }}h
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Spend
+                          </div>
+                          <div class="text-body2 text-white q-mt-sm">
+                            {{ todayStatistics.appointmentGroup?.finished || 0 }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Order
+                          </div>
+                        </div>
+                        <div class="col">
+                          <div class="text-h6 text-white">110</div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Order Size
+                          </div>
+                          <div class="text-body2 text-white q-mt-sm">28k</div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Items
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-5 flex flex-center">
+                    <q-img
+                      src="../assets/sidebar-dashboard.png"
+                      style="max-width: 200px; max-height: 200px"
+                      class="performance-image"
+                    />
+                  </div>
+                </div>
+              </div>
+            </q-carousel-slide>
+
+            <!-- Slide 2: Appointment Statistics -->
+            <q-carousel-slide name="appointments" class="column no-wrap q-pa-none">
+              <div class="q-pa-lg fit">
+                <div class="row fit">
+                  <div class="col-7 column justify-between">
+                    <div>
+                      <div class="text-h4 text-white q-mb-xs">
+                        Appointment Statistics
+                      </div>
+                      <div class="text-subtitle1 text-white" style="opacity: 0.8;">
+                        Updated {{ formatUpdateTime() }}
+                      </div>
+                    </div>
+
+                    <div class="q-mt-md">
+                      <div class="text-h5 text-white q-mb-md">
+                        Today's Overview
+                      </div>
+                      <div class="row q-gutter-lg">
+                        <div class="col">
+                          <div class="text-h6 text-white">
+                            {{ todayStatistics.total_appointments }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Total Appointments
+                          </div>
+                          <div class="text-body2 text-white q-mt-sm">
+                            ${{ todayStatistics.total_revenue.toFixed(0) }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Revenue
+                          </div>
+                        </div>
+                        <div class="col">
+                          <div class="text-h6 text-white">
+                            {{ todayStatistics.appointmentGroup?.finished || 0 }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Completed
+                          </div>
+                          <div class="text-body2 text-white q-mt-sm">
+                            {{ todayStatistics.appointmentGroup?.booked || 0 }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Pending
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-5 flex flex-center">
+                    <q-img
+                      src="../assets/sidebar-dashboard.png"
+                      style="max-width: 200px; max-height: 200px"
+                      class="appointment-image"
+                    />
+                  </div>
+                </div>
+              </div>
+            </q-carousel-slide>
+
+            <!-- Slide 3: Revenue Analytics -->
+            <q-carousel-slide name="revenue" class="column no-wrap q-pa-none">
+              <div class="q-pa-lg fit">
+                <div class="row fit">
+                  <div class="col-7 column justify-between">
+                    <div>
+                      <div class="text-h4 text-white q-mb-xs">
+                        Revenue Analytics
+                      </div>
+                      <div class="text-subtitle1 text-white" style="opacity: 0.8;">
+                        Financial performance overview
+                      </div>
+                    </div>
+
+                    <div class="q-mt-md">
+                      <div class="text-h5 text-white q-mb-md">
+                        Payment Distribution
+                      </div>
+                      <div class="row q-gutter-lg">
+                        <div class="col">
+                          <div class="text-h6 text-white">
+                            ${{ todayStatistics.total_revenue.toFixed(0) }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Total Revenue
+                          </div>
+                          <div class="text-body2 text-white q-mt-sm">
+                            ${{ todayStatistics.total_paid?.toFixed(0) || 0 }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Paid Amount
+                          </div>
+                        </div>
+                        <div class="col">
+                          <div class="text-h6 text-white">
+                            {{ topPaymentMethods.length }}
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Payment Methods
+                          </div>
+                          <div class="text-body2 text-white q-mt-sm">
+                            {{ topPaymentMethodPercentage.toFixed(1) }}%
+                          </div>
+                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                            Paid Rate
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-5 flex flex-center">
+                    <q-img
+                      src="../assets/sidebar-dashboard.png"
+                      style="max-width: 200px; max-height: 200px"
+                      class="revenue-image"
+                    />
+                  </div>
+                </div>
+              </div>
+            </q-carousel-slide>
+          </q-carousel>
+        </q-card>
+      </div>
+
+      <!--Today Income Earned -->
+      <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+        <q-card class="fit bg-white q-pa-lg shadow-1">
+          <div class="row q-mb-md">
+            <div
+              class="bg-orange-1 flex flex-center q-mr-md"
+              style="width: 40px; height: 40px; border-radius: 50%"
+            >
+              <q-icon name="o_analytics" color="green-3" size="25px" />
+            </div>
+
+            <div class="col-6">
+              <div class="text-h5 text-weight-bold text-grey-7">
+                {{ todayStatistics.total_appointments }}
+              </div>
+              <div class="text-subtitle2 text-grey-5 q-mb-md">Appointments</div>
+            </div>
+
+            <div class="col-auto text-subtitle2 text-grey-5">
+              <q-icon name="circle" size="15px" class="text-green-2" />
+              Today
             </div>
           </div>
-          <div class="row q-col-gutter-xl q-mt-md q-mb-md flex justify-between">
 
-            <div class="col-auto flex column items-center">
-              <div
-                class="bg-indigo-2 flex flex-center"
-                style="width: 64px; height: 64px; border-radius: 50%"
-              >
-                <q-icon name="pie_chart" color="indigo-3" size="32px" />
-              </div>
-              <div class="text-h5 text-weight-bold text-white q-mt-sm">
-                245k
-              </div>
-              <div class="text-subtitle2 text-white">Total Appointments</div>
-            </div>
-
+          <div class="text-h4 text-weight-bold text-grey-7">
+            ${{ todayStatistics.total_revenue.toFixed(2) }}
+          </div>
+          <div class="text-subtitle2 text-grey-5 q-mb-md">Sale Amount</div>
+          <div style="height: 100px; overflow: hidden;">
+            <!-- Appointments line chart in this week -->
+            <ApexCharts
+              type="area"
+              :options="AppointmentWeekChartOptions"
+              :series="AppointmentWeekSeries"
+              height="100"
+            />
           </div>
         </q-card>
       </div>
@@ -104,45 +315,6 @@
             style="height: 6px; border-radius: 4px"
             track-color="grey-3"
           />
-        </q-card>
-      </div>
-
-         <!--Today Income Earned -->
-      <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
-        <q-card class="fit bg-white q-pa-lg shadow-1">
-          <div class="row q-mb-md">
-            <div
-              class="bg-orange-1 flex flex-center q-mr-md"
-              style="width: 40px; height: 40px; border-radius: 50%"
-            >
-              <q-icon name="o_analytics" color="green-3" size="25px" />
-            </div>
-
-            <div class="col-6">
-              <div class="text-h5 text-weight-bold text-grey-7">
-                {{ todayStatistics.total_appointments }}
-              </div>
-              <div class="text-subtitle2 text-grey-5 q-mb-md">Appointments</div>
-            </div>
-
-            <div class="col-auto text-subtitle2 text-grey-5">
-              <q-icon name="circle" size="15px" class="text-green-2" />
-              Today
-            </div>
-          </div>
-
-          <div class="text-h4 text-weight-bold text-grey-7">
-            ${{ todayStatistics.total_revenue.toFixed(2) }}
-          </div>
-          <div class="text-subtitle2 text-grey-5 q-mb-md">Sale Amount</div>
-          <div style="height: 160px">
-            <!-- Appointments line chart in this week -->
-            <ApexCharts
-              type="line"
-              :options="AppointmentWeekChartOptions"
-              :series="AppointmentWeekSeries"
-            />
-          </div>
         </q-card>
       </div>
 
@@ -234,7 +406,6 @@
         </q-card>
       </div>
 
-
       <!-- Summary of Weekly Earnings -->
       <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card class="q-pa-md shadow-1">
@@ -274,16 +445,18 @@
 
           <div class="row items-center q-mb-md">
             <div class="col-auto">
-              <div class="text-h2 text-weight-bold">${{ totalWeeklyEarnings.toFixed(2) }}</div>
+              <div class="text-h2 text-weight-bold">
+                ${{ totalWeeklyEarnings.toFixed(2) }}
+              </div>
             </div>
             <div class="col-auto flex items-center">
-              <q-badge color="orange-2" text-color="orange-8" class="q-ml-sm"
-                >{{ selectedStaffName }}</q-badge
-              >
+              <q-badge color="orange-2" text-color="orange-8" class="q-ml-sm">{{
+                selectedStaffName
+              }}</q-badge>
             </div>
           </div>
           <div class="text-grey-5 q-mb-md">
-            Weekly earnings for {{ selectedStaffName || 'selected staff' }}
+            Weekly earnings for {{ selectedStaffName || "selected staff" }}
           </div>
           <div class="q-mb-lg">
             <!-- Staff Earnings Column Charts -->
@@ -306,9 +479,15 @@
                 class="q-mb-xs"
               />
               <div class="text-caption text-grey-6">Weekly Income</div>
-              <div class="text-h6 text-weight-bold">${{ totalWeeklyEarnings.toFixed(2) }}</div>
+              <div class="text-h6 text-weight-bold">
+                ${{ totalWeeklyEarnings.toFixed(2) }}
+              </div>
               <q-linear-progress
-                :value="totalWeeklyEarnings > 0 ? Math.min(totalWeeklyEarnings / totalWeeklyEarnings, 1) : 0"
+                :value="
+                  totalWeeklyEarnings > 0
+                    ? Math.min(totalWeeklyEarnings / totalWeeklyEarnings, 1)
+                    : 0
+                "
                 color="deep-purple-4"
                 class="q-mt-sm"
                 style="height: 4px; width: 100%"
@@ -325,22 +504,65 @@
               />
               <div class="text-caption text-grey-6">Total Services</div>
               <div class="text-h6 text-weight-bold">
-                {{ selectedStaffId === 'all' ?
-                  staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0)
-                  : (selectedStaffId ?
-                    staffEarningsData.find(s => s.id === selectedStaffId)?.booking_services?.length || 0
-                    : 0) }}
+                {{ actualServiceCount }}
               </div>
               <q-linear-progress
-                :value="selectedStaffId === 'all' ?
-                  1
-                  : (selectedStaffId ?
-                    (staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0) > 0 ?
-                      (staffEarningsData.find(s => s.id === selectedStaffId)?.booking_services?.length || 0) /
-                      staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0)
-                      : 0)
-                    : 0)"
+                :value="
+                  selectedStaffId === 'all'
+                    ? 1
+                    : selectedStaffId
+                    ? totalServiceCount > 0
+                      ? actualServiceCount / totalServiceCount
+                      : 0
+                    : 0
+                "
                 color="cyan-5"
+                class="q-mt-sm"
+                style="height: 4px; width: 100%"
+              />
+            </div>
+
+            <div
+              class="col bg-grey-1 q-pa-md rounded-borders flex column items-center"
+            >
+              <q-icon
+                name="pending_actions"
+                color="deep-orange-4"
+                size="md"
+                class="q-mb-xs"
+              />
+              <div class="text-caption text-grey-6">Pending</div>
+              <div class="text-h6 text-weight-bold">
+                {{ unpaidCount }}
+              </div>
+              <q-linear-progress
+                :value="
+                  selectedStaffId === 'all'
+                    ? 1
+                    : selectedStaffId
+                    ? staffEarningsData.reduce(
+                        (total, staff) =>
+                          total +
+                          (staff.booking_services?.filter(
+                            (booking) =>
+                              booking.appointment?.status !== 'finished'
+                          ).length || 0),
+                        0
+                      ) > 0
+                      ? unpaidCount /
+                        staffEarningsData.reduce(
+                          (total, staff) =>
+                            total +
+                            (staff.booking_services?.filter(
+                              (booking) =>
+                                booking.appointment?.status !== 'finished'
+                            ).length || 0),
+                          0
+                        )
+                      : 0
+                    : 0
+                "
+                color="deep-orange-4"
                 class="q-mt-sm"
                 style="height: 4px; width: 100%"
               />
@@ -348,26 +570,37 @@
             <div
               class="col bg-grey-1 q-pa-md rounded-borders flex column items-center"
             >
-              <q-icon name="trending_up" color="green-4" size="md" class="q-mb-xs" />
-              <div class="text-caption text-grey-6">Average/Service</div>
+              <q-icon name="coffee" color="grey-6" size="md" class="q-mb-xs" />
+              <div class="text-caption text-grey-6">Break</div>
               <div class="text-h6 text-weight-bold">
-                ${{ selectedStaffId === 'all' ?
-                  (staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0) > 0 ?
-                    (totalWeeklyEarnings / staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0)).toFixed(2)
-                    : '0.00')
-                  : (selectedStaffId && staffEarningsData.find(s => s.id === selectedStaffId)?.booking_services?.length > 0 ?
-                    (totalWeeklyEarnings / staffEarningsData.find(s => s.id === selectedStaffId).booking_services.length).toFixed(2)
-                    : '0.00') }}
+                {{ breakCount }}
               </div>
               <q-linear-progress
-                :value="selectedStaffId === 'all' ?
-                  (staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0) > 0 ?
-                    Math.min((totalWeeklyEarnings / staffEarningsData.reduce((total, staff) => total + (staff.booking_services?.length || 0), 0)) / 100, 1)
-                    : 0)
-                  : (selectedStaffId && staffEarningsData.find(s => s.id === selectedStaffId)?.booking_services?.length > 0 ?
-                    Math.min((totalWeeklyEarnings / staffEarningsData.find(s => s.id === selectedStaffId).booking_services.length) / 100, 1)
-                    : 0)"
-                color="green-4"
+                :value="
+                  selectedStaffId === 'all'
+                    ? 1
+                    : selectedStaffId
+                    ? staffEarningsData.reduce(
+                        (total, staff) =>
+                          total +
+                          (staff.booking_services?.filter(
+                            (booking) => booking.appointment?.type === 'break'
+                          ).length || 0),
+                        0
+                      ) > 0
+                      ? breakCount /
+                        staffEarningsData.reduce(
+                          (total, staff) =>
+                            total +
+                            (staff.booking_services?.filter(
+                              (booking) => booking.appointment?.type === 'break'
+                            ).length || 0),
+                          0
+                        )
+                      : 0
+                    : 0
+                "
+                color="brown-5"
                 class="q-mt-sm"
                 style="height: 4px; width: 100%"
               />
@@ -559,13 +792,15 @@ const AppointmentTrackerchartOptions = {
 };
 const AppointmentTrackerSeries = ref([0]);
 
+// Carousel state for statistics card
+const currentStatSlide = ref("performance");
 
 const days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 // Staff earnings data
 const staffEarningsData = ref([]);
-const selectedStaffId = ref('all'); // Default to 'all'
-const selectedStaffName = ref('All Staff');
+const selectedStaffId = ref("all"); // Default to 'all'
+const selectedStaffName = ref("All Staff");
 const weeklyEarningsData = ref([0, 0, 0, 0, 0, 0, 0]); // Monday to Sunday
 
 const StaffEarningsBarOptions = computed(() => ({
@@ -574,10 +809,10 @@ const StaffEarningsBarOptions = computed(() => ({
     toolbar: { show: false },
     height: 180,
     events: {
-      dataPointSelection: function(event, chartContext, config) {
+      dataPointSelection: function (event, chartContext, config) {
         // This will be handled by the staff selection buttons instead
-      }
-    }
+      },
+    },
   },
   plotOptions: {
     bar: {
@@ -590,53 +825,144 @@ const StaffEarningsBarOptions = computed(() => ({
     enabled: true,
     offsetY: 2,
     style: {
-      fontSize: '12px',
-      fontWeight: 'bold',
-      colors: ['#ffffff']
+      fontSize: "12px",
+      fontWeight: "bold",
+      colors: ["#ffffff"],
     },
     formatter: function (val) {
-      return val > 0 ? '$' + val.toFixed(0) : '';
-    }
+      return val > 0 ? "$" + val.toFixed(0) : "";
+    },
   },
   xaxis: {
     categories: days,
     labels: { style: { colors: "#bdbacb", fontSize: "14px" } },
   },
   yaxis: {
-    show: false
+    show: false,
   },
   grid: { show: false },
   legend: {
-    show: false
+    show: false,
   },
   tooltip: {
     enabled: true,
     y: {
       formatter: function (val) {
-        return '$' + val.toFixed(2);
-      }
-    }
+        return "$" + val.toFixed(2);
+      },
+    },
   },
   colors: days.map((_, idx) => (selectedStaffId.value ? "#5B4FE9" : "#E6E4FB")),
 }));
 
-const StaffEarningsBarSeries = computed(() => [{
-  name: 'Earnings',
-  data: weeklyEarningsData.value
-}]);
+const StaffEarningsBarSeries = computed(() => [
+  {
+    name: "Earnings",
+    data: weeklyEarningsData.value,
+  },
+]);
 
 const AppointmentWeekChartOptions = {
   chart: {
-    type: "line",
+    type: "area",
+    height: 100,
+    width: "100%",
+    sparkline: {
+      enabled: true
+    },
+    toolbar: {
+      show: false
+    },
+    zoom: {
+      enabled: false
+    },
+    dropShadow: {
+      enabled: true,
+      top: 1,
+      left: 0,
+      blur: 3,
+      opacity: 0.2,
+      color: "#3bcc7c"
+    }
+  },
+  stroke: {
+    curve: "smooth",
+    width: 2.5,
+    colors: ["#3bcc7c"],
+    lineCap: "round"
+  },
+  fill: {
+    type: "gradient",
+    gradient: {
+      type: "vertical",
+      shadeIntensity: 1,
+      gradientToColors: ["#3bcc7c"],
+      inverseColors: false,
+      opacityFrom: 0.5,
+      opacityTo: 0.1,
+      stops: [0, 90, 100]
+    }
+  },
+  markers: {
+    size: 0,
+    hover: {
+      size: 0
+    }
+  },
+  grid: {
+    show: false,
+    padding: {
+      top: -10,
+      right: 5,
+      bottom: -10,
+      left: 5
+    }
   },
   xaxis: {
-    categories: ["Jan", "Feb", "Mar", "Apr"],
+    labels: {
+      show: false
+    },
+    axisBorder: {
+      show: false
+    },
+    axisTicks: {
+      show: false
+    },
+    crosshairs: {
+      show: false
+    }
   },
+  yaxis: {
+    labels: {
+      show: false
+    },
+    min: 0
+  },
+  dataLabels: {
+    enabled: false
+  },
+  legend: {
+    show: false
+  },
+  tooltip: {
+    enabled: true,
+    theme: 'light',
+    style: {
+      fontSize: '12px',
+      fontFamily: 'Inter, sans-serif'
+    },
+    custom: function({ series, seriesIndex, dataPointIndex }) {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return '<div style="background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">' +
+        '<span>' + days[dataPointIndex] + ': ' + series[seriesIndex][dataPointIndex] + ' appointments</span>' +
+        '</div>';
+    }
+  }
 };
 const AppointmentWeekSeries = [
   {
-    name: "Sales",
-    data: [10, 41, 35, 51],
+    name: "Appointments",
+    data: [8, 15, 12, 22, 28, 20, 14],
   },
 ];
 
@@ -729,7 +1055,6 @@ const marketing = [
   },
 ];
 
-
 const todayStatistics = ref({
   total_appointments: 0,
   total_revenue: 0,
@@ -751,14 +1076,22 @@ const calculateWeeklyEarnings = (staffData) => {
     return weeklyData;
   }
 
-  staffData.booking_services.forEach(booking => {
-    const bookingDate = new Date(booking.booking_time);
-    // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-    let dayOfWeek = bookingDate.getDay();
-    // Convert to Monday = 0, Tuesday = 1, ..., Sunday = 6
-    dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  staffData.booking_services.forEach((booking) => {
+    // Only include bookings that are not breaks or no-shows and have service_price
+    if (
+      booking.appointment?.type !== "break" &&
+      booking.appointment?.type !== "no_show" &&
+      booking.service_price !== null &&
+      booking.service_price > 0
+    ) {
+      const bookingDate = new Date(booking.booking_time);
+      // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+      let dayOfWeek = bookingDate.getDay();
+      // Convert to Monday = 0, Tuesday = 1, ..., Sunday = 6
+      dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-    weeklyData[dayOfWeek] += booking.service_price;
+      weeklyData[dayOfWeek] += booking.service_price;
+    }
   });
 
   return weeklyData;
@@ -768,16 +1101,24 @@ const calculateWeeklyEarnings = (staffData) => {
 const calculateAllStaffWeeklyEarnings = () => {
   const weeklyData = [0, 0, 0, 0, 0, 0, 0]; // Monday to Sunday
 
-  staffEarningsData.value.forEach(staff => {
+  staffEarningsData.value.forEach((staff) => {
     if (staff.booking_services) {
-      staff.booking_services.forEach(booking => {
-        const bookingDate = new Date(booking.booking_time);
-        // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-        let dayOfWeek = bookingDate.getDay();
-        // Convert to Monday = 0, Tuesday = 1, ..., Sunday = 6
-        dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      staff.booking_services.forEach((booking) => {
+        // Only include bookings that are not breaks or no-shows and have service_price
+        if (
+          booking.appointment?.type !== "break" &&
+          booking.appointment?.type !== "no_show" &&
+          booking.service_price !== null &&
+          booking.service_price > 0
+        ) {
+          const bookingDate = new Date(booking.booking_time);
+          // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+          let dayOfWeek = bookingDate.getDay();
+          // Convert to Monday = 0, Tuesday = 1, ..., Sunday = 6
+          dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-        weeklyData[dayOfWeek] += booking.service_price;
+          weeklyData[dayOfWeek] += booking.service_price;
+        }
       });
     }
   });
@@ -787,8 +1128,8 @@ const calculateAllStaffWeeklyEarnings = () => {
 
 // Function to select all staff and update chart
 const selectAllStaff = () => {
-  selectedStaffId.value = 'all';
-  selectedStaffName.value = 'All Staff';
+  selectedStaffId.value = "all";
+  selectedStaffName.value = "All Staff";
   weeklyEarningsData.value = calculateAllStaffWeeklyEarnings();
 };
 
@@ -803,6 +1144,131 @@ const selectStaff = (staff) => {
 const totalWeeklyEarnings = computed(() => {
   return weeklyEarningsData.value.reduce((sum, amount) => sum + amount, 0);
 });
+
+// Calculate actual service count (excluding breaks and no-shows)
+const actualServiceCount = computed(() => {
+  if (selectedStaffId.value === "all") {
+    return staffEarningsData.value.reduce((total, staff) => {
+      return (
+        total +
+        (staff.booking_services?.filter(
+          (booking) =>
+            booking.appointment?.type !== "break" &&
+            booking.appointment?.type !== "no_show" &&
+            booking.service_price !== null &&
+            booking.service_price > 0
+        ).length || 0)
+      );
+    }, 0);
+  } else if (selectedStaffId.value) {
+    const staff = staffEarningsData.value.find(
+      (s) => s.id === selectedStaffId.value
+    );
+    return (
+      staff?.booking_services?.filter(
+        (booking) =>
+          booking.appointment?.type !== "break" &&
+          booking.appointment?.type !== "no_show" &&
+          booking.service_price !== null &&
+          booking.service_price > 0
+      ).length || 0
+    );
+  }
+  return 0;
+});
+
+// Calculate break count
+const breakCount = computed(() => {
+  if (selectedStaffId.value === "all") {
+    return staffEarningsData.value.reduce((total, staff) => {
+      return (
+        total +
+        (staff.booking_services?.filter(
+          (booking) => booking.appointment?.type === "break"
+        ).length || 0)
+      );
+    }, 0);
+  } else if (selectedStaffId.value) {
+    const staff = staffEarningsData.value.find(
+      (s) => s.id === selectedStaffId.value
+    );
+    return (
+      staff?.booking_services?.filter(
+        (booking) => booking.appointment?.type === "break"
+      ).length || 0
+    );
+  }
+  return 0;
+});
+
+// Calculate unpaid count (appointments not finished)
+const unpaidCount = computed(() => {
+  if (selectedStaffId.value === "all") {
+    return staffEarningsData.value.reduce((total, staff) => {
+      return (
+        total +
+        (staff.booking_services?.filter(
+          (booking) =>
+            booking.appointment?.status !== "finished" &&
+            booking.appointment?.type !== "break"
+        ).length || 0)
+      );
+    }, 0);
+  } else if (selectedStaffId.value) {
+    const staff = staffEarningsData.value.find(
+      (s) => s.id === selectedStaffId.value
+    );
+    return (
+      staff?.booking_services?.filter(
+        (booking) =>
+          booking.appointment?.status !== "finished" &&
+          booking.appointment?.type !== "break"
+      ).length || 0
+    );
+  }
+  return 0;
+});
+
+// Calculate combined break and unpaid count for backwards compatibility
+const breakUnpaidCount = computed(() => {
+  return breakCount.value + unpaidCount.value;
+});
+
+// Calculate total service count for progress bar calculation
+const totalServiceCount = computed(() => {
+  return staffEarningsData.value.reduce((total, staff) => {
+    return (
+      total +
+      (staff.booking_services?.filter(
+        (booking) =>
+          booking.appointment?.type !== "break" &&
+          booking.appointment?.type !== "no_show" &&
+          booking.service_price !== null &&
+          booking.service_price > 0
+      ).length || 0)
+    );
+  }, 0);
+});
+
+// Computed property for appointment conversion rate
+const appointmentConversionRate = computed(() => {
+  if (todayStatistics.value.total_appointments === 0) return "0.0";
+  const finishedAppointments =
+    todayStatistics.value.appointmentGroup?.finished || 0;
+  return (
+    (finishedAppointments / todayStatistics.value.total_appointments) *
+    100
+  ).toFixed(1);
+});
+
+// Function to format update time
+const formatUpdateTime = () => {
+  const now = new Date();
+  const hours = now.getHours();
+  if (hours < 12) return "this morning";
+  if (hours < 17) return "this afternoon";
+  return "this evening";
+};
 
 onMounted(() => {
   fetchTodayStatistics();
@@ -842,25 +1308,38 @@ async function fetchStaffIncomeStatistics() {
   try {
     const date = new Date();
     // if weekly statistics, set to the start of the week (Monday)
-    const start_date = new Date(date.setDate(date.getDate() - date.getDay() + 1));
+    const start_date = new Date(
+      date.setDate(date.getDate() - date.getDay() + 1)
+    );
     const end_date = new Date(date.setDate(date.getDate() - date.getDay() + 7));
 
-    const response = await api.get("/api/getStaffIncomeStatistics",
-      {
-        params: {
-          start_date: start_date.toISOString().split("T")[0], // Format date as YYYY-MM-DD
-          end_date: end_date.toISOString().split("T")[0],
-        },
-      }
-    );
+    const response = await api.get("/api/getStaffIncomeStatistics", {
+      params: {
+        start_date: start_date.toISOString().split("T")[0], // Format date as YYYY-MM-DD
+        end_date: end_date.toISOString().split("T")[0],
+      },
+    });
 
     if (response.data) {
       staffEarningsData.value = response.data; // Store the staff array directly
 
-      // Calculate total income from all staff
+      // Calculate total income from all staff (excluding breaks and no-shows)
       const totalIncome = response.data.reduce((sum, staff) => {
-        const staffTotal = staff.booking_services.reduce((staffSum, booking) =>
-          staffSum + booking.service_price, 0);
+        const staffTotal = staff.booking_services.reduce(
+          (staffSum, booking) => {
+            // Only include bookings that are not breaks or no-shows and have service_price
+            if (
+              booking.appointment?.type !== "break" &&
+              booking.appointment?.type !== "no_show" &&
+              booking.service_price !== null &&
+              booking.service_price > 0
+            ) {
+              return staffSum + booking.service_price;
+            }
+            return staffSum;
+          },
+          0
+        );
         return sum + staffTotal;
       }, 0);
 
@@ -972,11 +1451,69 @@ const topPaymentMethodPercentage = computed(() => {
   // Return percentage of paid amount vs total revenue
   return totalRevenue > 0 ? (paidAmount / totalRevenue) * 100 : 0;
 });
-
 </script>
 
 <style scoped>
 .q-card {
   border-radius: 16px;
+}
+
+.bg-opacity-20 {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Image animations for carousel slides */
+.performance-image,
+.appointment-image,
+.revenue-image {
+  filter: brightness(1.1) contrast(1.1);
+  transition: all 0.3s ease;
+  animation: float 3s ease-in-out infinite;
+}
+
+.performance-image:hover,
+.appointment-image:hover,
+.revenue-image:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2) contrast(1.2);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Carousel improvements */
+.q-carousel__control {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+}
+
+.q-carousel__control--active {
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+.q-carousel__arrow {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  color: white !important;
+}
+
+.q-carousel__arrow:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+:deep(.tooltip-custom) {
+  background: #1f2937;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 </style>

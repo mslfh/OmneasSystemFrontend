@@ -319,7 +319,7 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="isHistoryDialogOpen" persistent>
+  <q-dialog v-model="isHistoryDialogOpen">
     <q-card style="min-width: 350px; min-height: 300px">
       <q-card-section class="text-h6"> Customer History </q-card-section>
       <q-card-section>

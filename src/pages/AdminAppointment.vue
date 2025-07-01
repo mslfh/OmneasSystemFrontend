@@ -916,6 +916,7 @@ async function onDrop(
       staff_id: event.staff_id,
       staff_name: event.staff_name,
       status: "booked",
+      type: "assigned",
     };
     await api.put("/api/service-appointments/" + event.id, payload);
   } catch (error) {
