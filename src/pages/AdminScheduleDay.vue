@@ -8,15 +8,15 @@
       class="q-mr-md"
     />
     <div class="text-h6 q-mb-md text-center">
-      {{ currentMonth }}
+      {{ currentDayTitle }}
     </div>
 
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-    <div style="display: flex; min-width: 1000px; width: 100%">
+    <div style="display: flex;  width: 100%">
       <q-calendar-day
         ref="calendar"
         v-model="selectedDate"
-        view="week"
+        view="day"
         animated
         bordered
         transition-next="slide-left"
@@ -126,7 +126,7 @@
   />
 
   <!-- Quick Schedule Dialog Component -->
-  <ScheduleQuickSetWeekDialog
+  <ScheduleQuickSetDayDialog
     v-model="quickScheduleDialog"
     :staff-list="staffList"
     :work-date="quickSchedule.work_date"
@@ -151,19 +151,8 @@ import ScheduleStaffSetDialog from "src/components/dialog/ScheduleStaffSetDialog
 const calendar = ref<QCalendarDay>();
 const selectedDate = ref(today());
 
-const weekStart = computed(() => {
-  const date = new Date(selectedDate.value);
-  const day = date.getDay();
-  const start = new Date(date);
-  start.setDate(date.getDate() - day);
-  return start;
-});
-
-const weekEnd = computed(() => {
-  const start = new Date(weekStart.value);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  return end;
+const currentDay = computed(() => {
+  return selectedDate.value;
 });
 
 const events = ref([]);
@@ -195,11 +184,17 @@ function formatDateTitle(dateString) {
     "Saturday",
   ];
 
-  const weekday = weekdays[date.getDay()];
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-  return `${weekday} (${month}-${day})`;
+  const weekday = weekdays[date.getDay()];
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  return `${weekday}, ${month} ${day}, ${year}`;
 }
 
 const eventsMap = computed(() => {
@@ -321,13 +316,8 @@ function scrollToEvent(event: Event) {
   }
 }
 
-const currentMonth = computed(() => {
-  const date = new Date(selectedDate.value);
-  return date.toLocaleString("default", {
-    month: "long",
-    year: "numeric",
-    day: "numeric",
-  });
+const currentDayTitle = computed(() => {
+  return formatDateTitle(selectedDate.value);
 });
 
 interface Event {
@@ -349,8 +339,8 @@ async function fetchSchedules() {
   try {
     const response = await api.get("/api/schedules", {
       params: {
-        start_date: weekStart.value.toISOString().split("T")[0],
-        end_date: weekEnd.value.toISOString().split("T")[0],
+        start_date: selectedDate.value,
+        end_date: selectedDate.value,
       },
     });
 
@@ -371,7 +361,7 @@ async function fetchSchedules() {
           ? getDuration(schedule.start_time, schedule.end_time)
           : 60,
     }));
-    console.log("Fetched schedules:", events.value);
+    console.log("Fetched schedules for day:", events.value);
   } catch (error) {
     console.error("Error fetching schedules:", error);
   }
@@ -583,7 +573,7 @@ onMounted(() => {
 });
 
 // Watch for selectedDate changes to refetch schedules
-watch([weekStart, weekEnd], () => {
+watch(selectedDate, () => {
   fetchSchedules();
 });
 </script>
@@ -689,43 +679,13 @@ watch([weekStart, weekEnd], () => {
   border-left: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* Alternating column colors for calendar */
-.q-calendar-day__head-weekday:nth-child(odd) {
+/* Calendar styling for day view */
+.q-calendar-day__head-weekday {
+  background-color: #f8f9fa !important;
+}
+
+.q-calendar-day__day {
   background-color: #ffffff !important;
-}
-
-.q-calendar-day__head-weekday:nth-child(even) {
-  background-color: #f5f5f5 !important;
-}
-
-.q-calendar-day__day:nth-child(odd) {
-  background-color: #ffffff !important;
-}
-
-.q-calendar-day__day:nth-child(even) {
-  background-color: #f5f5f5 !important;
-}
-
-/* Alternative approach using CSS variables */
-.q-calendar-day .q-calendar__day-container:nth-child(odd) {
-  background-color: #ffffff;
-}
-
-.q-calendar-day .q-calendar__day-container:nth-child(even) {
-  background-color: #d1d1d1;
-}
-
-/* Ensure the alternating pattern is visible */
-.q-calendar-day .q-calendar__day {
-  border-right: 1px solid #e0e0e0;
-}
-
-.q-calendar-day .q-calendar__day:nth-child(odd) {
-  background-color: #ffffff;
-}
-
-.q-calendar-day .q-calendar__day:nth-child(even) {
-  background-color: #f8f8f8;
 }
 
 /* Modern Dialog Styles */

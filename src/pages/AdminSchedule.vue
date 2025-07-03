@@ -30,16 +30,16 @@
         <template v-for="event in eventsMap[timestamp.date]" :key="event.id">
           <div
             :class="badgeClasses(event)"
-            class="my-event"
+            class="my-event "
             @click="openEventDialog(event)"
           >
             <abbr :title="event.details" class="tooltip">
               <div
-                :class="
-                  'bg-' +
-                  eventColors[event.title] +
-                  ' q-mt-xs text-center rounded-borders'
-                "
+                :class="[
+                  event.status !== 'inactive' ? 'bg-' + eventColors[event.title] : 'bg-grey-5',
+                  'q-mt-xs text-center rounded-borders',
+                  { 'inactive-event': event.status === 'inactive' }
+                ]"
                 :style="
                   event.status == 'inactive'
                     ? 'text-decoration: line-through;'
@@ -54,275 +54,34 @@
         </template>
       </template>
     </q-calendar-month>
-<!-- Set Staff Schedule -->
-    <q-dialog v-model="scheduleDialog">
-      <q-card>
-        <q-card-section>
-          <div class="text-h6">Set Staff Schedule</div>
-        </q-card-section>
-        <q-card-section horizontal>
-          <q-card style="width: 400px">
-            <q-card-section>
-              <q-select
-                v-model="selectedStaff"
-                :options="staffList"
-                option-label="name"
-                option-value="id"
-                label="Select Staff"
-                dense
-              />
-            </q-card-section>
-            <q-card-section
-              ><q-select
-                v-model="scheduleType"
-                label="Schedule Type"
-                :options="['Every week']"
-            /></q-card-section>
 
-            <q-card-section>
-              <q-input v-model="startDate" label="Start Date" mask="####-##-##">
-                <template v-slot:prepend>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                    >
-                      <q-date v-model="startDate" mask="YYYY-MM-DD">
-                        <div class="row items-center justify-end">
-                          <q-btn
-                            v-close-popup
-                            label="Close"
-                            color="primary"
-                            flat
-                          />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </q-card-section>
-            <q-card-section>
-              <q-input v-model="endDate" label="End Date" mask="####-##-##">
-                <template v-slot:prepend>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                    >
-                      <q-date v-model="endDate" mask="YYYY-MM-DD">
-                        <div class="row items-center justify-end">
-                          <q-btn
-                            v-close-popup
-                            label="Close"
-                            color="primary"
-                            flat
-                          />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </q-card-section>
-          </q-card>
-          <q-separator vertical />
-          <q-card style="width: 400px">
-            <q-card-section>
-              <q-card class="q-ma-sm q-gutter-sm">
-                <q-card-section
-                  horizontal
-                  class="q-gutter-sm"
-                  v-for="(day, index) in weekDays"
-                  :key="index"
-                >
-                  <q-checkbox
-                    style="width: 140px"
-                    v-model="day.enabled"
-                    :label="day.label"
-                  />
-                  <div v-if="day.enabled">
-                    <q-card-section horizontal>
-                      <q-input
-                        outlined
-                        v-model="day.start"
-                        type="time"
-                        style="width: 70px"
-                        dense
-                      />
-                      <q-label class="q-ma-sm"> -- </q-label>
-                      <q-input
-                        outlined
-                        v-model="day.end"
-                        type="time"
-                        style="width: 70px"
-                        dense
-                      />
-                      <q-btn
-                        color="accent"
-                        icon="add"
-                        @click="addTimeInput(day)"
-                        flat
-                        round
-                      />
-                    </q-card-section>
-                    <q-card-section
-                      v-for="(time, timeIndex) in day.additionalTimes || []"
-                      :key="timeIndex"
-                      horizontal
-                    >
-                      <q-input
-                        outlined
-                        v-model="time.start"
-                        type="time"
-                        style="width: 70px"
-                        dense
-                      />
-                      <q-label class="q-ma-sm"> -- </q-label>
-                      <q-input
-                        outlined
-                        v-model="time.end"
-                        type="time"
-                        style="width: 70px"
-                        dense
-                      />
-                      <q-btn
-                        icon="remove"
-                        @click="removeTimeInput(day, timeIndex)"
-                        color="negative"
-                        flat
-                        round
-                      />
-                    </q-card-section>
-                  </div>
-                </q-card-section>
-              </q-card>
-            </q-card-section>
-          </q-card>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn
-            flat
-            label="Cancel"
-            color="primary"
-            @click="closeScheduleDialog"
-          />
-          <q-btn flat label="Save" color="primary" @click="saveSchedule" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-    <!-- Add Day Schedule -->
-    <q-dialog v-model="dayScheduleDialog">
-      <q-card style="width: 100%">
-        <q-card-section>
-          <div class="text-h6">Add Day Schedule</div>
-        </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="schedule.work_date"
-            filled
-            type="date"
-            label="Work Date"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-select
-            v-model="selectedStaff"
-            :options="staffList"
-            option-label="name"
-            option-value="id"
-            label=" * Select Staff"
-            clearable
-            dense
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-label class="text-grey-8">
-            <q-icon size="xs" name="access_time" />
-            Working Time
-          </q-label>
-          <q-range
-            v-model="timeRangeModel"
-            color="teal"
-            :inner-min="8"
-            :inner-max="19"
-            :step="0.5"
-            markers
-            label-always
-            :left-label-value="minTimeLabel"
-            :right-label-value="maxTimeLabel"
-            switch-label-side
-            :min="8"
-            :max="19"
-          />
-          <q-input v-model="schedule.remark" label="Remark" filled />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn
-            flat
-            label="Cancel"
-            color="primary"
-            @click="closeDayScheduleDialog"
-          />
-          <q-btn flat label="Save" color="primary" @click="saveDaySchedule" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <!-- Staff Schedule Dialog Component -->
+    <ScheduleStaffSetDialog
+      v-model="scheduleDialog"
+      :staff-list="staffList"
+      @save="saveSchedule"
+      @cancel="closeScheduleDialog"
+    />
 
-    <!-- Event Details Dialog -->
-    <q-dialog v-model="eventDialog">
-      <q-card style="width: 100%">
-        <q-card-section>
-          <div class="text-h6">Event Details</div>
-        </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="selectedEvent.title"
-            label="Staff"
-            readonly
-            filled
-          />
-          <q-input
-            v-model="selectedEvent.start_time"
-            type="time"
-            label="Start Time"
-          />
-          <q-input
-            v-model="selectedEvent.end_time"
-            type="time"
-            label="End Time"
-          />
-          <!-- <q-input
-            v-model="selectedEvent.break_start_time"
-            filled
-            type="time"
-            label="Break Start Time"
-          />
-          <q-input
-            v-model="selectedEvent.break_end_time"
-            filled
-            type="time"
-            label="Break End Time"
-          /> -->
-          <q-option-group
-            v-model="selectedEvent.status"
-            label="Status"
-            :options="[
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
-            ]"
-            inline
-          />
-          <q-input v-model="selectedEvent.remark" label="Remark" />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Delete" color="negative" @click="deleteEvent" />
-          <q-btn flat label="Save" color="primary" @click="updateEvent" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <!-- Quick Schedule Dialog Component -->
+    <ScheduleQuickSetMonthDialog
+      v-model="dayScheduleDialog"
+      :staff-list="staffList"
+      :work-date="schedule.work_date"
+      :selected-staff="selectedStaff"
+      :time-range="timeRangeModel"
+      :remark="schedule.remark"
+      @save="saveDaySchedule"
+      @cancel="closeDayScheduleDialog"
+    />
+
+    <!-- Event Details Dialog Component -->
+    <ScheduleEventDetailsDialog
+      v-model="eventDialog"
+      :event-data="selectedEvent"
+      @save="updateEvent"
+      @delete="deleteEvent"
+    />
   </q-page>
 </template>
 
@@ -330,16 +89,21 @@
 import { QCalendarMonth, today, Timestamp } from "@quasar/quasar-ui-qcalendar";
 import { ref, computed, onMounted } from "vue";
 import { api } from "boot/axios";
-import NavigationBar from "src/components/NavigationBar.vue"; // Import NavigationBar
-import { matHeight, matWidthFull } from "@quasar/extras/material-icons";
+import NavigationBar from "src/components/NavigationBar.vue";
+import ScheduleEventDetailsDialog from "../components/dialog/ScheduleEventDetailsDialog.vue";
+import ScheduleQuickSetMonthDialog from "../components/dialog/ScheduleQuickSetMonthDialog.vue";
+import ScheduleStaffSetDialog from "../components/dialog/ScheduleStaffSetDialog.vue";
 
-const calendar = ref(null); // Ensure this is initialized as null
+const calendar = ref(null);
 const selectedDate = ref(today());
 const events = ref([]);
 const scheduleDialog = ref(false);
 const dayScheduleDialog = ref(false);
+const eventDialog = ref(false);
 const staffList = ref([]);
 const selectedStaff = ref(null);
+const selectedEvent = ref({});
+
 const schedule = ref({
   status: "",
   start_time: "",
@@ -350,29 +114,7 @@ const schedule = ref({
   break_end_time: "",
 });
 
-const timeRangeModel = ref({ min: 8, max: 19 });
-
-const minTimeLabel = computed(() => {
-  return formatTimeLabel(timeRangeModel.value.min);
-});
-const maxTimeLabel = computed(() => {
-  return formatTimeLabel(timeRangeModel.value.max);
-});
-
-function formatTimeLabel(time) {
-  const hasHalfStep = time % 1 === 0.5;
-
-  if (hasHalfStep) {
-    return Math.floor(time) + ":30";
-  } else {
-    return time + ":00";
-  }
-}
-
-const timeMarkerLabels = Array.from({ length: 11 }, (_, i) => ({
-  value: 8 + i,
-  label: `${8 + i}:00`,
-}));
+const timeRangeModel = ref({ min: 8, max: 20 });
 
 const eventsMap = computed(() => {
   const map = {};
@@ -441,70 +183,9 @@ function openScheduleDialog() {
 
 function closeScheduleDialog() {
   scheduleDialog.value = false;
-  resetScheduleForm();
 }
 
-function resetScheduleForm() {
-  selectedStaff.value = null;
-  schedule.value = {
-    work_date: "",
-    break_start_time: "",
-    break_end_time: "",
-  };
-}
-
-const scheduleType = ref("Every week");
-const startDate = ref("");
-const endDate = ref("");
-
-const weekDays = ref([
-  { label: "Monday", enabled: false, start: "", end: "" },
-  { label: "Tuesday", enabled: false, start: "", end: "" },
-  { label: "Wednesday", enabled: false, start: "", end: "" },
-  { label: "Thursday", enabled: false, start: "", end: "" },
-  { label: "Friday", enabled: false, start: "", end: "" },
-  { label: "Saturday", enabled: false, start: "", end: "" },
-  { label: "Sunday", enabled: false, start: "", end: "" },
-]);
-
-function addTimeInput(day) {
-  if (!day.additionalTimes) {
-    day.additionalTimes = [];
-  }
-  day.additionalTimes.push({ start: "", end: "" });
-}
-
-function removeTimeInput(day, index) {
-  if (day.additionalTimes && day.additionalTimes.length > index) {
-    day.additionalTimes.splice(index, 1);
-  }
-}
-
-async function saveSchedule() {
-  if (!selectedStaff.value) {
-    alert("Please select a staff member.");
-    return;
-  }
-  if (!startDate.value || !endDate.value) {
-    alert("Please select a start and end date.");
-    return;
-  }
-
-  const payload = {
-    staff_id: selectedStaff.value.id,
-    schedule_type: scheduleType.value,
-    start_date: startDate.value,
-    end_date: endDate.value,
-    week_days: weekDays.value
-      .filter((day) => day.enabled)
-      .map((day) => ({
-        day: day.label,
-        start_time: day.start,
-        end_time: day.end,
-        additional_times: day.additionalTimes || [],
-      })),
-  };
-
+async function saveSchedule(payload) {
   try {
     await api.post("/api/insert-schedule", payload);
     fetchSchedules();
@@ -516,63 +197,38 @@ async function saveSchedule() {
 
 function badgeClasses(event) {
   return {
-    [`text-white `]: true,
+    [`text-white `]: event.status !== 'inactive',
+    "text-grey-2 bg-grey-5": event.status === 'inactive',
     "rounded-border": true,
+    "inactive-event": event.status === 'inactive',
   };
 }
-
-const eventDialog = ref(false);
-const selectedEvent = ref({});
 
 function openEventDialog(event) {
   selectedEvent.value = {
     ...event,
     start_time: event.start_time,
     end_time: event.end_time,
-    break_start_time: event.break_start_time, // Include break start time
-    break_end_time: event.break_end_time, // Include break end time
   };
   console.log("Selected Event:", event);
   eventDialog.value = true;
 }
 
-function closeEventDialog() {
-  eventDialog.value = false;
-  selectedEvent.value = {};
-}
-
-async function updateEvent() {
+async function updateEvent(eventData) {
   try {
-    const {
-      id,
-      start_time,
-      end_time,
-      status,
-      remark,
-      break_start_time,
-      break_end_time,
-    } = selectedEvent.value;
-    await api.put(`/api/schedules/${id}`, {
-      start_time,
-      end_time,
-      status,
-      remark,
-      break_start_time,
-      break_end_time,
-    });
+    await api.put(`/api/schedules/${eventData.id}`, eventData);
     fetchSchedules();
-    closeEventDialog();
+    eventDialog.value = false;
   } catch (error) {
     console.error("Error updating event:", error);
   }
 }
 
-async function deleteEvent() {
+async function deleteEvent(id) {
   try {
-    const { id } = selectedEvent.value;
     await api.delete(`/api/schedules/${id}`);
     fetchSchedules();
-    closeEventDialog();
+    eventDialog.value = false;
   } catch (error) {
     console.error("Error deleting event:", error);
   }
@@ -606,8 +262,9 @@ function onClickDay(data: Timestamp) {
   if (eventDialog.value == true) {
     return;
   }
-  schedule.value.work_date = data.scope.timestamp.date; // Set the selected date
-  dayScheduleDialog.value = true; // Open the dialog
+  schedule.value.work_date = data.scope.timestamp.date;
+  selectedStaff.value = null; // Reset selected staff
+  dayScheduleDialog.value = true;
 }
 
 function closeDayScheduleDialog() {
@@ -615,31 +272,22 @@ function closeDayScheduleDialog() {
   resetScheduleForm();
 }
 
-async function saveDaySchedule() {
-  if (!selectedStaff.value) {
-    alert("Please select a staff member.");
-    return;
-  }
-  // Set date into yyyy/mm/dd format
-  schedule.value.work_date = schedule.value.work_date.replace(/-/g, "/");
-  // Set start_time and end_time based on timeRangeModel
+function resetScheduleForm() {
+  selectedStaff.value = null;
+  schedule.value = {
+    status: "",
+    start_time: "",
+    end_time: "",
+    remark: "",
+    work_date: "",
+    break_start_time: "",
+    break_end_time: "",
+  };
+  timeRangeModel.value = { min: 8, max: 19 };
+}
 
-  schedule.value.start_time = formatTimeLabel(timeRangeModel.value.min);
-  schedule.value.end_time = formatTimeLabel(timeRangeModel.value.max);
-
-  if (schedule.value.start_time.length == 4) {
-    schedule.value.start_time = "0" + schedule.value.start_time;
-  }
-  if (schedule.value.end_time.length == 4) {
-    schedule.value.end_time = "0" + schedule.value.end_time;
-  }
-
-  schedule.value.status = "active";
+async function saveDaySchedule(payload) {
   try {
-    const payload = {
-      staff_id: selectedStaff.value.id,
-      ...schedule.value,
-    };
     await api.post("/api/schedules", payload);
     fetchSchedules();
     closeDayScheduleDialog();
@@ -665,4 +313,11 @@ onMounted(() => {
   overflow: hidden;
   cursor: pointer;
 }
+
+.inactive-event {
+  text-decoration: line-through;
+  position: relative;
+  border-radius: 5px;
+}
+
 </style>

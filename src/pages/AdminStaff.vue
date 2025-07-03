@@ -7,6 +7,7 @@
       :rows="staff"
       :columns="columns"
       row-key="id"
+      :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>
         <q-btn

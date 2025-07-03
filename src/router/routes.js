@@ -37,6 +37,7 @@ const routes = [
       { path: 'service', component: () => import('pages/AdminService.vue') },
       { path: 'schedule', component: () => import('pages/AdminSchedule.vue') },
       { path: 'schedule/week', component: () => import('pages/AdminScheduleWeek.vue') },
+      { path: 'schedule/day', component: () => import('pages/AdminScheduleDay.vue') },
       { path: 'appointment', component: () => import('pages/AdminAppointment.vue') },
       { path: 'appointment/detail', component: () => import('pages/AdminHistoryDetail.vue') },
       { path: 'setting', component: () => import('pages/AdminSetting.vue') },

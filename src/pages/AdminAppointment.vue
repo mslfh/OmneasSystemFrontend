@@ -797,6 +797,7 @@ function onToday() {
     calendar.value.moveToToday();
   }
 }
+
 function onPrev() {
   if (calendar.value) {
     calendar.value.prev();
