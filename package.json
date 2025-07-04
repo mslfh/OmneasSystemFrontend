@@ -1,8 +1,8 @@
 {
-  "name": "massagefrontend",
+  "name": "omneas-frontend",
   "version": "0.0.1",
-  "description": "Relax and heal with professional massage therapy in Launceston. Book online with Mia's Massage for stress relief and wellness.",
-  "productName": "Mia's Massage Therapy Launceston",
+  "description": "Omneas Frontend",
+  "productName": "Omneas Frontend",
   "author": "Fuhai Li <55822442+mslfh@users.noreply.github.com>",
   "type": "module",
   "private": true,
