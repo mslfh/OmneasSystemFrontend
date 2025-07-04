@@ -4,7 +4,7 @@
       <q-page class="flex bg-image flex-center">
         <q-card v-bind:style="$q.screen.lt.sm?{'width': '80%'}:{'width':'30%'}">
           <q-card-section>
-            <q-avatar size="103px" >
+            <q-avatar size="103px" class="absolute-center">
               <img  src="../assets/sidebar-dashboard.png">
             </q-avatar>
           </q-card-section>
