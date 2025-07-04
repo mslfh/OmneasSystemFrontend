@@ -62,10 +62,6 @@ export function adminDeskOnlyGuard(to, from, next) {
 export function defaultRouteGuard(to, from, next) {
   const userRole = getUserRole();
 
-  // Redirect Staff to schedule, others to appointment
-  if (userRole === 'Staff') {
-    next('/admin/schedule');
-  } else {
-    next('/admin/appointment');
-  }
+  // Redirect all users to schedule/day after login
+  next('/admin/schedule/day');
 }
