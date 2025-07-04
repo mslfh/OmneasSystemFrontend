@@ -333,7 +333,7 @@ function getUserInitials() {
 
           <!-- Customer - Only for Admin and Desk -->
           <q-expansion-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             icon="supervisor_account"
             label="Customer"
           >

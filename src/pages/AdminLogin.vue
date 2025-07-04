@@ -62,7 +62,7 @@ const handleLogin = async () => {
     localStorage.setItem("authToken", token); // Store token in localStorage
     localStorage.setItem("user", JSON.stringify(user)); // Optionally store user info
 
-    router.push("/admin"); // Redirect to admin dashboard
+    router.push("/admin/schedule/day"); // Redirect to schedule day view
   } catch (error) {
     console.error("Login failed:", error);
   }
