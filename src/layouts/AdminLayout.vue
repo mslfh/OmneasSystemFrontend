@@ -264,7 +264,7 @@ function getUserInitials() {
         <q-list>
           <!-- Dashboard - Only for Admin and Desk -->
           <q-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             to="/admin/dashboard"
             active-class="q-item-no-link-highlighting"
           >
@@ -278,7 +278,7 @@ function getUserInitials() {
 
           <!-- Appointment - Only for Admin and Desk -->
           <q-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             to="/admin/appointment"
             active-class="q-item-no-link-highlighting"
           >
@@ -292,7 +292,7 @@ function getUserInitials() {
 
           <!-- History - Only for Admin and Desk -->
           <q-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             to="/admin/history"
             active-class="q-item-no-link-highlighting"
           >
@@ -350,6 +350,7 @@ function getUserInitials() {
                 </q-item-section>
               </q-item>
               <q-item
+              v-if="false"
                 to="/admin/profile"
                 active-class="q-item-no-link-highlighting"
               >
@@ -364,7 +365,7 @@ function getUserInitials() {
           </q-expansion-item>
 
           <!-- Services - Only for Admin and Desk -->
-          <q-expansion-item v-if="isAdminOrDesk" icon="pages" label="Services">
+          <q-expansion-item v-if="false" icon="pages" label="Services">
             <q-list class="q-pl-lg">
               <q-item
                 to="/admin/package"
@@ -393,7 +394,7 @@ function getUserInitials() {
 
           <!-- Invoice - Only for Admin and Desk -->
           <q-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             to="/admin/order"
             active-class="q-item-no-link-highlighting"
           >
@@ -407,7 +408,7 @@ function getUserInitials() {
 
           <!-- Voucher - Only for Admin and Desk -->
           <q-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             to="/admin/voucher"
             active-class="q-item-no-link-highlighting"
           >
@@ -421,7 +422,7 @@ function getUserInitials() {
 
           <!-- Setting - Only for Admin and Desk -->
           <q-item
-            v-if="isAdminOrDesk"
+            v-if="false"
             to="/admin/setting"
             active-class="q-item-no-link-highlighting"
           >
@@ -444,7 +445,7 @@ function getUserInitials() {
               @click="zoomLeftDrawer"
             >
               <img
-                src="https://cdn.quasar.dev/logo-v2/svg/logo.svg"
+                src="../assets/sidebar-dashboard.png"
                 alt="Quasar Logo"
               />
             </q-avatar>
