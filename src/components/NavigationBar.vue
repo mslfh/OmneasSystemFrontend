@@ -1,8 +1,8 @@
 <template>
-  <div class="navigation-bar ">
+  <div class="navigation-bar text-center">
     <q-btn flat icon="chevron_left" @click="$emit('prev')" label="Previous" />
     <q-btn flat icon="today" @click="$emit('today')" label="Today" />
-    <q-btn flat icon="chevron_right" @click="$emit('next')" label="Next" />
+    <q-btn flat icon-right="chevron_right" @click="$emit('next')" label="Next" />
   </div>
 </template>
 

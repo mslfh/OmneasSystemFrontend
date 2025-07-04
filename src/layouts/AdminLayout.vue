@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import Messages from "./Messages.vue";
 import Profile from "./Profile.vue";
@@ -8,12 +8,36 @@ import { fetchUserFromSearch } from "../composables/useUserFromSearch";
 import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
 import { api } from "boot/axios";
 import AddAppointmentDialog from "components/dialog/AddAppointmentDialog.vue";
+import {
+  getCurrentUser,
+  getUserRole,
+  canAccessAllMenus,
+  canOnlyAccessSchedule,
+} from "../utils/auth";
 
 const APP_TITLE = import.meta.env.VITE_APP_TITLE;
 const showingNavigationDropdown = ref(false);
 const leftDrawerOpen = ref(false);
 const zoomDrawer = ref(false);
 const $q = useQuasar();
+
+// User role management
+const currentUser = ref(null);
+const userRole = ref("");
+
+// Get current user info from localStorage
+onMounted(() => {
+  currentUser.value = getCurrentUser();
+  console.log("Current User:", currentUser.value);
+  userRole.value = getUserRole();
+  console.log("User Role:", userRole.value);
+  console.log("Is Admin or Desk:", canAccessAllMenus());
+  console.log("Is Staff Only:", canOnlyAccessSchedule());
+});
+
+// Computed properties for role-based visibility
+const isAdminOrDesk = computed(() => canAccessAllMenus());
+const isStaffOnly = computed(() => canOnlyAccessSchedule());
 
 const searchField = ref("");
 const loading = ref(false);
@@ -52,6 +76,25 @@ function viewHistory(user) {
   selectedUser.value = user;
   isHistoryDialogOpen.value = true;
 }
+
+// Get user initials for avatar display
+function getUserInitials() {
+  if (!currentUser.value) return "?";
+
+  const name = currentUser.value.name;
+  if (!name) return "?";
+
+  // If name has spaces, get first letter of first and last name
+  const nameParts = name.trim().split(" ");
+  if (nameParts.length > 1) {
+    return (
+      nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)
+    ).toUpperCase();
+  }
+
+  // Otherwise just get first letter
+  return name.charAt(0).toUpperCase();
+}
 </script>
 
 <template>
@@ -78,7 +121,7 @@ function viewHistory(user) {
           clearable
           v-model="searchField"
           :placeholder="
-            $q.screen.gt.sm
+            $q.screen.gt.sm && isAdminOrDesk
               ? 'Search customer by  phone, name or email.'
               : 'Search'
           "
@@ -90,7 +133,14 @@ function viewHistory(user) {
           </template>
         </q-input>
 
-        <q-menu v-if="searchField !== '' && !loading && foundUsers.length > 0">
+        <q-menu
+          v-if="
+            isAdminOrDesk &&
+            searchField !== '' &&
+            !loading &&
+            foundUsers.length > 0
+          "
+        >
           <q-list>
             <q-item v-for="user in foundUsers" :key="user.id">
               <q-item-section>
@@ -150,7 +200,14 @@ function viewHistory(user) {
             v-if="$q.screen.gt.sm"
           >
           </q-btn>
-          <q-btn round dense flat color="grey-8" icon="notifications">
+          <q-btn
+            v-if="false"
+            round
+            dense
+            flat
+            color="grey-8"
+            icon="notifications"
+          >
             <q-badge color="red" text-color="white" floating> 5 </q-badge>
             <q-menu>
               <q-list style="min-width: 100px">
@@ -169,8 +226,13 @@ function viewHistory(user) {
           </q-btn>
 
           <q-btn round dense flat>
-            <q-avatar size="26px">
-              <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+            <q-avatar size="26px" color="primary" text-color="white">
+              {{ getUserInitials() }}
+              <q-tooltip>
+                {{ currentUser?.name || "Unknown User" }} ({{
+                  userRole || "No Role"
+                }})
+              </q-tooltip>
             </q-avatar>
             <q-menu>
               <q-list style="min-width: 200px">
@@ -200,11 +262,10 @@ function viewHistory(user) {
         "
       >
         <q-list>
-          <!-- <q-item
-            to="/admin/dashboard"
-            active-class="q-item-no-link-highlighting"
-          > -->
+          <!-- Dashboard - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
+            to="/admin/dashboard"
             active-class="q-item-no-link-highlighting"
           >
             <q-item-section avatar>
@@ -214,7 +275,10 @@ function viewHistory(user) {
               <q-item-label>Dashboard</q-item-label>
             </q-item-section>
           </q-item>
+
+          <!-- Appointment - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
             to="/admin/appointment"
             active-class="q-item-no-link-highlighting"
           >
@@ -226,7 +290,9 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
+          <!-- History - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
             to="/admin/history"
             active-class="q-item-no-link-highlighting"
           >
@@ -238,6 +304,7 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
+          <!-- Schedule - Visible for all roles -->
           <q-item
             to="/admin/schedule"
             active-class="q-item-no-link-highlighting"
@@ -250,7 +317,12 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
-          <q-item to="/admin/staff" active-class="q-item-no-link-highlighting">
+          <!-- Staff - Only for Admin and Desk -->
+          <q-item
+            v-if="isAdminOrDesk"
+            to="/admin/staff"
+            active-class="q-item-no-link-highlighting"
+          >
             <q-item-section avatar>
               <q-icon name="storefront" />
             </q-item-section>
@@ -259,7 +331,12 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
-          <q-expansion-item icon="supervisor_account" label="Customer">
+          <!-- Customer - Only for Admin and Desk -->
+          <q-expansion-item
+            v-if="isAdminOrDesk"
+            icon="supervisor_account"
+            label="Customer"
+          >
             <q-list class="q-pl-lg">
               <q-item
                 to="/admin/user"
@@ -286,7 +363,8 @@ function viewHistory(user) {
             </q-list>
           </q-expansion-item>
 
-          <q-expansion-item icon="pages" label="Services">
+          <!-- Services - Only for Admin and Desk -->
+          <q-expansion-item v-if="isAdminOrDesk" icon="pages" label="Services">
             <q-list class="q-pl-lg">
               <q-item
                 to="/admin/package"
@@ -313,7 +391,12 @@ function viewHistory(user) {
             </q-list>
           </q-expansion-item>
 
-          <q-item to="/admin/order" active-class="q-item-no-link-highlighting">
+          <!-- Invoice - Only for Admin and Desk -->
+          <q-item
+            v-if="isAdminOrDesk"
+            to="/admin/order"
+            active-class="q-item-no-link-highlighting"
+          >
             <q-item-section avatar>
               <q-icon name="payments" />
             </q-item-section>
@@ -322,7 +405,9 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
+          <!-- Voucher - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
             to="/admin/voucher"
             active-class="q-item-no-link-highlighting"
           >
@@ -334,7 +419,9 @@ function viewHistory(user) {
             </q-item-section>
           </q-item>
 
+          <!-- Setting - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
             to="/admin/setting"
             active-class="q-item-no-link-highlighting"
           >
@@ -345,14 +432,6 @@ function viewHistory(user) {
               <q-item-label>Setting</q-item-label>
             </q-item-section>
           </q-item>
-          <!-- <q-item to="/Mail" active-class="q-item-no-link-highlighting">
-            <q-item-section avatar>
-              <q-icon name="email" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>Notification</q-item-label>
-            </q-item-section>
-          </q-item> -->
         </q-list>
       </q-scroll-area>
       <div class="absolute-top" style="height: 80px; padding-left: 10px">

@@ -19,8 +19,8 @@
             <q-form class="q-gutter-md" @submit="handleLogin">
               <q-input
                 filled
-                v-model="username"
-                label="Username"
+                v-model="userLogin"
+                label="Phone or Email"
                 lazy-rules
               />
               <q-input
@@ -46,7 +46,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
-const username = ref("");
+const userLogin = ref("");
 const password = ref("");
 const router = useRouter();
 const { VITE_API_URL } = import.meta.env;
@@ -54,7 +54,7 @@ const { VITE_API_URL } = import.meta.env;
 const handleLogin = async () => {
   try {
     const response = await axios.post(`${VITE_API_URL}/api/login`, {
-      email: username.value,
+      userLogin: userLogin.value,
       password: password.value,
     });
     const { token, user } = response.data;

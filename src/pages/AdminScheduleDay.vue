@@ -1,18 +1,38 @@
 <template>
-  <q-page class="q-pa-sm bg-white">
-    <q-btn
-      :dense="$q.screen.lt.md"
-      label="Staff Schedule"
-      color="accent"
-      @click="openScheduleDialog"
-      class="q-mr-md"
-    />
+  <q-page class="q-pa-sm bg-white schedule-day-view">
+     <div class="row items-center justify-between">
+      <q-btn
+        v-if="isAdminOrDesk"
+        :dense="$q.screen.lt.md"
+        label="Schedule"
+        color="accent"
+        @click="openScheduleDialog"
+        class="q-mr-md"
+      />
+      <!-- View Switcher Component -->
+      <schedule-view-switcher />
+    </div>
     <div class="text-h6 q-mb-md text-center">
-      {{ currentDayTitle }}
+      {{ currentMonth }}
     </div>
 
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
-    <div style="display: flex;  width: 100%">
+
+
+    <!-- Quick Add Tip -->
+    <div v-if="isAdminOrDesk" class="text-center q-mb-sm">
+      <q-chip
+        color="grey-1"
+        text-color="grey-8"
+        icon="info"
+        class="tip-chip"
+      >
+        Click on header or intervals to quickly add schedules
+      </q-chip>
+    </div>
+
+
+    <div class="calendar-container">
       <q-calendar-day
         ref="calendar"
         v-model="selectedDate"
@@ -25,9 +45,10 @@
         :interval-minutes="10"
         :interval-start="62"
         :interval-count="64"
-        :interval-height="12"
-        @click-head-day="onClickHeadDay"
-        @click-time="onClickTime"
+        :interval-height="$q.screen.lt.md ? 10 : 12"
+        @click-head-day=" onClickHeadDay "
+        @click-time=" onClickTime "
+        class="calendar-day"
       >
         <template #head-day-event="{ scope: { timestamp } }">
           <div
@@ -86,10 +107,11 @@
               v-if="event.time !== undefined"
               class="my-event"
               :class="badgeClasses(event)"
-              :style="
-                badgeStyles(event, timeStartPos, timeDurationHeight)
-              "
-              @click="openEventDialog(event)"
+              :style="[
+                badgeStyles(event, timeStartPos, timeDurationHeight),
+                !isAdminOrDesk ? 'cursor: default;' : 'cursor: pointer;'
+              ]"
+              @click="isAdminOrDesk ? openEventDialog(event) : null"
             >
               <div class="event-content">
                 <div class="event-title">{{ event.title }}</div>
@@ -110,6 +132,7 @@
 
   <!-- Staff Schedule Dialog Component -->
   <ScheduleStaffSetDialog
+    v-if="isAdminOrDesk"
     v-model="scheduleDialog"
     :staff-list="staffList"
     @save="saveSchedule"
@@ -118,6 +141,7 @@
 
   <!-- Event Details Dialog Component -->
   <ScheduleEventDetailsDialog
+    v-if="isAdminOrDesk"
     v-model="eventDialog"
     :event-data="selectedEvent"
     :show-break-time="false"
@@ -127,6 +151,7 @@
 
   <!-- Quick Schedule Dialog Component -->
   <ScheduleQuickSetDayDialog
+    v-if="isAdminOrDesk"
     v-model="quickScheduleDialog"
     :staff-list="staffList"
     :work-date="quickSchedule.work_date"
@@ -142,14 +167,21 @@ import { QCalendarDay, today, Timestamp } from "@quasar/quasar-ui-qcalendar";
 import { ref, computed, onMounted, watch } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "src/components/NavigationBar.vue";
+import ScheduleViewSwitcher from "src/components/ScheduleViewSwitcher.vue";
 
 import ScheduleEventDetailsDialog from "src/components/dialog/ScheduleEventDetailsDialog.vue";
-import ScheduleQuickSetWeekDialog from "src/components/dialog/ScheduleQuickSetWeekDialog.vue";
+import ScheduleQuickSetDayDialog from "src/components/dialog/ScheduleQuickSetDayDialog.vue";
 import ScheduleStaffSetDialog from "src/components/dialog/ScheduleStaffSetDialog.vue";
+import { getCurrentUser, getUserRole, canAccessAllMenus } from "../utils/auth";
 
 
 const calendar = ref<QCalendarDay>();
 const selectedDate = ref(today());
+
+// User role management
+const currentUser = ref(null);
+const userRole = ref("");
+const isAdminOrDesk = ref(false);
 
 const currentDay = computed(() => {
   return selectedDate.value;
@@ -170,32 +202,15 @@ const quickSchedule = ref({
   duration: 3,
 });
 
-function formatDateTitle(dateString) {
-  if (!dateString) return "";
-
-  const date = new Date(dateString);
-  const weekdays = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  const weekday = weekdays[date.getDay()];
-  const month = months[date.getMonth()];
-  const day = date.getDate();
-  const year = date.getFullYear();
-
-  return `${weekday}, ${month} ${day}, ${year}`;
-}
+const currentMonth = computed(() => {
+  const date = new Date(selectedDate.value);
+  return date.toLocaleString("default", {
+    weekday: "long",
+    month: "long",
+    year: "numeric",
+    day: "numeric",
+  });
+});
 
 const eventsMap = computed(() => {
   const map = {};
@@ -213,7 +228,7 @@ const eventColors = computed(() => {
     "purple-3",
     "deep-orange-3",
     "green-4",
-    "brown-3",
+    "red-3",
     "indigo-4",
     "pink-3",
   ];
@@ -337,12 +352,18 @@ interface Event {
 
 async function fetchSchedules() {
   try {
-    const response = await api.get("/api/schedules", {
-      params: {
-        start_date: selectedDate.value,
-        end_date: selectedDate.value,
-      },
-    });
+    // Prepare API parameters
+    const params = {
+      start_date: selectedDate.value,
+      end_date: selectedDate.value,
+    };
+
+    // If user is staff, only fetch their own schedules
+    if (!isAdminOrDesk.value && currentUser.value) {
+      params.staff_id =  currentUser.value.staff?.id;
+    }
+
+    const response = await api.get("/api/getStaffSchedule", { params });
 
     events.value = response.data.map((schedule) => ({
       id: schedule.id,
@@ -426,16 +447,21 @@ function badgeStyles(
     s.position = "absolute";
 
     // Handle column positioning for events
+    // Always leave 10% space (5% on each side) for easier time interval clicking
+    const availableWidth = 90; // 90% of total width, leaving 10% for clicking
+    const leftMargin = 5; // 5% margin on the left
+
     if (
       event.column !== undefined &&
       event.totalColumns !== undefined &&
       event.totalColumns > 1
     ) {
-      const columnWidth = 100 / event.totalColumns;
+      const columnWidth = availableWidth / event.totalColumns;
       s.width = `${columnWidth - 0.5}%`; // Slight gap between columns
-      s.left = `${event.column * columnWidth}%`;
+      s.left = `${leftMargin + (event.column * columnWidth)}%`;
     } else {
-      s.width = "100%";
+      s.width = `${availableWidth}%`; // Leave 10% space (5% on each side) for easier time interval clicking
+      s.left = `${leftMargin}%`; // Center the event with margin on both sides
     }
   }
 
@@ -444,6 +470,11 @@ function badgeStyles(
 }
 
 function openEventDialog(event) {
+  // Staff users can only view, not edit
+  if (!isAdminOrDesk.value) {
+    return;
+  }
+
   selectedEvent.value = {
     ...event,
     start_time: event.start_time,
@@ -509,6 +540,12 @@ function onClickHeadDay(data: any) {
   if (eventDialog.value == true) {
     return;
   }
+
+  // Staff users cannot add schedules
+  if (!isAdminOrDesk.value) {
+    return;
+  }
+
   quickSchedule.value.work_date = data.scope.timestamp.date;
   quickSelectedStaff.value = null; // Reset selected staff
   quickScheduleDialog.value = true;
@@ -518,6 +555,12 @@ function onClickTime(data: any) {
   if (eventDialog.value == true) {
     return;
   }
+
+  // Staff users cannot add schedules
+  if (!isAdminOrDesk.value) {
+    return;
+  }
+
   quickSchedule.value.work_date = data.scope.timestamp.date;
 
   const originalTime = data.scope.timestamp.time;
@@ -568,8 +611,21 @@ function getDuration(start, end) {
 }
 
 onMounted(() => {
+  // Initialize user role information
+  currentUser.value = getCurrentUser();
+  userRole.value = getUserRole();
+  isAdminOrDesk.value = canAccessAllMenus();
+
+  console.log("Current User:", currentUser.value);
+  console.log("User Role:", userRole.value);
+  console.log("Is Admin or Desk:", isAdminOrDesk.value);
+
   fetchSchedules();
-  fetchStaffList();
+
+  // Only fetch staff list if user is admin or desk
+  if (isAdminOrDesk.value) {
+    fetchStaffList();
+  }
 });
 
 // Watch for selectedDate changes to refetch schedules
@@ -579,7 +635,113 @@ watch(selectedDate, () => {
 </script>
 
 <style>
-.my-event {
+/* Calendar container for centering and responsive design */
+.page-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.schedule-btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.calendar-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.calendar-day {
+  width: 800px;
+  max-width: 100%;
+  min-width: 300px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .page-header {
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .schedule-btn {
+    margin-right: 0 !important;
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  .calendar-container {
+    padding: 0 8px;
+  }
+
+  .calendar-day {
+    width: 100%;
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.1rem !important;
+    margin-bottom: 12px !important;
+    padding: 0 8px;
+  }
+
+  .calendar-container {
+    padding: 0 4px;
+  }
+
+  .calendar-day {
+    width: 100%;
+    min-width: 250px;
+  }
+
+  /* Adjust calendar header for mobile - Day view only */
+  .schedule-day-view .q-calendar-day__head-weekday {
+    font-size: 12px !important;
+    padding: 4px !important;
+  }
+
+  /* Adjust time intervals for mobile - Day view only */
+  .schedule-day-view .q-calendar-day__time {
+    font-size: 10px !important;
+    padding: 2px !important;
+  }
+
+  /* Adjust event cards for mobile - Day view only */
+  .schedule-day-view .my-event {
+    font-size: 10px !important;
+    padding: 1px !important;
+  }
+
+  .schedule-day-view .event-content {
+    padding: 1px !important;
+  }
+
+  .schedule-day-view .event-title {
+    font-size: 10px !important;
+    margin-bottom: 1px !important;
+  }
+
+  .schedule-day-view .event-start-time,
+  .schedule-day-view .event-end-time {
+    font-size: 8px !important;
+    margin-bottom: 1px !important;
+    margin-top: 1px !important;
+  }
+
+  .schedule-day-view .event-duration {
+    font-size: 9px !important;
+  }
+}
+
+/* Day view specific event styles */
+.schedule-day-view .my-event {
   position: relative;
   font-size: 12px;
   width: 100%;
@@ -598,65 +760,71 @@ watch(selectedDate, () => {
   padding: 2px;
 }
 
-.my-event:hover {
+.tip-chip {
+  font-size: 12px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+.schedule-day-view .my-event:hover {
   opacity: 1;
 }
 
-.inactive-event {
+.schedule-day-view .inactive-event {
   text-decoration: line-through;
   position: relative;
 }
 
-.inactive-event::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    to bottom left,
-    transparent 49.5%,
-    #f8f8f8 49.5%,
-    #f0eeee 50.5%,
-    transparent 40.5%
-  );
-  pointer-events: none;
-  z-index: 10;
-}
 
-.inactive-event .event-title,
-.inactive-event .event-start-time,
-.inactive-event .event-duration,
-.inactive-event .event-end-time {
+.schedule-day-view .inactive-event .event-title,
+.schedule-day-view .inactive-event .event-start-time,
+.schedule-day-view .inactive-event .event-duration,
+.schedule-day-view .inactive-event .event-end-time {
   text-decoration: line-through;
 }
 
-.event-content {
+.schedule-day-view .event-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   height: 100%;
   width: 100%;
   text-align: center;
+  padding: 2px;
 }
 
-.event-title {
+.schedule-day-view .event-title {
   font-size: 12px;
   font-weight: bold;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   color: white;
+  order: 1;
+  flex-shrink: 0;
 }
 
-.event-start-time {
+.schedule-day-view .event-start-time {
   font-size: 9px;
   font-weight: 500;
   opacity: 0.9;
   margin-bottom: 2px;
+  color: white;
+  order: 2;
+  flex-shrink: 0;
 }
 
-.event-duration {
+.schedule-day-view .event-duration {
   font-size: 10px;
   font-weight: 500;
   flex-grow: 1;
@@ -665,46 +833,42 @@ watch(selectedDate, () => {
   justify-content: center;
   opacity: 0.8;
   font-style: italic;
+  color: white;
+  order: 3;
 }
 
-.event-end-time {
+.schedule-day-view .event-end-time {
   font-size: 9px;
   font-weight: 500;
   opacity: 0.9;
-  margin-top: 2px;
+  margin-top: auto;
+  color: white;
+  order: 4;
+  flex-shrink: 0;
 }
 
-/* Add some spacing between overlapping events */
-.my-event + .my-event {
+/* Add some spacing between overlapping events - Day view only */
+.schedule-day-view .my-event + .my-event {
   border-left: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* Calendar styling for day view */
-.q-calendar-day__head-weekday {
+/* Calendar styling for day view only */
+.schedule-day-view .q-calendar-day__head-weekday {
   background-color: #f8f9fa !important;
 }
 
-.q-calendar-day__day {
+.schedule-day-view .q-calendar-day__day {
   background-color: #ffffff !important;
 }
 
-/* Modern Dialog Styles */
 .dialog-header {
   background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
   border-radius: 16px 16px 0 0;
   padding: 20px 24px;
 }
 
-.quick-schedule-card .dialog-header {
-  background: linear-gradient(135deg, #2563eb 0%, #3730a3 100%);
-}
-
 .event-detail-card .dialog-header {
   background: linear-gradient(135deg, #059669 0%, #065f46 100%);
-}
-
-.form-group {
-  margin-bottom: 16px;
 }
 
 .modern-input .q-field__control {
@@ -751,7 +915,6 @@ watch(selectedDate, () => {
   border-radius: 12px;
 }
 
-.duration-card,
 .status-card,
 .time-range-card {
   border: 1px solid #e5e7eb;
@@ -760,36 +923,10 @@ watch(selectedDate, () => {
   transition: all 0.3s ease;
 }
 
-.duration-card:hover,
 .status-card:hover,
 .time-range-card:hover {
   border-color: #d1d5db;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.duration-options {
-  gap: 8px;
-}
-
-.duration-options .q-radio {
-  padding: 6px 14px;
-  margin: 2px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  transition: all 0.3s ease;
-  font-size: 13px;
-}
-
-.duration-options .q-radio:hover {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
-
-.duration-options .q-radio--checked {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: white;
 }
 
 .status-options .q-radio {
@@ -813,13 +950,11 @@ watch(selectedDate, () => {
   color: white;
 }
 
-.duration-card .q-card-section,
 .status-card .q-card-section,
 .time-range-card .q-card-section {
   padding: 16px !important;
 }
 
-.duration-card .text-subtitle2,
 .status-card .text-subtitle2,
 .time-range-card .text-subtitle2 {
   margin-bottom: 8px;
@@ -871,7 +1006,6 @@ watch(selectedDate, () => {
 }
 
 /* Card animations */
-.quick-schedule-card,
 .event-detail-card {
   animation: slideInUp 0.3s ease-out;
 }
@@ -889,7 +1023,6 @@ watch(selectedDate, () => {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .quick-schedule-card,
   .event-detail-card {
     width: 95vw !important;
     max-width: none !important;

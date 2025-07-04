@@ -1,12 +1,17 @@
 <template>
-  <q-page class="q-pa-sm bg-white">
-    <q-btn
-      :dense="$q.screen.lt.md"
-      label="Staff Schedule"
-      color="accent"
-      @click="openScheduleDialog"
-      class="q-mr-md"
-    />
+  <q-page class="q-pa-sm bg-white schedule-month-view">
+    <div class="row items-center justify-between">
+      <q-btn
+        v-if="isAdminOrDesk"
+        :dense="$q.screen.lt.md"
+        label="Schedule"
+        color="accent"
+        @click="openScheduleDialog"
+        class="q-mr-md"
+      />
+      <!-- View Switcher Component -->
+      <schedule-view-switcher />
+    </div>
 
     <div class="text-h6 q-mb-md text-center">
       {{ currentMonth }}
@@ -14,6 +19,12 @@
 
     <navigation-bar @today="onToday" @prev="onPrev" @next="onNext" />
 
+    <!-- Quick Add Tip -->
+    <div v-if="isAdminOrDesk" class="text-center q-mb-sm">
+      <q-chip color="grey-1" text-color="grey-8" icon="info" class="tip-chip">
+        Click on date intervals to quickly add schedules
+      </q-chip>
+    </div>
     <q-calendar-month
       ref="calendar"
       v-model="selectedDate"
@@ -30,15 +41,18 @@
         <template v-for="event in eventsMap[timestamp.date]" :key="event.id">
           <div
             :class="badgeClasses(event)"
-            class="my-event "
-            @click="openEventDialog(event)"
+            class="my-event"
+            @click="isAdminOrDesk ? openEventDialog(event) : null"
+            :style="!isAdminOrDesk ? 'cursor: default;' : 'cursor: pointer;'"
           >
             <abbr :title="event.details" class="tooltip">
               <div
                 :class="[
-                  event.status !== 'inactive' ? 'bg-' + eventColors[event.title] : 'bg-grey-5',
+                  event.status !== 'inactive'
+                    ? 'bg-' + eventColors[event.title]
+                    : 'bg-grey-5',
                   'q-mt-xs text-center rounded-borders',
-                  { 'inactive-event': event.status === 'inactive' }
+                  { 'inactive-event': event.status === 'inactive' },
                 ]"
                 :style="
                   event.status == 'inactive'
@@ -57,6 +71,7 @@
 
     <!-- Staff Schedule Dialog Component -->
     <ScheduleStaffSetDialog
+      v-if="isAdminOrDesk"
       v-model="scheduleDialog"
       :staff-list="staffList"
       @save="saveSchedule"
@@ -65,6 +80,7 @@
 
     <!-- Quick Schedule Dialog Component -->
     <ScheduleQuickSetMonthDialog
+      v-if="isAdminOrDesk"
       v-model="dayScheduleDialog"
       :staff-list="staffList"
       :work-date="schedule.work_date"
@@ -77,6 +93,7 @@
 
     <!-- Event Details Dialog Component -->
     <ScheduleEventDetailsDialog
+      v-if="isAdminOrDesk"
       v-model="eventDialog"
       :event-data="selectedEvent"
       @save="updateEvent"
@@ -87,12 +104,14 @@
 
 <script setup lang="ts">
 import { QCalendarMonth, today, Timestamp } from "@quasar/quasar-ui-qcalendar";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { api } from "boot/axios";
 import NavigationBar from "src/components/NavigationBar.vue";
+import ScheduleViewSwitcher from "src/components/ScheduleViewSwitcher.vue";
 import ScheduleEventDetailsDialog from "../components/dialog/ScheduleEventDetailsDialog.vue";
 import ScheduleQuickSetMonthDialog from "../components/dialog/ScheduleQuickSetMonthDialog.vue";
 import ScheduleStaffSetDialog from "../components/dialog/ScheduleStaffSetDialog.vue";
+import { getCurrentUser, getUserRole, canAccessAllMenus } from "../utils/auth";
 
 const calendar = ref(null);
 const selectedDate = ref(today());
@@ -103,6 +122,11 @@ const eventDialog = ref(false);
 const staffList = ref([]);
 const selectedStaff = ref(null);
 const selectedEvent = ref({});
+
+// User role management
+const currentUser = ref(null);
+const userRole = ref("");
+const isAdminOrDesk = ref(false);
 
 const schedule = ref({
   status: "",
@@ -126,7 +150,16 @@ const eventsMap = computed(() => {
 
 const eventColors = computed(() => {
   const colorMap = {};
-  const colors = ["teal-5", "blue-5", "deep-orange-3", "purple-3"];
+ const colors = [
+    "teal-4",
+    "blue-4",
+    "purple-3",
+    "deep-orange-3",
+    "green-4",
+    "red-3",
+    "indigo-4",
+    "pink-3",
+  ];
   let colorIndex = 0;
 
   events.value.forEach((event) => {
@@ -150,7 +183,33 @@ const currentMonth = computed(() => {
 
 async function fetchSchedules() {
   try {
-    const response = await api.get("/api/schedules");
+    // Calculate start and end dates for the current month
+    const currentDate = new Date(selectedDate.value);
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // First day of the current month
+    const startDate = new Date(year, month, 1);
+    // Last day of the current month
+    const endDate = new Date(year, month + 1, 0);
+
+    // Format dates as YYYY-MM-DD
+    const start_date = startDate.toISOString().split("T")[0];
+    const end_date = endDate.toISOString().split("T")[0];
+
+    // Prepare API parameters
+    const params = {
+      start_date,
+      end_date,
+    };
+
+    // If user is staff, only fetch their own schedules
+    if (!isAdminOrDesk.value && currentUser.value) {
+      params.staff_id = currentUser.value.staff?.id;
+    }
+
+    const response = await api.get("/api/getStaffSchedule", { params });
+
     events.value = response.data.map((schedule) => ({
       id: schedule.id,
       title: `${schedule.staff.name}`,
@@ -197,14 +256,20 @@ async function saveSchedule(payload) {
 
 function badgeClasses(event) {
   return {
-    [`text-white `]: event.status !== 'inactive',
-    "text-grey-2 bg-grey-5": event.status === 'inactive',
+    [`text-white `]: event.status !== "inactive",
+    "text-grey-2 bg-grey-5": event.status === "inactive",
     "rounded-border": true,
-    "inactive-event": event.status === 'inactive',
+    "inactive-event": event.status === "inactive",
   };
 }
 
 function openEventDialog(event) {
+  // Staff users can only view, not edit
+  if (!isAdminOrDesk.value) {
+    // For staff users, show a read-only version or just return
+    return;
+  }
+
   selectedEvent.value = {
     ...event,
     start_time: event.start_time,
@@ -262,6 +327,12 @@ function onClickDay(data: Timestamp) {
   if (eventDialog.value == true) {
     return;
   }
+
+  // Staff users cannot add schedules
+  if (!isAdminOrDesk.value) {
+    return;
+  }
+
   schedule.value.work_date = data.scope.timestamp.date;
   selectedStaff.value = null; // Reset selected staff
   dayScheduleDialog.value = true;
@@ -297,27 +368,73 @@ async function saveDaySchedule(payload) {
 }
 
 onMounted(() => {
+  // Initialize user role information
+  currentUser.value = getCurrentUser();
+  userRole.value = getUserRole();
+  isAdminOrDesk.value = canAccessAllMenus();
+
+  console.log("Current User:", currentUser.value);
+  console.log("User Role:", userRole.value);
+  console.log("Is Admin or Desk:", isAdminOrDesk.value);
+
   fetchSchedules();
-  fetchStaffList(); // Ensure this is only called once and does not trigger unnecessary reactivity
+
+  // Only fetch staff list if user is admin or desk
+  if (isAdminOrDesk.value) {
+    fetchStaffList();
+  }
+});
+
+// Watch for selectedDate changes to refetch schedules when month changes
+watch(selectedDate, () => {
+  fetchSchedules();
 });
 </script>
 
 <style>
-.my-event {
-  position: relative;
-  font-size: 12px;
-  width: 100%;
-  margin: 1px 0 0 0;
-  justify-content: center;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  cursor: pointer;
+/* Month view specific event styles */
+.schedule-month-view .my-event {
+  position: relative !important;
+  font-size: 12px !important;
+  width: 100% !important;
+  margin: 1px 0 0 0 !important;
+  justify-content: center !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  display: block !important;
+  min-height: 20px !important;
+  background-color: inherit !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  opacity: 1 !important;
+  transition: none !important;
+  align-items: initial !important;
 }
 
-.inactive-event {
+.schedule-month-view .inactive-event {
   text-decoration: line-through;
   position: relative;
   border-radius: 5px;
 }
 
+/* Month view specific styles - protect from day/week view interference */
+.schedule-month-view .q-calendar-month__day {
+  background-color: #ffffff !important;
+}
+
+.schedule-month-view .q-calendar-month__head-weekday {
+  background-color: #f8f9fa !important;
+}
+
+/* Ensure month view calendar displays correctly */
+.schedule-month-view .q-calendar-month .q-calendar__day:nth-child(odd),
+.schedule-month-view .q-calendar-month .q-calendar__day:nth-child(even) {
+  background-color: inherit !important;
+}
+
+.schedule-month-view .q-calendar-month__day-container {
+  background-color: #ffffff !important;
+}
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="show" @hide="onClose" persistent>
+  <q-dialog v-model="show" @hide="onClose">
     <q-card style="max-width: 900px; width: 100%;  border-radius: 12px;">
       <q-card-section class="dialog-header q-pa-md">
         <div class="text-h6 text-white">
