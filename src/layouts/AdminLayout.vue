@@ -264,7 +264,7 @@ function getUserInitials() {
         <q-list>
           <!-- Dashboard - Only for Admin and Desk -->
           <q-item
-            v-if="false"
+            v-if="isAdminOrDesk"
             to="/admin/dashboard"
             active-class="q-item-no-link-highlighting"
           >

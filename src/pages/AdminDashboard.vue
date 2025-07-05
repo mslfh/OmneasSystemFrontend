@@ -2,8 +2,142 @@
   <div class="q-pa-md q-pt-lg">
     <!-- first row -->
     <div class="row q-col-gutter-lg">
+
+         <!-- Summary of Weekly Schedule -->
+      <div class="col-lg-12 col-md-6 col-sm-12 col-xs-12">
+        <q-card class="q-pa-md shadow-1">
+          <div class="row items-center q-mb-md">
+            <div class="col">
+              <div class="text-h6 text-grey-6">Summary of Staff Schedule</div>
+              <div class="text-subtitle2 text-grey-5">Weekly Statements</div>
+            </div>
+            <q-btn flat round icon="more_vert" class="q-ml-auto" />
+          </div>
+
+          <!-- Staff Selection Buttons -->
+          <div class="row q-mb-md q-gutter-xs" v-if="staffScheduleData.length > 0">
+            <q-btn
+              :color="selectedScheduleStaffId === 'all' ? 'deep-purple-4' : 'grey-4'"
+              :text-color="selectedScheduleStaffId === 'all' ? 'white' : 'grey-7'"
+              :outline="selectedScheduleStaffId !== 'all'"
+              size="sm"
+              @click="selectAllScheduleStaff()"
+              class="q-mb-xs"
+            >
+              All
+            </q-btn>
+            <q-btn
+              v-for="staff in staffScheduleData"
+              :key="staff.id"
+              :color="selectedScheduleStaffId === staff.id ? 'deep-purple-4' : 'grey-4'"
+              :text-color="selectedScheduleStaffId === staff.id ? 'white' : 'grey-7'"
+              :outline="selectedScheduleStaffId !== staff.id"
+              size="sm"
+              @click="selectScheduleStaff(staff)"
+              class="q-mb-xs"
+            >
+              {{ staff.name }}
+            </q-btn>
+          </div>
+
+          <!-- No Staff Message -->
+          <div v-if="staffScheduleData.length === 0" class="text-center q-pa-md">
+            <q-icon name="schedule" size="48px" color="grey-4" class="q-mb-sm" />
+            <div class="text-body1 text-grey-6">No staff schedule data available</div>
+            <div class="text-caption text-grey-5">Please check back later or contact administrator</div>
+          </div>
+
+          <!-- Main Schedule Content -->
+          <div v-if="staffScheduleData.length > 0">
+            <div class="row items-center q-mb-md">
+              <div class="col-auto">
+                <div class="text-h3 text-weight-bold">
+                  {{ totalWeeklyHours.toFixed(1) }}h
+                </div>
+              </div>
+              <div class="col-auto flex items-center">
+                <q-badge color="orange-2" text-color="orange-8" class="q-ml-sm">{{
+                  selectedScheduleStaffDisplayName
+                }}</q-badge>
+              </div>
+            </div>
+            <div class="text-grey-5 q-mb-md">
+              Weekly schedule for {{ selectedScheduleStaffDisplayName || "selected staff" }}
+            </div>
+            <div class="q-mb-lg">
+              <!-- Staff Schedule Column Charts -->
+              <ApexCharts
+                type="bar"
+                :options="StaffScheduleBarOptions"
+                :series="StaffScheduleBarSeries"
+                height="180"
+              />
+            </div>
+            <q-separator />
+            <div class="row q-mt-md q-gutter-md">
+              <div
+                class="col bg-grey-1 q-pa-md rounded-borders flex column items-center"
+              >
+                <q-icon
+                  name="schedule"
+                  color="deep-purple-4"
+                  size="md"
+                  class="q-mb-xs"
+                />
+                <div class="text-caption text-grey-6">Weekly Hours</div>
+                <div class="text-h6 text-weight-bold">
+                  {{ totalWeeklyHours.toFixed(1) }}h
+                </div>
+                <q-linear-progress
+                  :value="
+                    selectedScheduleStaffId === 'all'
+                      ? 1
+                      : selectedScheduleStaffId && staffScheduleData.length > 0
+                      ? totalAllStaffWeeklyHours > 0
+                        ? totalWeeklyHours / totalAllStaffWeeklyHours
+                        : 0
+                      : 0
+                  "
+                  color="deep-purple-4"
+                  class="q-mt-sm"
+                  style="height: 4px; width: 100%"
+                />
+              </div>
+              <div
+                class="col bg-grey-1 q-pa-md rounded-borders flex column items-center"
+              >
+                <q-icon
+                  name="event_available"
+                  color="cyan-5"
+                  size="md"
+                  class="q-mb-xs"
+                />
+                <div class="text-caption text-grey-6">Total Schedules</div>
+                <div class="text-h6 text-weight-bold">
+                  {{ totalScheduleCount }}
+                </div>
+                <q-linear-progress
+                  :value="
+                    selectedScheduleStaffId === 'all'
+                      ? 1
+                      : selectedScheduleStaffId
+                      ? totalScheduleCount > 0
+                        ? totalScheduleCount / Math.max(totalScheduleCount, 7)
+                        : 0
+                      : 0
+                  "
+                  color="cyan-5"
+                  class="q-mt-sm"
+                  style="height: 4px; width: 100%"
+                />
+              </div>
+            </div>
+          </div>
+        </q-card>
+      </div>
+
       <!-- Statistics Card with Carousel -->
-      <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card
           class="fit shadow-1 overflow-hidden"
         >
@@ -83,7 +217,7 @@
                   <div class="col-7 column justify-between">
                     <div>
                       <div class="text-h4 text-white q-mb-xs">
-                        Appointment Statistics
+                        Orders Statistics
                       </div>
                       <div class="text-subtitle1 text-white" style="opacity: 0.8;">
                         Updated {{ formatUpdateTime() }}
@@ -202,7 +336,7 @@
       </div>
 
       <!--Today Income Earned -->
-      <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
         <q-card class="fit bg-white q-pa-lg shadow-1">
           <div class="row q-mb-md">
             <div
@@ -216,7 +350,7 @@
               <div class="text-h5 text-weight-bold text-grey-7">
                 {{ todayStatistics.total_appointments }}
               </div>
-              <div class="text-subtitle2 text-grey-5 q-mb-md">Appointments</div>
+              <div class="text-subtitle2 text-grey-5 q-mb-md">Orders</div>
             </div>
 
             <div class="col-auto text-subtitle2 text-grey-5">
@@ -242,7 +376,7 @@
       </div>
 
       <!-- Sales Summary -->
-      <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
         <q-card class="fit bg-white q-pa-lg shadow-1">
           <div class="row items-center q-mb-xs">
             <div class="text-h6 text-grey-6">Sales Summary</div>
@@ -319,7 +453,7 @@
       </div>
 
       <!-- Tracker -->
-      <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card class="fit bg-white q-pa-lg shadow-1">
           <div class="row items-center q-mb-md">
             <div class="col">
@@ -407,7 +541,7 @@
       </div>
 
       <!-- Summary of Weekly Earnings -->
-      <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card class="q-pa-md shadow-1">
           <div class="row items-center q-mb-md">
             <div class="col">
@@ -610,7 +744,7 @@
       </div>
 
       <!-- Sales by Staff Card -->
-      <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card
           class="col bg-white q-pa-lg shadow-1 card-min"
           style="border-radius: 20px"
@@ -660,7 +794,7 @@
       </div>
 
       <!-- Monthly Appointment Performance Card -->
-      <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+      <div v-if="false" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <q-card
           class="col bg-white q-pa-lg shadow-1 card-min"
           style="border-radius: 20px"
@@ -802,6 +936,12 @@ const staffEarningsData = ref([]);
 const selectedStaffId = ref("all"); // Default to 'all'
 const selectedStaffName = ref("All Staff");
 const weeklyEarningsData = ref([0, 0, 0, 0, 0, 0, 0]); // Monday to Sunday
+
+// Schedule data
+const staffScheduleData = ref([]);
+const selectedScheduleStaffId = ref("all"); // Default to 'all'
+const selectedScheduleStaffName = ref("All Staff");
+const weeklyScheduleData = ref([0, 0, 0, 0, 0, 0, 0]); // Monday to Sunday
 
 const StaffEarningsBarOptions = computed(() => ({
   chart: {
@@ -1140,9 +1280,102 @@ const selectStaff = (staff) => {
   weeklyEarningsData.value = calculateWeeklyEarnings(staff);
 };
 
+// Schedule functions
+const calculateWeeklySchedule = (staffData) => {
+  const weeklyData = [0, 0, 0, 0, 0, 0, 0]; // Monday to Sunday (in hours)
+
+  if (!staffData || !staffData.schedules) {
+    return weeklyData;
+  }
+
+  // Process schedules object where each key is a date
+  Object.values(staffData.schedules).forEach((schedule) => {
+    if (schedule.date && schedule.hours > 0) {
+      const scheduleDate = new Date(schedule.date);
+      // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+      let dayOfWeek = scheduleDate.getDay();
+      // Convert to Monday = 0, Tuesday = 1, ..., Sunday = 6
+      dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+      weeklyData[dayOfWeek] += schedule.hours;
+    }
+  });
+
+  return weeklyData;
+};
+
+// Function to calculate weekly schedule for all staff combined
+const calculateAllStaffWeeklySchedule = () => {
+  const weeklyData = [0, 0, 0, 0, 0, 0, 0]; // Monday to Sunday
+
+  staffScheduleData.value.forEach((staff) => {
+    if (staff.schedules) {
+      Object.values(staff.schedules).forEach((schedule) => {
+        if (schedule.date && schedule.hours > 0) {
+          const scheduleDate = new Date(schedule.date);
+          // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+          let dayOfWeek = scheduleDate.getDay();
+          // Convert to Monday = 0, Tuesday = 1, ..., Sunday = 6
+          dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+          weeklyData[dayOfWeek] += schedule.hours;
+        }
+      });
+    }
+  });
+
+  return weeklyData;
+};
+
+// Function to select all staff and update schedule chart
+const selectAllScheduleStaff = () => {
+  if (staffScheduleData.value.length === 0) return;
+  selectedScheduleStaffId.value = "all";
+  selectedScheduleStaffName.value = "All Staff";
+  weeklyScheduleData.value = calculateAllStaffWeeklySchedule();
+};
+
+// Function to select staff and update schedule chart
+const selectScheduleStaff = (staff) => {
+  selectedScheduleStaffId.value = staff.id;
+  selectedScheduleStaffName.value = staff.name;
+  weeklyScheduleData.value = calculateWeeklySchedule(staff);
+};
+
 // Calculate total weekly earnings for selected staff
 const totalWeeklyEarnings = computed(() => {
   return weeklyEarningsData.value.reduce((sum, amount) => sum + amount, 0);
+});
+
+// Schedule Computed Properties
+const totalWeeklyHours = computed(() => {
+  if (staffScheduleData.value.length === 0) return 0;
+  return weeklyScheduleData.value.reduce((sum, hours) => sum + hours, 0);
+});
+
+const totalScheduleCount = computed(() => {
+  if (staffScheduleData.value.length === 0) return 0;
+  if (selectedScheduleStaffId.value === "all") {
+    return staffScheduleData.value.reduce((total, staff) => {
+      return total + (staff.schedules ? Object.keys(staff.schedules).length : 0);
+    }, 0);
+  } else if (selectedScheduleStaffId.value) {
+    const staff = staffScheduleData.value.find(
+      (s) => s.id === selectedScheduleStaffId.value
+    );
+    return staff?.schedules ? Object.keys(staff.schedules).length : 0;
+  }
+  return 0;
+});
+
+const selectedScheduleStaffDisplayName = computed(() => {
+  if (staffScheduleData.value.length === 0) return "";
+  return selectedScheduleStaffName.value;
+});
+
+const totalAllStaffWeeklyHours = computed(() => {
+  if (staffScheduleData.value.length === 0) return 0;
+  return calculateAllStaffWeeklySchedule().reduce((sum, hours) => sum + hours, 0);
 });
 
 // Calculate actual service count (excluding breaks and no-shows)
@@ -1273,6 +1506,7 @@ const formatUpdateTime = () => {
 onMounted(() => {
   fetchTodayStatistics();
   fetchStaffIncomeStatistics();
+  fetchStaffScheduleStatistics();
 });
 
 async function fetchTodayStatistics() {
@@ -1357,6 +1591,53 @@ async function fetchStaffIncomeStatistics() {
     }
   } catch (error) {
     console.error("Error fetching staff income statistics:", error);
+  }
+}
+
+async function fetchStaffScheduleStatistics() {
+  try {
+    const date = new Date();
+    // if weekly statistics, set to the start of the week (Monday)
+    const start_date = new Date(
+      date.setDate(date.getDate() - date.getDay() + 1)
+    );
+    const end_date = new Date(date.setDate(date.getDate() - date.getDay() + 7));
+
+    const response = await api.get("/api/getStaffScheduleStatistics", {
+      params: {
+        start_date: start_date.toISOString().split("T")[0], // Format date as YYYY-MM-DD
+        end_date: end_date.toISOString().split("T")[0],
+      },
+    });
+
+    if (response.data && Array.isArray(response.data)) {
+      staffScheduleData.value = response.data; // Store the staff array directly
+
+      // Auto-select "All" staff by default only if there's data
+      if (response.data.length > 0) {
+        selectAllScheduleStaff();
+      } else {
+        // Reset to empty state when no data
+        selectedScheduleStaffId.value = null;
+        selectedScheduleStaffName.value = "";
+        weeklyScheduleData.value = [0, 0, 0, 0, 0, 0, 0];
+      }
+
+      console.log("Staff schedule statistics:", staffScheduleData.value);
+    } else {
+      // Handle case where API returns null or undefined
+      staffScheduleData.value = [];
+      selectedScheduleStaffId.value = null;
+      selectedScheduleStaffName.value = "";
+      weeklyScheduleData.value = [0, 0, 0, 0, 0, 0, 0];
+    }
+  } catch (error) {
+    console.error("Error fetching staff schedule statistics:", error);
+    // Set empty state on error
+    staffScheduleData.value = [];
+    selectedScheduleStaffId.value = null;
+    selectedScheduleStaffName.value = "";
+    weeklyScheduleData.value = [0, 0, 0, 0, 0, 0, 0];
   }
 }
 
@@ -1451,6 +1732,65 @@ const topPaymentMethodPercentage = computed(() => {
   // Return percentage of paid amount vs total revenue
   return totalRevenue > 0 ? (paidAmount / totalRevenue) * 100 : 0;
 });
+
+const StaffScheduleBarOptions = computed(() => ({
+  chart: {
+    type: "bar",
+    toolbar: { show: false },
+    height: 180,
+    events: {
+      dataPointSelection: function (event, chartContext, config) {
+        // This will be handled by the staff selection buttons instead
+      },
+    },
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 8,
+      columnWidth: "60%",
+      distributed: true,
+    },
+  },
+  dataLabels: {
+    enabled: true,
+    offsetY: 2,
+    style: {
+      fontSize: "12px",
+      fontWeight: "bold",
+      colors: ["#ffffff"],
+    },
+    formatter: function (val) {
+      return val > 0 ? val.toFixed(1) + "h" : "";
+    },
+  },
+  xaxis: {
+    categories: days,
+    labels: { style: { colors: "#bdbacb", fontSize: "14px" } },
+  },
+  yaxis: {
+    show: false,
+  },
+  grid: { show: false },
+  legend: {
+    show: false,
+  },
+  tooltip: {
+    enabled: true,
+    y: {
+      formatter: function (val) {
+        return val.toFixed(1) + " hours";
+      },
+    },
+  },
+  colors: days.map((_, idx) => (selectedScheduleStaffId.value ? "#5B4FE9" : "#E6E4FB")),
+}));
+
+const StaffScheduleBarSeries = computed(() => [
+  {
+    name: "Hours",
+    data: weeklyScheduleData.value,
+  },
+]);
 </script>
 
 <style scoped>

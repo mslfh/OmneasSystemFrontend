@@ -1,7 +1,7 @@
 {
   "name": "omneas-frontend",
   "version": "0.0.1",
-  "description": "Omneas Frontend",
+  "description": "Omneas Frontend- A Vue.js application for Omneas, a platform for managing and visualizing data.",
   "productName": "Omneas Frontend",
   "author": "Fuhai Li <55822442+mslfh@users.noreply.github.com>",
   "type": "module",
