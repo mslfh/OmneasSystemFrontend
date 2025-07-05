@@ -106,6 +106,7 @@
                   "
                   outlined
                   readonly
+                   autogrow
                   dense
                   input-class="text-grey-6"
                   v-model="formData.selectedStaff.description"

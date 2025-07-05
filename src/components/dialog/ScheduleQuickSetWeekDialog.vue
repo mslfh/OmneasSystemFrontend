@@ -36,6 +36,7 @@
             dense
             v-if="formData.selectedStaff && formData.selectedStaff.description"
             readonly
+             autogrow
             v-model="formData.selectedStaff.description"
             class="q-mr-xs q-ml-xs"
             input-class="text-grey-6"
