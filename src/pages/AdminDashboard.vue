@@ -9,9 +9,40 @@
           <div class="row items-center q-mb-md">
             <div class="col">
               <div class="text-h6 text-grey-6">Summary of Staff Schedule</div>
-              <div class="text-subtitle2 text-grey-5">Weekly Statements</div>
+              <div class="text-subtitle2 text-grey-5">
+                {{
+                  scheduleSelectedDateRange
+                  ? `From ${(scheduleSelectedDateRange['from'])} to ${(scheduleSelectedDateRange['to'])}`
+                  : "Current Week" }}
+              </div>
             </div>
-            <q-btn flat round icon="more_vert" class="q-ml-auto" />
+            <q-btn flat round icon="more_vert" class="q-ml-auto">
+              <q-menu>
+                <q-list style="min-width: 300px">
+                  <q-item-label header class="text-subtitle1">* Select Date Range</q-item-label>
+                  <q-item>
+                    <q-item-section>
+                      <q-date
+                        v-model="scheduleSelectedDateRange"
+                        range
+                        color="deep-purple-4"
+                        class="no-shadow"
+                        @update:model-value="updateScheduleDateRange"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-separator />
+                  <q-item clickable v-close-popup @click="resetScheduleDateRange">
+                    <q-item-section>
+                      <q-item-label class="text-grey-6">Reset to Current Week</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-icon name="refresh" />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
           </div>
 
           <!-- Staff Selection Buttons -->
@@ -84,7 +115,7 @@
                   size="md"
                   class="q-mb-xs"
                 />
-                <div class="text-caption text-grey-6">Weekly Hours</div>
+                <div class="text-caption text-grey-6">Total Hours</div>
                 <div class="text-h6 text-weight-bold">
                   {{ totalWeeklyHours.toFixed(1) }}h
                 </div>
@@ -942,6 +973,7 @@ const staffScheduleData = ref([]);
 const selectedScheduleStaffId = ref("all"); // Default to 'all'
 const selectedScheduleStaffName = ref("All Staff");
 const weeklyScheduleData = ref([0, 0, 0, 0, 0, 0, 0]); // Monday to Sunday
+const scheduleSelectedDateRange = ref(null); // For date range picker
 
 const StaffEarningsBarOptions = computed(() => ({
   chart: {
@@ -1342,6 +1374,19 @@ const selectScheduleStaff = (staff) => {
   weeklyScheduleData.value = calculateWeeklySchedule(staff);
 };
 
+// Function to handle date range updates
+const updateScheduleDateRange = (dateRange) => {
+  if (dateRange && dateRange.from && dateRange.to) {
+    fetchStaffScheduleStatistics(dateRange.from, dateRange.to);
+  }
+};
+
+// Function to reset date range to current week
+const resetScheduleDateRange = () => {
+  scheduleSelectedDateRange.value = null;
+  fetchStaffScheduleStatistics(); // Fetch current week data
+};
+
 // Calculate total weekly earnings for selected staff
 const totalWeeklyEarnings = computed(() => {
   return weeklyEarningsData.value.reduce((sum, amount) => sum + amount, 0);
@@ -1594,14 +1639,23 @@ async function fetchStaffIncomeStatistics() {
   }
 }
 
-async function fetchStaffScheduleStatistics() {
+async function fetchStaffScheduleStatistics(customStartDate = null, customEndDate = null) {
   try {
-    const date = new Date();
-    // if weekly statistics, set to the start of the week (Monday)
-    const start_date = new Date(
-      date.setDate(date.getDate() - date.getDay() + 1)
-    );
-    const end_date = new Date(date.setDate(date.getDate() - date.getDay() + 7));
+    let start_date, end_date;
+
+    if (customStartDate && customEndDate) {
+      // Use custom date range
+      start_date = new Date(customStartDate);
+      end_date = new Date(customEndDate);
+    } else {
+      // Use current week (default behavior)
+      const date = new Date();
+      // if weekly statistics, set to the start of the week (Monday)
+      start_date = new Date(
+        date.setDate(date.getDate() - date.getDay() + 1)
+      );
+      end_date = new Date(date.setDate(date.getDate() - date.getDay() + 7));
+    }
 
     const response = await api.get("/api/getStaffScheduleStatistics", {
       params: {
