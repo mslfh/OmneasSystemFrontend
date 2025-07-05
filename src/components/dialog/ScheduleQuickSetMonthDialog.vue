@@ -7,16 +7,14 @@
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
       "
     >
-      <q-card-section
-        class="dialog-header"
-      >
+      <q-card-section class="dialog-header">
         <div class="text-h6 text-white">
           <q-icon name="schedule" class="q-mr-sm" size="24px" />
           Add Schedule for {{ formatDateTitle(formData.work_date) }}
         </div>
       </q-card-section>
       <q-card-section class="q-pa-lg">
-        <div>
+        <div class="q-mb-md">
           <q-select
             v-model="formData.selectedStaff"
             :options="staffList"
@@ -26,13 +24,25 @@
             clearable
             outlined
             dense
-            class="q-mb-md"
             color="blue-6"
           >
             <template v-slot:prepend>
               <q-icon name="person" color="grey-6" />
             </template>
           </q-select>
+          <q-input
+            dense
+            v-if="formData.selectedStaff && formData.selectedStaff.description"
+            readonly
+            v-model="formData.selectedStaff.description"
+            class="q-mr-xs q-ml-xs"
+            input-class="text-grey-6"
+          >
+            <template v-slot:prepend>
+              <q-icon name="info" color="grey-6" size="xs" />
+            </template>
+          </q-input>
+
         </div>
 
         <div>
@@ -62,27 +72,27 @@
 
         <div class="row q-gutter-md q-mb-md">
           <div class="col">
-          <q-input
-            v-model="formData.start_time"
-            type="time"
-            label="* Start Time"
-            outlined
-            dense
-            class=" q-mb-md"
-          >
-          </q-input>
+            <q-input
+              v-model="formData.start_time"
+              type="time"
+              label="* Start Time"
+              outlined
+              dense
+              class="q-mb-md"
+            >
+            </q-input>
           </div>
           <div class="col">
-          <q-input
-            v-model="formData.end_time"
-            type="time"
-            label="* End Time"
-            outlined
-            dense
-            class="q-mb-md"
-          >
-          </q-input>
-        </div>
+            <q-input
+              v-model="formData.end_time"
+              type="time"
+              label="* End Time"
+              outlined
+              dense
+              class="q-mb-md"
+            >
+            </q-input>
+          </div>
         </div>
 
         <div>
@@ -106,19 +116,14 @@
           class="q-mr-sm"
           @click="onCancel"
         />
-        <q-btn
-          label="Save"
-          flat
-          color="blue-6"
-          @click="onSave"
-        />
+        <q-btn label="Save" flat color="blue-6" @click="onSave" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from "vue";
 
 interface Props {
   modelValue: boolean;
@@ -130,29 +135,29 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'save', data: any): void;
-  (e: 'cancel'): void;
+  (e: "update:modelValue", value: boolean): void;
+  (e: "save", data: any): void;
+  (e: "cancel"): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   timeRange: () => ({ min: 8, max: 19 }),
-  remark: '',
+  remark: "",
 });
 
 const emit = defineEmits<Emits>();
 
 const show = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit("update:modelValue", value),
 });
 
 const formData = ref({
   selectedStaff: null,
-  work_date: '',
-  start_time: '',
-  end_time: '',
-  remark: '',
+  work_date: "",
+  start_time: "",
+  end_time: "",
+  remark: "",
 });
 
 const timeRangeModel = ref({ min: 8, max: 19 });
@@ -173,7 +178,7 @@ function formatTimeLabel(time: number) {
   const hours = Math.floor(time);
   const minutes = (time % 1) * 60;
 
-  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  return `${hours}:${minutes.toString().padStart(2, "0")}`;
 }
 
 function formatDateTitle(dateString: string) {
@@ -210,8 +215,8 @@ function updateTimeFromRange() {
 
 function timeStringToDecimal(timeString: string): number {
   if (!timeString) return props.timeRange?.min || 8;
-  const [hours, minutes] = timeString.split(':').map(Number);
-  return hours + (minutes / 60);
+  const [hours, minutes] = timeString.split(":").map(Number);
+  return hours + minutes / 60;
 }
 
 function updateRangeFromTime() {
@@ -221,12 +226,16 @@ function updateRangeFromTime() {
   const maxTime = props.timeRange?.max || 19;
 
   // 确保时间在有效范围内
-  if (startDecimal >= minTime && startDecimal <= maxTime &&
-      endDecimal >= minTime && endDecimal <= maxTime &&
-      startDecimal < endDecimal) {
+  if (
+    startDecimal >= minTime &&
+    startDecimal <= maxTime &&
+    endDecimal >= minTime &&
+    endDecimal <= maxTime &&
+    startDecimal < endDecimal
+  ) {
     timeRangeModel.value = {
       min: startDecimal,
-      max: endDecimal
+      max: endDecimal,
     };
   }
 }
@@ -234,19 +243,19 @@ function updateRangeFromTime() {
 function resetForm() {
   formData.value = {
     selectedStaff: props.selectedStaff || null,
-    work_date: props.workDate || '',
-    start_time: '',
-    end_time: '',
-    remark: props.remark || '',
+    work_date: props.workDate || "",
+    start_time: "",
+    end_time: "",
+    remark: props.remark || "",
   };
   timeRangeModel.value = props.timeRange || { min: 8, max: 19 };
 }
 
 function onClose() {
   formData.value.selectedStaff = null;
-  formData.value.start_time = '';
-  formData.value.end_time = '';
-  formData.value.remark = '';
+  formData.value.start_time = "";
+  formData.value.end_time = "";
+  formData.value.remark = "";
   timeRangeModel.value = props.timeRange || { min: 8, max: 19 };
 }
 
@@ -270,47 +279,72 @@ function onSave() {
     status: "active",
   };
 
-  emit('save', payload);
+  emit("save", payload);
 }
 
 function onCancel() {
-  emit('cancel');
+  emit("cancel");
 }
 
 // Watch for props changes to update form data
-watch(() => props.workDate, (newDate) => {
-  formData.value.work_date = newDate;
-}, { immediate: true });
+watch(
+  () => props.workDate,
+  (newDate) => {
+    formData.value.work_date = newDate;
+  },
+  { immediate: true }
+);
 
-watch(() => props.selectedStaff, (newStaff) => {
-  formData.value.selectedStaff = newStaff;
-}, { immediate: true });
+watch(
+  () => props.selectedStaff,
+  (newStaff) => {
+    formData.value.selectedStaff = newStaff;
+  },
+  { immediate: true }
+);
 
-watch(() => props.timeRange, (newRange) => {
-  if (newRange) {
-    timeRangeModel.value = newRange;
-  }
-}, { immediate: true });
+watch(
+  () => props.timeRange,
+  (newRange) => {
+    if (newRange) {
+      timeRangeModel.value = newRange;
+    }
+  },
+  { immediate: true }
+);
 
-watch(() => props.remark, (newRemark) => {
-  formData.value.remark = newRemark;
-}, { immediate: true });
+watch(
+  () => props.remark,
+  (newRemark) => {
+    formData.value.remark = newRemark;
+  },
+  { immediate: true }
+);
 
 // Watch for dialog open to initialize form
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    resetForm();
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      resetForm();
+    }
   }
-});
+);
 
 // Watch for manual time input changes to update range
-watch(() => formData.value.start_time, () => {
-  updateRangeFromTime();
-});
+watch(
+  () => formData.value.start_time,
+  () => {
+    updateRangeFromTime();
+  }
+);
 
-watch(() => formData.value.end_time, () => {
-  updateRangeFromTime();
-});
+watch(
+  () => formData.value.end_time,
+  () => {
+    updateRangeFromTime();
+  }
+);
 </script>
 
 <style scoped>

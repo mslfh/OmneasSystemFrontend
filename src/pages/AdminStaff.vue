@@ -48,14 +48,15 @@
     </q-table>
 
     <q-dialog v-model="isEditDialogOpen">
-      <q-card style="min-width: 400px">
+      <q-card style="width: 100%">
         <q-card-section>
           <div class="text-h6">Edit Staff</div>
         </q-card-section>
         <q-card-section>
           <q-input v-model="editForm.name" label="Name" />
-          <q-input filled v-model="editForm.email" label="Email" type="email" />
-          <q-input v-model="editForm.position" label="Position" />
+          <q-input v-model="editForm.email" label="Email" type="email" />
+          <q-input v-model="editForm.phone" label="Phone" />
+          <!-- <q-input v-model="editForm.position" label="Position" /> -->
           <q-select
             v-model="editForm.status"
             label="Status"
@@ -65,10 +66,9 @@
           />
           <q-input
             v-model="editForm.description"
-            label="Description"
+            label="Remark"
             type="textarea"
           />
-          <q-input v-model="editForm.phone" label="Phone" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn
@@ -83,7 +83,7 @@
     </q-dialog>
 
     <q-dialog v-model="isDeleteDialogOpen">
-      <q-card>
+      <q-card  style="width: 100%">
         <q-card-section>
           <div class="text-h6">Confirm Deletion</div>
         </q-card-section>
@@ -103,7 +103,7 @@
     </q-dialog>
 
     <q-dialog v-model="isAddDialogOpen">
-      <q-card style="min-width: 400px">
+      <q-card  style="width: 100%">
         <q-card-section>
           <div class="text-h6">Add New Staff</div>
         </q-card-section>
@@ -111,7 +111,7 @@
           <q-input v-model="addForm.name" label="* Name" />
           <q-input v-model="addForm.phone" label="* Phone" />
           <q-input v-model="addForm.email" label="Email" type="email" />
-          <q-input v-model="addForm.position" label="Position" />
+          <!-- <q-input v-model="addForm.position" label="Position" /> -->
           <q-select
             v-model="addForm.status"
             label="Status"
@@ -125,7 +125,7 @@
           /> -->
           <q-input
             v-model="addForm.description"
-            label="Description"
+            label="Remark"
             type="textarea"
           />
         </q-card-section>
@@ -152,7 +152,6 @@ import { api } from "boot/axios";
 const staff = ref([]);
 const columns = [
   { name: "name", required: true, label: "Name", align: "left", field: "name" },
-  { name: "position", label: "Position", align: "left", field: "position" },
   { name: "phone", label: "Phone", align: "left", field: "phone" },
   { name: "email", label: "Email", align: "left", field: "email" },
   {
@@ -160,6 +159,9 @@ const columns = [
     label: "Status",
     align: "left",
     field: "status",
+  },
+  { name: "description", label: "Remark", align: "left", field: "description",
+    style: "max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
   },
   { name: "actions", label: "Actions", align: "center" },
 ];

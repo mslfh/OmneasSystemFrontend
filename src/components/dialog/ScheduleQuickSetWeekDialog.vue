@@ -14,7 +14,7 @@
         </div>
       </q-card-section>
       <q-card-section class="q-pa-lg">
-        <div>
+        <div class="q-mb-md">
           <q-select
             v-model="formData.selectedStaff"
             :options="staffList"
@@ -31,6 +31,19 @@
               <q-icon name="person" color="grey-6" />
             </template>
           </q-select>
+
+           <q-input
+            dense
+            v-if="formData.selectedStaff && formData.selectedStaff.description"
+            readonly
+            v-model="formData.selectedStaff.description"
+            class="q-mr-xs q-ml-xs"
+            input-class="text-grey-6"
+          >
+            <template v-slot:prepend>
+              <q-icon name="info" color="grey-6" size="xs" />
+            </template>
+          </q-input>
         </div>
 
         <div class="row q-gutter-md q-mb-md">

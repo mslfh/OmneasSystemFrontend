@@ -14,7 +14,7 @@
         </div>
       </q-card-section>
       <q-card-section class="q-pa-lg">
-        <div>
+        <div class="q-mb-md">
           <q-select
             v-model="formData.selectedStaff"
             :options="staffList"
@@ -24,13 +24,25 @@
             clearable
             outlined
             dense
-            class="q-mb-md"
             color="grey-6"
           >
             <template v-slot:prepend>
               <q-icon name="person" color="grey-6" />
             </template>
           </q-select>
+
+          <q-input
+            dense
+            v-if="formData.selectedStaff && formData.selectedStaff.description"
+            readonly
+            v-model="formData.selectedStaff.description"
+            class="q-mr-xs q-ml-xs"
+            input-class="text-grey-6"
+          >
+            <template v-slot:prepend>
+              <q-icon name="info" color="grey-6" size="xs" />
+            </template>
+          </q-input>
         </div>
 
         <div class="row q-gutter-md q-mb-md">
@@ -85,21 +97,19 @@
                 </template>
               </q-input>
             </div>
-            <q-separator vertical/>
-            <div class="col-4 flex items-center  ">
-                <div class="text-caption text-grey-6">
-                Quick Select
-                </div>
-                <q-option-group
-                  v-model="formData.duration"
-                  :options="durationOptions"
-                  inline
-                  dense
-                  class="text-grey-6"
-                  color="blue-4"
-                  size="sm"
-                  @update:model-value="updateEndTime"
-                />
+            <q-separator vertical />
+            <div class="col-4 flex items-center">
+              <div class="text-caption text-grey-6">Quick Select</div>
+              <q-option-group
+                v-model="formData.duration"
+                :options="durationOptions"
+                inline
+                dense
+                class="text-grey-6"
+                color="blue-4"
+                size="sm"
+                @update:model-value="updateEndTime"
+              />
             </div>
           </div>
         </div>
@@ -300,10 +310,10 @@ watch(
   () => props.startTime,
   (newStartTime) => {
     formData.value.start_time = newStartTime;
-  // If there's a new start_time and duration, automatically calculate end_time
-  if (newStartTime && formData.value.duration) {
-    updateEndTime();
-  }
+    // If there's a new start_time and duration, automatically calculate end_time
+    if (newStartTime && formData.value.duration) {
+      updateEndTime();
+    }
   },
   { immediate: true }
 );
@@ -312,10 +322,10 @@ watch(
   () => props.duration,
   (newDuration) => {
     formData.value.duration = newDuration;
-  // If there's a start_time, recalculate end_time
-  if (formData.value.start_time && newDuration) {
-    updateEndTime();
-  }
+    // If there's a start_time, recalculate end_time
+    if (formData.value.start_time && newDuration) {
+      updateEndTime();
+    }
   },
   { immediate: true }
 );
