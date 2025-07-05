@@ -183,7 +183,7 @@ const weekStart = computed(() => {
   const date = new Date(selectedDate.value);
   const day = date.getDay();
   const start = new Date(date);
-  start.setDate(date.getDate() - day);
+  start.setDate(date.getDate() - day + 1); // Adjust to start on Monday
   return start;
 });
 
