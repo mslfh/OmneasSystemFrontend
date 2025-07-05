@@ -34,6 +34,7 @@
         view="week"
         animated
         bordered
+        :weekdays="[1, 2, 3, 4, 5, 6, 0]"
         transition-next="slide-left"
         transition-prev="slide-right"
         no-active-date

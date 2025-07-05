@@ -31,6 +31,7 @@
       animated
       bordered
       focusable
+       :weekdays="[1, 2, 3, 4, 5, 6, 0]"
       hoverable
       no-active-date
       :focus-type="['day']"
