@@ -172,7 +172,8 @@ import ScheduleStaffSetDialog from "src/components/dialog/ScheduleStaffSetDialog
 import { getCurrentUser, getUserRole, canAccessAllMenus } from "../utils/auth";
 
 const calendar = ref<QCalendarDay>();
-const selectedDate = ref(today());
+//test 2025 07 07
+const selectedDate = ref( today()); // Default to the first day of the month
 
 // User role management
 const currentUser = ref(null);
@@ -180,10 +181,13 @@ const userRole = ref("");
 const isAdminOrDesk = ref(false);
 
 const weekStart = computed(() => {
+  // Calculate the start Monday of the week based on selected date
   const date = new Date(selectedDate.value);
   const day = date.getDay();
+  const diff = (day + 6) % 7; // Adjust to get Monday
   const start = new Date(date);
-  start.setDate(date.getDate() - day + 1); // Adjust to start on Monday
+  start.setDate(date.getDate() - diff +1);
+  start.setHours(0, 0, 0, 0); // Set to start of the day
   return start;
 });
 
