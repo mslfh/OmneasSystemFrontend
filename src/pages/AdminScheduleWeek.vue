@@ -172,8 +172,8 @@ import ScheduleStaffSetDialog from "src/components/dialog/ScheduleStaffSetDialog
 import { getCurrentUser, getUserRole, canAccessAllMenus } from "../utils/auth";
 
 const calendar = ref<QCalendarDay>();
-//test 2025 07 07
-const selectedDate = ref( today()); // Default to the first day of the month
+// Default to the first day of the month
+const selectedDate = ref( today());
 
 // User role management
 const currentUser = ref(null);

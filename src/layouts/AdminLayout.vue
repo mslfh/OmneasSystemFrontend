@@ -440,7 +440,6 @@ function getUserInitials() {
           <q-toolbar class="bg-white text-grey-8">
             <q-avatar
               size="40px"
-              class="q-mr-md"
               style="background-color: #f5f5f5"
               @click="zoomLeftDrawer"
             >
@@ -451,7 +450,7 @@ function getUserInitials() {
             </q-avatar>
             <q-toolbar-title
               class="text-weight-medium"
-              style="font-size: 1.4rem; letter-spacing: -0.5px"
+              style="font-size: 1.3rem; letter-spacing: -1.0px"
             >
               {{ APP_TITLE }}
             </q-toolbar-title>

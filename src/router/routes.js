@@ -2,20 +2,21 @@ import { roleGuard, adminDeskOnlyGuard, defaultRouteGuard } from './guards';
 
 const routes = [
   //Customer routes
-  {
-    path: '/',
-    component: () => import('layouts/CustomerLayout.vue'),
-    children: [
-      // { path: '', component: () => import('pages/CustomerIndex.vue') },
-      { path: '', component: () => import('pages/CustomerBooking.vue') },
-      { path: '/old', component: () => import('pages/CustomerBookingSelectTime.vue') },
-      { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
-      { path: 'profile', component: () => import('pages/CustomerProfile.vue') },
-      { path: 'profile/detail', component: () => import('src/pages/CustomerProfileDetail.vue') },
-    ]
-  },
+  // {
+    // path: '/',
+    // component: () => import('layouts/CustomerLayout.vue'),
+  //   children: [
+  //     // { path: '', component: () => import('pages/CustomerIndex.vue') },
+  //     { path: '', component: () => import('pages/CustomerBooking.vue') },
+  //     { path: '/old', component: () => import('pages/CustomerBookingSelectTime.vue') },
+  //     { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
+  //     { path: 'profile', component: () => import('pages/CustomerProfile.vue') },
+  //     { path: 'profile/detail', component: () => import('src/pages/CustomerProfileDetail.vue') },
+  //   ]
+  // },
 
   //Admin routes
+
   {
     path: '/admin/login',
     component: () => import('pages/AdminLogin.vue')
