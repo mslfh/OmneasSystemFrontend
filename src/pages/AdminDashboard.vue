@@ -2,8 +2,7 @@
   <div class="q-pa-md q-pt-lg">
     <!-- first row -->
     <div class="row q-col-gutter-lg">
-
-         <!-- Summary of Weekly Schedule -->
+      <!-- Summary of Weekly Schedule -->
       <div class="col-lg-12 col-md-6 col-sm-12 col-xs-12">
         <q-card class="q-pa-md shadow-1">
           <div class="row items-center q-mb-md">
@@ -12,14 +11,17 @@
               <div class="text-subtitle2 text-grey-5">
                 {{
                   scheduleSelectedDateRange
-                  ? `From ${(scheduleSelectedDateRange['from'])} to ${(scheduleSelectedDateRange['to'])}`
-                  : "Current Week" }}
+                    ? `From ${scheduleSelectedDateRange["from"]} to ${scheduleSelectedDateRange["to"]}`
+                    : "Current Week"
+                }}
               </div>
             </div>
             <q-btn flat round icon="more_vert" class="q-ml-auto">
               <q-menu>
                 <q-list style="min-width: 300px">
-                  <q-item-label header class="text-subtitle1">* Select Date Range</q-item-label>
+                  <q-item-label header class="text-subtitle1"
+                    >* Select Date Range</q-item-label
+                  >
                   <q-item>
                     <q-item-section>
                       <q-date
@@ -32,9 +34,15 @@
                     </q-item-section>
                   </q-item>
                   <q-separator />
-                  <q-item clickable v-close-popup @click="resetScheduleDateRange">
+                  <q-item
+                    clickable
+                    v-close-popup
+                    @click="resetScheduleDateRange"
+                  >
                     <q-item-section>
-                      <q-item-label class="text-grey-6">Reset to Current Week</q-item-label>
+                      <q-item-label class="text-grey-6"
+                        >Reset to Current Week</q-item-label
+                      >
                     </q-item-section>
                     <q-item-section side>
                       <q-icon name="refresh" />
@@ -46,10 +54,17 @@
           </div>
 
           <!-- Staff Selection Buttons -->
-          <div class="row q-mb-md q-gutter-xs" v-if="staffScheduleData.length > 0">
+          <div
+            class="row q-mb-md q-gutter-xs"
+            v-if="staffScheduleData.length > 0"
+          >
             <q-btn
-              :color="selectedScheduleStaffId === 'all' ? 'deep-purple-4' : 'grey-4'"
-              :text-color="selectedScheduleStaffId === 'all' ? 'white' : 'grey-7'"
+              :color="
+                selectedScheduleStaffId === 'all' ? 'deep-purple-4' : 'grey-4'
+              "
+              :text-color="
+                selectedScheduleStaffId === 'all' ? 'white' : 'grey-7'
+              "
               :outline="selectedScheduleStaffId !== 'all'"
               size="sm"
               @click="selectAllScheduleStaff()"
@@ -60,8 +75,14 @@
             <q-btn
               v-for="staff in staffScheduleData"
               :key="staff.id"
-              :color="selectedScheduleStaffId === staff.id ? 'deep-purple-4' : 'grey-4'"
-              :text-color="selectedScheduleStaffId === staff.id ? 'white' : 'grey-7'"
+              :color="
+                selectedScheduleStaffId === staff.id
+                  ? 'deep-purple-4'
+                  : 'grey-4'
+              "
+              :text-color="
+                selectedScheduleStaffId === staff.id ? 'white' : 'grey-7'
+              "
               :outline="selectedScheduleStaffId !== staff.id"
               size="sm"
               @click="selectScheduleStaff(staff)"
@@ -72,10 +93,22 @@
           </div>
 
           <!-- No Staff Message -->
-          <div v-if="staffScheduleData.length === 0" class="text-center q-pa-md">
-            <q-icon name="schedule" size="48px" color="grey-4" class="q-mb-sm" />
-            <div class="text-body1 text-grey-6">No staff schedule data available</div>
-            <div class="text-caption text-grey-5">Please check back later or contact administrator</div>
+          <div
+            v-if="staffScheduleData.length === 0"
+            class="text-center q-pa-md"
+          >
+            <q-icon
+              name="schedule"
+              size="48px"
+              color="grey-4"
+              class="q-mb-sm"
+            />
+            <div class="text-body1 text-grey-6">
+              No staff schedule data available
+            </div>
+            <div class="text-caption text-grey-5">
+              Please check back later or contact administrator
+            </div>
           </div>
 
           <!-- Main Schedule Content -->
@@ -87,13 +120,17 @@
                 </div>
               </div>
               <div class="col-auto flex items-center">
-                <q-badge color="orange-2" text-color="orange-8" class="q-ml-sm">{{
-                  selectedScheduleStaffDisplayName
-                }}</q-badge>
+                <q-badge
+                  color="orange-2"
+                  text-color="orange-8"
+                  class="q-ml-sm"
+                  >{{ selectedScheduleStaffDisplayName }}</q-badge
+                >
               </div>
             </div>
             <div class="text-grey-5 q-mb-md">
-              Weekly schedule for {{ selectedScheduleStaffDisplayName || "selected staff" }}
+              Weekly schedule for
+              {{ selectedScheduleStaffDisplayName || "selected staff" }}
             </div>
             <div class="q-mb-lg">
               <!-- Staff Schedule Column Charts -->
@@ -169,9 +206,7 @@
 
       <!-- Statistics Card with Carousel -->
       <div v-if="false" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
-        <q-card
-          class="fit shadow-1 overflow-hidden"
-        >
+        <q-card class="fit shadow-1 overflow-hidden">
           <q-carousel
             v-model="currentStatSlide"
             transition-prev="slide-right"
@@ -184,10 +219,13 @@
             :autoplay="5000"
             height="100%"
             class="text-white rounded-borders"
-            style=" background: #7165ec;"
+            style="background: #7165ec"
           >
             <!-- Slide 1: Site Performance -->
-            <q-carousel-slide name="performance" class="column no-wrap q-pa-none">
+            <q-carousel-slide
+              name="performance"
+              class="column no-wrap q-pa-none"
+            >
               <div class="q-pa-lg fit">
                 <div class="row fit">
                   <div class="col-7 column justify-between">
@@ -195,8 +233,12 @@
                       <div class="text-h4 text-white q-mb-xs">
                         Service Performance
                       </div>
-                      <div class="text-subtitle1 text-white" style="opacity: 0.8;">
-                        The conversion rate is a total of {{ appointmentConversionRate }}%.
+                      <div
+                        class="text-subtitle1 text-white"
+                        style="opacity: 0.8"
+                      >
+                        The conversion rate is a total of
+                        {{ appointmentConversionRate }}%.
                       </div>
                     </div>
 
@@ -207,23 +249,37 @@
                           <div class="text-h6 text-white">
                             {{ todayStatistics.total_appointments }}h
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Spend
                           </div>
                           <div class="text-body2 text-white q-mt-sm">
-                            {{ todayStatistics.appointmentGroup?.finished || 0 }}
+                            {{
+                              todayStatistics.appointmentGroup?.finished || 0
+                            }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Order
                           </div>
                         </div>
                         <div class="col">
                           <div class="text-h6 text-white">110</div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Order Size
                           </div>
                           <div class="text-body2 text-white q-mt-sm">28k</div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Items
                           </div>
                         </div>
@@ -242,7 +298,10 @@
             </q-carousel-slide>
 
             <!-- Slide 2: Appointment Statistics -->
-            <q-carousel-slide name="appointments" class="column no-wrap q-pa-none">
+            <q-carousel-slide
+              name="appointments"
+              class="column no-wrap q-pa-none"
+            >
               <div class="q-pa-lg fit">
                 <div class="row fit">
                   <div class="col-7 column justify-between">
@@ -250,7 +309,10 @@
                       <div class="text-h4 text-white q-mb-xs">
                         Orders Statistics
                       </div>
-                      <div class="text-subtitle1 text-white" style="opacity: 0.8;">
+                      <div
+                        class="text-subtitle1 text-white"
+                        style="opacity: 0.8"
+                      >
                         Updated {{ formatUpdateTime() }}
                       </div>
                     </div>
@@ -264,27 +326,41 @@
                           <div class="text-h6 text-white">
                             {{ todayStatistics.total_appointments }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Total Appointments
                           </div>
                           <div class="text-body2 text-white q-mt-sm">
                             ${{ todayStatistics.total_revenue.toFixed(0) }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Revenue
                           </div>
                         </div>
                         <div class="col">
                           <div class="text-h6 text-white">
-                            {{ todayStatistics.appointmentGroup?.finished || 0 }}
+                            {{
+                              todayStatistics.appointmentGroup?.finished || 0
+                            }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Completed
                           </div>
                           <div class="text-body2 text-white q-mt-sm">
                             {{ todayStatistics.appointmentGroup?.booked || 0 }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Pending
                           </div>
                         </div>
@@ -311,7 +387,10 @@
                       <div class="text-h4 text-white q-mb-xs">
                         Revenue Analytics
                       </div>
-                      <div class="text-subtitle1 text-white" style="opacity: 0.8;">
+                      <div
+                        class="text-subtitle1 text-white"
+                        style="opacity: 0.8"
+                      >
                         Financial performance overview
                       </div>
                     </div>
@@ -325,13 +404,19 @@
                           <div class="text-h6 text-white">
                             ${{ todayStatistics.total_revenue.toFixed(0) }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Total Revenue
                           </div>
                           <div class="text-body2 text-white q-mt-sm">
                             ${{ todayStatistics.total_paid?.toFixed(0) || 0 }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Paid Amount
                           </div>
                         </div>
@@ -339,13 +424,19 @@
                           <div class="text-h6 text-white">
                             {{ topPaymentMethods.length }}
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Payment Methods
                           </div>
                           <div class="text-body2 text-white q-mt-sm">
                             {{ topPaymentMethodPercentage.toFixed(1) }}%
                           </div>
-                          <div class="text-body2 text-white" style="opacity: 0.8;">
+                          <div
+                            class="text-body2 text-white"
+                            style="opacity: 0.8"
+                          >
                             Paid Rate
                           </div>
                         </div>
@@ -394,7 +485,7 @@
             ${{ todayStatistics.total_revenue.toFixed(2) }}
           </div>
           <div class="text-subtitle2 text-grey-5 q-mb-md">Sale Amount</div>
-          <div style="height: 100px; overflow: hidden;">
+          <div style="height: 100px; overflow: hidden">
             <!-- Appointments line chart in this week -->
             <ApexCharts
               type="area"
@@ -973,7 +1064,10 @@ const staffScheduleData = ref([]);
 const selectedScheduleStaffId = ref("all"); // Default to 'all'
 const selectedScheduleStaffName = ref("All Staff");
 const weeklyScheduleData = ref([0, 0, 0, 0, 0, 0, 0]); // Monday to Sunday
-const scheduleSelectedDateRange = ref(null); // For date range picker
+const scheduleSelectedDateRange = ref({
+  start: "",
+  end: "",
+}); // For date range picker
 
 const StaffEarningsBarOptions = computed(() => ({
   chart: {
@@ -1040,13 +1134,13 @@ const AppointmentWeekChartOptions = {
     height: 100,
     width: "100%",
     sparkline: {
-      enabled: true
+      enabled: true,
     },
     toolbar: {
-      show: false
+      show: false,
     },
     zoom: {
-      enabled: false
+      enabled: false,
     },
     dropShadow: {
       enabled: true,
@@ -1054,14 +1148,14 @@ const AppointmentWeekChartOptions = {
       left: 0,
       blur: 3,
       opacity: 0.2,
-      color: "#3bcc7c"
-    }
+      color: "#3bcc7c",
+    },
   },
   stroke: {
     curve: "smooth",
     width: 2.5,
     colors: ["#3bcc7c"],
-    lineCap: "round"
+    lineCap: "round",
   },
   fill: {
     type: "gradient",
@@ -1072,14 +1166,14 @@ const AppointmentWeekChartOptions = {
       inverseColors: false,
       opacityFrom: 0.5,
       opacityTo: 0.1,
-      stops: [0, 90, 100]
-    }
+      stops: [0, 90, 100],
+    },
   },
   markers: {
     size: 0,
     hover: {
-      size: 0
-    }
+      size: 0,
+    },
   },
   grid: {
     show: false,
@@ -1087,49 +1181,55 @@ const AppointmentWeekChartOptions = {
       top: -10,
       right: 5,
       bottom: -10,
-      left: 5
-    }
+      left: 5,
+    },
   },
   xaxis: {
     labels: {
-      show: false
+      show: false,
     },
     axisBorder: {
-      show: false
+      show: false,
     },
     axisTicks: {
-      show: false
+      show: false,
     },
     crosshairs: {
-      show: false
-    }
+      show: false,
+    },
   },
   yaxis: {
     labels: {
-      show: false
+      show: false,
     },
-    min: 0
+    min: 0,
   },
   dataLabels: {
-    enabled: false
+    enabled: false,
   },
   legend: {
-    show: false
+    show: false,
   },
   tooltip: {
     enabled: true,
-    theme: 'light',
+    theme: "light",
     style: {
-      fontSize: '12px',
-      fontFamily: 'Inter, sans-serif'
+      fontSize: "12px",
+      fontFamily: "Inter, sans-serif",
     },
-    custom: function({ series, seriesIndex, dataPointIndex }) {
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return '<div style="background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">' +
-        '<span>' + days[dataPointIndex] + ': ' + series[seriesIndex][dataPointIndex] + ' appointments</span>' +
-        '</div>';
-    }
-  }
+    custom: function ({ series, seriesIndex, dataPointIndex }) {
+      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      return (
+        '<div style="background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">' +
+        "<span>" +
+        days[dataPointIndex] +
+        ": " +
+        series[seriesIndex][dataPointIndex] +
+        " appointments</span>" +
+        "</div>"
+      );
+    },
+  },
 };
 const AppointmentWeekSeries = [
   {
@@ -1402,7 +1502,9 @@ const totalScheduleCount = computed(() => {
   if (staffScheduleData.value.length === 0) return 0;
   if (selectedScheduleStaffId.value === "all") {
     return staffScheduleData.value.reduce((total, staff) => {
-      return total + (staff.schedules ? Object.keys(staff.schedules).length : 0);
+      return (
+        total + (staff.schedules ? Object.keys(staff.schedules).length : 0)
+      );
     }, 0);
   } else if (selectedScheduleStaffId.value) {
     const staff = staffScheduleData.value.find(
@@ -1420,7 +1522,10 @@ const selectedScheduleStaffDisplayName = computed(() => {
 
 const totalAllStaffWeeklyHours = computed(() => {
   if (staffScheduleData.value.length === 0) return 0;
-  return calculateAllStaffWeeklySchedule().reduce((sum, hours) => sum + hours, 0);
+  return calculateAllStaffWeeklySchedule().reduce(
+    (sum, hours) => sum + hours,
+    0
+  );
 });
 
 // Calculate actual service count (excluding breaks and no-shows)
@@ -1549,8 +1654,21 @@ const formatUpdateTime = () => {
 };
 
 onMounted(() => {
-  fetchTodayStatistics();
-  fetchStaffIncomeStatistics();
+  // Initialize schedule date range to Monday and Sunday of today's week
+  const today = new Date();
+  const startOfWeek = new Date(
+    today.setDate(today.getDate() - today.getDay() + 1)
+  ); // Set to Monday
+  const endOfWeek = new Date(
+    today.setDate(today.getDate() - today.getDay() + 7)
+  ); // Set to Sunday
+
+  scheduleSelectedDateRange.value = {
+    start: startOfWeek,
+    end: endOfWeek,
+  };
+  // fetchTodayStatistics();
+  // fetchStaffIncomeStatistics();
   fetchStaffScheduleStatistics();
 });
 
@@ -1639,7 +1757,10 @@ async function fetchStaffIncomeStatistics() {
   }
 }
 
-async function fetchStaffScheduleStatistics(customStartDate = null, customEndDate = null) {
+async function fetchStaffScheduleStatistics(
+  customStartDate = null,
+  customEndDate = null
+) {
   try {
     let start_date, end_date;
 
@@ -1648,13 +1769,15 @@ async function fetchStaffScheduleStatistics(customStartDate = null, customEndDat
       start_date = new Date(customStartDate);
       end_date = new Date(customEndDate);
     } else {
-      // Use current week (default behavior)
-      const date = new Date();
-      // if weekly statistics, set to the start of the week (Monday)
-      start_date = new Date(
-        date.setDate(date.getDate() - date.getDay() + 1)
-      );
-      end_date = new Date(date.setDate(date.getDate() - date.getDay() + 7));
+      // Use current week of today's date (default behavior)
+      const today = new Date();
+      const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay(); // Treat Sunday (0) as 7
+
+      start_date = new Date(today);
+      start_date.setDate(today.getDate() - dayOfWeek + 1); // Monday
+
+      end_date = new Date(today);
+      end_date.setDate(today.getDate() - dayOfWeek + 7); // Sunday
     }
 
     const response = await api.get("/api/getStaffScheduleStatistics", {
@@ -1836,7 +1959,9 @@ const StaffScheduleBarOptions = computed(() => ({
       },
     },
   },
-  colors: days.map((_, idx) => (selectedScheduleStaffId.value ? "#5B4FE9" : "#E6E4FB")),
+  colors: days.map((_, idx) =>
+    selectedScheduleStaffId.value ? "#5B4FE9" : "#E6E4FB"
+  ),
 }));
 
 const StaffScheduleBarSeries = computed(() => [
