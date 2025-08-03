@@ -31,7 +31,7 @@
       animated
       bordered
       focusable
-       :weekdays="[1, 2, 3, 4, 5, 6, 0]"
+      :weekdays="[1, 2, 3, 4, 5, 6, 0]"
       hoverable
       no-active-date
       :focus-type="['day']"
@@ -61,7 +61,9 @@
                     : ''
                 "
               >
-                {{ event.title }} {{ event.time }}
+                <div class="text-bold">{{ event.title }}</div>
+                {{ event.time }}
+                <div>{{ event.duration }}h</div>
                 <div v-if="event.remark">Remark: {{ event.remark }}</div>
               </div>
             </abbr>
@@ -151,7 +153,7 @@ const eventsMap = computed(() => {
 
 const eventColors = computed(() => {
   const colorMap = {};
- const colors = [
+  const colors = [
     "teal-4",
     "blue-4",
     "purple-3",
@@ -222,10 +224,25 @@ async function fetchSchedules() {
       break_start_time: schedule.break_start_time,
       status: schedule.status,
       remark: schedule.remark,
+      duration: calculateDuration(schedule.start_time, schedule.end_time),
     }));
   } catch (error) {
     console.error("Error fetching schedules:", error);
   }
+}
+
+// Helper function to calculate duration in hours
+function calculateDuration(startTime, endTime) {
+  if (!startTime || !endTime) return 0;
+
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+
+  const startMinutes = startHour * 60 + startMinute;
+  const endMinutes = endHour * 60 + endMinute;
+
+  const durationMinutes = endMinutes - startMinutes;
+  return Math.round((durationMinutes / 60) * 100) / 100; // Round to 2 decimal places
 }
 
 async function fetchStaffList() {
