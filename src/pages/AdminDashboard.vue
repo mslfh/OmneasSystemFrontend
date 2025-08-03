@@ -11,7 +11,7 @@
               <div class="text-subtitle2 text-grey-5">
                 {{
                   scheduleSelectedDateRange
-                    ? `From ${scheduleSelectedDateRange["from"]} to ${scheduleSelectedDateRange["to"]}`
+                    ? `From ${scheduleSelectedDateRange.from} to ${scheduleSelectedDateRange["to"]}`
                     : "Current Week"
                 }}
               </div>
@@ -1064,10 +1064,8 @@ const staffScheduleData = ref([]);
 const selectedScheduleStaffId = ref("all"); // Default to 'all'
 const selectedScheduleStaffName = ref("All Staff");
 const weeklyScheduleData = ref([0, 0, 0, 0, 0, 0, 0]); // Monday to Sunday
-const scheduleSelectedDateRange = ref({
-  start: "",
-  end: "",
-}); // For date range picker
+
+const scheduleSelectedDateRange = ref(null); // For date range picker
 
 const StaffEarningsBarOptions = computed(() => ({
   chart: {
@@ -1654,19 +1652,6 @@ const formatUpdateTime = () => {
 };
 
 onMounted(() => {
-  // Initialize schedule date range to Monday and Sunday of today's week
-  const today = new Date();
-  const startOfWeek = new Date(
-    today.setDate(today.getDate() - today.getDay() + 1)
-  ); // Set to Monday
-  const endOfWeek = new Date(
-    today.setDate(today.getDate() - today.getDay() + 7)
-  ); // Set to Sunday
-
-  scheduleSelectedDateRange.value = {
-    start: startOfWeek,
-    end: endOfWeek,
-  };
   // fetchTodayStatistics();
   // fetchStaffIncomeStatistics();
   fetchStaffScheduleStatistics();
