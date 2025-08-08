@@ -230,7 +230,7 @@ import { onMounted, ref, watch } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
-import AttachmentViewer from "components/AttachmentViewer.vue";
+import AttachmentViewer from "src/components/tools/AttachmentViewer.vue";
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 const router = useRouter();

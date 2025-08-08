@@ -166,8 +166,8 @@
 import { QCalendarDay, today, Timestamp } from "@quasar/quasar-ui-qcalendar";
 import { ref, computed, onMounted, watch } from "vue";
 import { api } from "boot/axios";
-import NavigationBar from "src/components/NavigationBar.vue";
-import ScheduleViewSwitcher from "src/components/ScheduleViewSwitcher.vue";
+import NavigationBar from "src/components/tools/NavigationBar.vue";
+import ScheduleViewSwitcher from "src/components/tools/ScheduleViewSwitcher.vue";
 
 import ScheduleEventDetailsDialog from "src/components/dialog/ScheduleEventDetailsDialog.vue";
 import ScheduleQuickSetDayDialog from "src/components/dialog/ScheduleQuickSetDayDialog.vue";

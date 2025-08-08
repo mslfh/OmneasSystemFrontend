@@ -381,7 +381,7 @@ import { useQuasar } from "quasar";
 import { api } from "boot/axios";
 import { fetchUserFromSearch } from "../../composables/useUserFromSearch";
 import { fetchAvailableBookingTimeSlots } from "../../composables/useAvailableBookingTime";
-import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
+import CustomerHistoryTimeline from "src/components/tools/CustomerHistoryTimeline.vue";
 import ConfidentialClientCard from "components/ConfidentialClientCard.vue";
 import CustomerProfileCard from "components/CustomerProfileCard.vue";
 import ProfileAttachmentDialog from "components/dialog/ProfileAttachmentDialog.vue";

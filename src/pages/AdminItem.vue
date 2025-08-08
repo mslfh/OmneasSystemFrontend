@@ -1,7 +1,7 @@
 <template>
   <div class="q-pa-md">
     <q-table
-      no-data-label="No product attribute found"
+      no-data-label="No items found"
       :dense="$q.screen.lt.md"
       :columns="columns"
       :rows="data"
@@ -13,7 +13,7 @@
       binary-state-sort
     >
       <template v-slot:top-left>
-        <div class="text-h6 q-mr-md">Product Attribute</div>
+        <div class="text-h6 q-mr-md">Items</div>
         <q-chip
           outline
           color="primary"
@@ -117,22 +117,10 @@
           <q-chip
             size="sm"
             dense
-            :color="getTypeColor(props.row.type)"
-            :label="formatType(props.row.type)"
-            text-color="white"
+            :color="props.row.type === 'addon' ? 'blue-2' : 'orange-2'"
+            :text-color="props.row.type === 'addon' ? 'blue-8' : 'orange-8'"
+            :label="props.row.type"
             class="q-ma-xs"
-          />
-        </q-td>
-      </template>
-
-      <template v-slot:body-cell-extra_cost="props">
-        <q-td :props="props">
-          <q-chip
-            size="sm"
-            dense
-            :color="parseFloat(props.row.extra_cost) > 0 ? 'green' : 'grey'"
-            :label="`$${parseFloat(props.row.extra_cost).toFixed(2)}`"
-            text-color="white"
           />
         </q-td>
       </template>
@@ -153,16 +141,16 @@
             icon="o_edit"
             color="primary"
             size="10px"
-            @click="editAttribute(props.row)"
+            @click="editRow(props.row.id)"
           />
         </q-td>
       </template>
     </q-table>
 
-    <!-- Attribute Dialog -->
-    <AttributeDialog
+    <!-- Item Dialog -->
+    <ItemDialog
       v-model="showDialog"
-      :attribute="selectedAttribute"
+      :item="selectedItem"
       :isEdit="isEditMode"
       @success="onDialogSuccess"
     />
@@ -174,11 +162,11 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 import { format, useQuasar } from "quasar";
-import AttributeDialog from "src/components/dialog/AttributeDialog.vue";
+import ItemDialog from "src/components/dialog/ItemDialog.vue";
 
 const router = useRouter();
 const $q = useQuasar();
-const API_URL = "/api/orders";
+const API_URL = "/api/items";
 const data = ref([]);
 
 const columns = [
@@ -197,12 +185,18 @@ const columns = [
     sortable: true,
   },
   {
-    name: "extra_cost",
-    label: "Extra Cost",
+    name: "description",
+    label: "Description",
+    align: "left",
+    field: "description",
+  },
+  {
+    name: "price",
+    label: "Price",
     align: "right",
-    field: "extra_cost",
+    field: "price",
     sortable: true,
-    format: (val) => `$${parseFloat(val).toFixed(2)}`,
+    format: (val) => `$${val}`,
   },
   { name: "actions", label: "Actions", align: "center" },
 ];
@@ -210,18 +204,14 @@ const columns = [
 const filterFields = [
   { label: "Name", value: "name" },
   { label: "Type", value: "type" },
-  { label: "Extra Cost", value: "extra_cost" },
+  { label: "Description", value: "description" },
 ];
 
 const searchFields = [
-  { icon: "engineering", label: "Material", value: "type:material" },
-  { icon: "local_dining", label: "Sweetness", value: "type:sweetness" },
-  { icon: "whatshot", label: "Spice Level", value: "type:spice_level" },
-  { icon: "texture", label: "Texture", value: "type:texture" },
-  { icon: "thermostat", label: "Temperature", value: "type:temperature" },
-  { icon: "restaurant", label: "Cooking Method", value: "type:cooking_method" },
-  { icon: "attach_money", label: "Has Extra Cost", value: "extra_cost:>0" },
-  { icon: "money_off", label: "No Extra Cost", value: "extra_cost:0" },
+  { icon: "restaurant_menu", label: "Addon Type", value: "type:addon" },
+  { icon: "sauce", label: "Sauce Type", value: "type:sauce" },
+  { icon: "attach_money", label: "Price > $3", value: "price:>3" },
+  { icon: "money_off", label: "Price < $3", value: "price:<3" },
 ];
 
 const filter = ref({
@@ -243,7 +233,7 @@ const pagination = ref({
 
 // Dialog state
 const showDialog = ref(false);
-const selectedAttribute = ref({});
+const selectedItem = ref({});
 const isEditMode = ref(false);
 
 onMounted(() => {
@@ -323,64 +313,18 @@ const clearSelectedField = () => {
   });
 };
 
-const deleteRow = async (id) => {
-  $q.dialog({
-    title: "Confirm Deletion?",
-    message: "Are you sure you want to completely delete this attribute?",
-    cancel: true,
-    persistent: true,
-  })
-    .onOk(() => {
-      api
-        .delete(`${API_URL}/${id}`)
-        .then(() => {
-          $q.notify({
-            type: "positive",
-            message: "Attribute deleted successfully.",
-          });
-          // Refresh the attributes list after deletion
-          onRequest({
-            pagination: pagination.value,
-            filter: undefined,
-          });
-        })
-        .catch((error) => {
-          console.error("Error deleting:", error);
-          $q.notify({
-            type: "negative",
-            message: "Failed to delete attribute.",
-          });
-        });
-    })
-    .onCancel(() => {
-      return;
-    });
-};
-
-const getTypeColor = (type) => {
-  const colorMap = {
-    material: "brown",
-    sweetness: "pink",
-    spice_level: "red",
-    texture: "orange",
-    temperature: "blue",
-    cooking_method: "purple",
-  };
-  return colorMap[type] || "grey";
-};
-
-const formatType = (type) => {
-  return type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-};
-
-const editAttribute = (attribute) => {
-  selectedAttribute.value = { ...attribute };
-  isEditMode.value = true;
-  showDialog.value = true;
+const editRow = (id) => {
+  // Find the item to edit
+  const item = data.value.find(item => item.id === id);
+  if (item) {
+    selectedItem.value = { ...item };
+    isEditMode.value = true;
+    showDialog.value = true;
+  }
 };
 
 const openAddDialog = () => {
-  selectedAttribute.value = {};
+  selectedItem.value = {};
   isEditMode.value = false;
   showDialog.value = true;
 };
@@ -391,5 +335,39 @@ const onDialogSuccess = () => {
     pagination: pagination.value,
     filter: undefined,
   });
+};
+
+const deleteRow = async (id) => {
+  $q.dialog({
+    title: "Confirm Deletion?",
+    message: "Are you sure you want to completely delete?",
+    cancel: true,
+    persistent: true,
+  })
+    .onOk(() => {
+      api
+        .delete(`${API_URL}/${id}`)
+        .then(() => {
+          $q.notify({
+            type: "positive",
+            message: "Deleted successfully.",
+          });
+          // Refresh the products list after deletion
+          onRequest({
+            pagination: pagination.value,
+            filter: undefined,
+          });
+        })
+        .catch((error) => {
+          console.error("Error deleting:", error);
+          $q.notify({
+            type: "negative",
+            message: "Failed to delete.",
+          });
+        });
+    })
+    .onCancel(() => {
+      return;
+    });
 };
 </script>

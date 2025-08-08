@@ -3,11 +3,8 @@ import { ref, computed, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import Messages from "./Messages.vue";
 import Profile from "./Profile.vue";
-import EssentialLink from "components/EssentialLink.vue";
-import { fetchUserFromSearch } from "../composables/useUserFromSearch";
-import CustomerHistoryTimeline from "components/CustomerHistoryTimeline.vue";
+import CustomerHistoryTimeline from "src/components/tools/CustomerHistoryTimeline.vue";
 import { api } from "boot/axios";
-import AddAppointmentDialog from "components/dialog/AddAppointmentDialog.vue";
 import {
   getCurrentUser,
   getUserRole,
@@ -39,23 +36,6 @@ onMounted(() => {
 const isAdminOrDesk = computed(() => canAccessAllMenus());
 const isStaffOnly = computed(() => canOnlyAccessSchedule());
 
-const searchField = ref("");
-const loading = ref(false);
-const foundUsers = ref<
-  { id: number; name: string; phone: string; email: string }[]
->([]);
-
-async function onSearch() {
-  if (!searchField.value) {
-    foundUsers.value = [];
-    return;
-  }
-  loading.value = true;
-  foundUsers.value = await fetchUserFromSearch(searchField.value);
-  loading.value = false;
-}
-const isHistoryDialogOpen = ref(false);
-
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 };
@@ -63,19 +43,6 @@ const toggleLeftDrawer = () => {
 const zoomLeftDrawer = () => {
   zoomDrawer.value = !zoomDrawer.value;
 };
-
-const showAddAppointmentDialog = ref(false);
-const selectedUser = ref(null);
-
-function addAppointment(user) {
-  selectedUser.value = user;
-  showAddAppointmentDialog.value = true;
-}
-
-function viewHistory(user) {
-  selectedUser.value = user;
-  isHistoryDialogOpen.value = true;
-}
 
 // Get user initials for avatar display
 function getUserInitials() {
@@ -132,15 +99,7 @@ function getUserInitials() {
             <q-icon name="search" />
           </template>
         </q-input>
-
-        <q-menu
-          v-if="
-            isAdminOrDesk &&
-            searchField !== '' &&
-            !loading &&
-            foundUsers.length > 0
-          "
-        >
+        <q-menu v-if="false">
           <q-list>
             <q-item v-for="user in foundUsers" :key="user.id">
               <q-item-section>
@@ -276,19 +235,58 @@ function getUserInitials() {
             </q-item-section>
           </q-item>
 
-          <!-- Appointment - Only for Admin and Desk -->
+          <!-- Product - Only for Admin and Desk -->
           <q-item
-            v-if="false"
-            to="/admin/appointment"
+            to="/admin/product"
             active-class="q-item-no-link-highlighting"
           >
             <q-item-section avatar>
               <q-icon name="bookmark" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Appointment</q-item-label>
+              <q-item-label>Product</q-item-label>
             </q-item-section>
           </q-item>
+
+          <!-- Product Information - Only for Admin and Desk -->
+          <q-expansion-item icon="inbox" label="Product Info">
+            <q-list class="q-pl-lg">
+              <q-item
+                to="/admin/category"
+                active-class="q-item-no-link-highlighting"
+              >
+                <q-item-section avatar>
+                  <q-icon name="o_category" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Category</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item
+                to="/admin/item"
+                active-class="q-item-no-link-highlighting"
+              >
+                <q-item-section avatar>
+                  <q-icon name="o_description" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Item</q-item-label>
+                </q-item-section>
+              </q-item>
+               <q-item
+                to="/admin/attribute"
+                active-class="q-item-no-link-highlighting"
+              >
+                <q-item-section avatar>
+                  <q-icon name="o_data_object" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Attribute</q-item-label>
+                </q-item-section>
+              </q-item>
+
+            </q-list>
+          </q-expansion-item>
 
           <!-- History - Only for Admin and Desk -->
           <q-item
@@ -331,39 +329,6 @@ function getUserInitials() {
             </q-item-section>
           </q-item>
 
-          <!-- Customer - Only for Admin and Desk -->
-          <q-expansion-item
-            v-if="false"
-            icon="supervisor_account"
-            label="Customer"
-          >
-            <q-list class="q-pl-lg">
-              <q-item
-                to="/admin/user"
-                active-class="q-item-no-link-highlighting"
-              >
-                <q-item-section avatar>
-                  <q-icon name="person" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>User</q-item-label>
-                </q-item-section>
-              </q-item>
-              <q-item
-              v-if="false"
-                to="/admin/profile"
-                active-class="q-item-no-link-highlighting"
-              >
-                <q-item-section avatar>
-                  <q-icon name="description" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>Profile</q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
-
           <!-- Services - Only for Admin and Desk -->
           <q-expansion-item v-if="false" icon="pages" label="Services">
             <q-list class="q-pl-lg">
@@ -394,7 +359,6 @@ function getUserInitials() {
 
           <!-- Invoice - Only for Admin and Desk -->
           <q-item
-            v-if="false"
             to="/admin/order"
             active-class="q-item-no-link-highlighting"
           >
@@ -443,14 +407,11 @@ function getUserInitials() {
               style="background-color: #f5f5f5"
               @click="zoomLeftDrawer"
             >
-              <img
-                src="../assets/sidebar-dashboard.png"
-                alt="Quasar Logo"
-              />
+              <img src="../assets/sidebar-dashboard.png" alt="Quasar Logo" />
             </q-avatar>
             <q-toolbar-title
               class="text-weight-medium"
-              style="font-size: 1.3rem; letter-spacing: -1.0px"
+              style="font-size: 1.3rem; letter-spacing: -1px"
             >
               {{ APP_TITLE }}
             </q-toolbar-title>
@@ -485,30 +446,4 @@ function getUserInitials() {
       </q-page>
     </q-page-container>
   </q-layout>
-
-  <AddAppointmentDialog
-    v-if="showAddAppointmentDialog"
-    :selectedStaff="{ id: 0, name: 'Any therapist' }"
-    :selectedDate="new Date().toISOString().split('T')[0]"
-    :selectedTime="''"
-    :staffOptions="[]"
-    :serviceOptions="[]"
-    :selectedUser="selectedUser"
-    @close="showAddAppointmentDialog = false"
-    @save="showAddAppointmentDialog = false"
-  />
-
-  <q-dialog v-model="isHistoryDialogOpen">
-    <q-card style="min-width: 350px; min-height: 300px">
-      <q-card-section class="text-h6"> Customer History </q-card-section>
-      <q-card-section>
-        <CustomerHistoryTimeline
-          :user_Id="selectedUser ? selectedUser.id : 0"
-        />
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn flat label="Close" @click="isHistoryDialogOpen = false" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
 </template>

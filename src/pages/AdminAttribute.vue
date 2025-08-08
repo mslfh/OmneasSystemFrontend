@@ -178,7 +178,7 @@ import AttributeDialog from "src/components/dialog/AttributeDialog.vue";
 
 const router = useRouter();
 const $q = useQuasar();
-const API_URL = "/api/orders";
+const API_URL = "/api/attributes";
 const data = ref([]);
 
 const columns = [

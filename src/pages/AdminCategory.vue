@@ -1,7 +1,7 @@
 <template>
   <div class="q-pa-md">
     <q-table
-      no-data-label="No product attribute found"
+      no-data-label="No data found"
       :dense="$q.screen.lt.md"
       :columns="columns"
       :rows="data"
@@ -13,13 +13,11 @@
       binary-state-sort
     >
       <template v-slot:top-left>
-        <div class="text-h6 q-mr-md">Product Attribute</div>
+        <div class="text-h6 q-mr-md">Category</div>
         <q-chip
           outline
           color="primary"
           icon="add"
-          clickable
-          @click="openAddDialog"
         >
         Add
         </q-chip>
@@ -112,27 +110,59 @@
         </q-tr>
       </template>
 
-      <template v-slot:body-cell-type="props">
+      <template v-slot:body-cell-parent="props">
         <q-td :props="props">
           <q-chip
+            v-if="props.row.parent"
             size="sm"
             dense
-            :color="getTypeColor(props.row.type)"
-            :label="formatType(props.row.type)"
+            color="blue-2"
+            text-color="blue-8"
+            :label="props.row.parent.title"
+          />
+          <span v-else class="text-grey-5">Top Level</span>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-children_count="props">
+        <q-td :props="props">
+          <q-chip
+            size="12px"
+            dense
+            :color="props.row.children && props.row.children.length > 0 ? 'green' : 'grey'"
+            :label="props.row.children ? props.row.children.length : 0"
             text-color="white"
-            class="q-ma-xs"
           />
         </q-td>
       </template>
 
-      <template v-slot:body-cell-extra_cost="props">
+      <template v-slot:body-cell-products_count="props">
         <q-td :props="props">
           <q-chip
-            size="sm"
+            size="12px"
             dense
-            :color="parseFloat(props.row.extra_cost) > 0 ? 'green' : 'grey'"
-            :label="`$${parseFloat(props.row.extra_cost).toFixed(2)}`"
+            :color="props.row.products && props.row.products.length > 0 ? 'blue' : 'grey'"
+            :label="props.row.products ? props.row.products.length : 0"
             text-color="white"
+          />
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-status="props">
+        <q-td :props="props">
+          <q-chip
+            size="12px"
+            dense
+            :color="
+              props.row.status === 'active'
+                ? 'green-5'
+                : props.row.status === 'inactive'
+                ? 'red-5'
+                : 'grey'
+            "
+            :label="props.row.status"
+            text-color="white"
+            class="q-mr-sm"
           />
         </q-td>
       </template>
@@ -150,22 +180,38 @@
           <q-btn
             flat
             round
-            icon="o_edit"
-            color="primary"
+            icon="o_visibility"
+            color="grey"
             size="10px"
-            @click="editAttribute(props.row)"
+            @click="
+              router.push({
+                path: '/admin/category/detail',
+                query: { id: props.row.id },
+              })
+            "
           />
+          <q-btn flat round icon="more_vert" color="grey" size="10px">
+            <q-menu>
+              <q-list style="min-width: 100px">
+                <q-btn
+                  flat
+                  icon="edit"
+                  color="grey"
+                  size="10px"
+                  label="Edit"
+                  @click="
+                    router.push({
+                      path: '/admin/category/edit',
+                      query: { id: props.row.id },
+                    })
+                  "
+                />
+              </q-list>
+            </q-menu>
+          </q-btn>
         </q-td>
       </template>
     </q-table>
-
-    <!-- Attribute Dialog -->
-    <AttributeDialog
-      v-model="showDialog"
-      :attribute="selectedAttribute"
-      :isEdit="isEditMode"
-      @success="onDialogSuccess"
-    />
   </div>
 </template>
 
@@ -174,58 +220,84 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 import { format, useQuasar } from "quasar";
-import AttributeDialog from "src/components/dialog/AttributeDialog.vue";
 
 const router = useRouter();
 const $q = useQuasar();
-const API_URL = "/api/orders";
+const API_URL = "/api/categories";
 const data = ref([]);
 
 const columns = [
   {
-    name: "name",
-    label: "Name",
+    name: "title",
+    label: "Title",
     align: "left",
-    field: "name",
+    field: "title",
     sortable: true,
   },
   {
-    name: "type",
-    label: "Type",
+    name: "hint",
+    label: "Hint",
+    align: "left",
+    field: "hint",
+  },
+  {
+    name: "parent",
+    label: "Parent Category",
+    align: "left",
+    field: "parent",
+  },
+  {
+    name: "children_count",
+    label: "Sub Categories",
     align: "center",
-    field: "type",
+    field: "children",
+    format: (val) => val ? val.length : 0,
+  },
+  {
+    name: "products_count",
+    label: "Products",
+    align: "center",
+    field: "products",
+    format: (val) => val ? val.length : 0,
+  },
+  {
+    name: "status",
+    label: "Status",
+    align: "center",
+    field: "status",
     sortable: true,
   },
   {
-    name: "extra_cost",
-    label: "Extra Cost",
-    align: "right",
-    field: "extra_cost",
+    name: "created_at",
+    label: "Created At",
+    align: "center",
+    field: "created_at",
     sortable: true,
-    format: (val) => `$${parseFloat(val).toFixed(2)}`,
+    format: (val) => val ? new Date(val).toLocaleDateString() : '',
   },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
 const filterFields = [
-  { label: "Name", value: "name" },
-  { label: "Type", value: "type" },
-  { label: "Extra Cost", value: "extra_cost" },
+  { label: "Title", value: "title" },
+  { label: "Hint", value: "hint" },
+  { label: "Parent Category", value: "parent.title" },
+  { label: "Status", value: "status" },
+  { label: "ID", value: "id" },
 ];
 
 const searchFields = [
-  { icon: "engineering", label: "Material", value: "type:material" },
-  { icon: "local_dining", label: "Sweetness", value: "type:sweetness" },
-  { icon: "whatshot", label: "Spice Level", value: "type:spice_level" },
-  { icon: "texture", label: "Texture", value: "type:texture" },
-  { icon: "thermostat", label: "Temperature", value: "type:temperature" },
-  { icon: "restaurant", label: "Cooking Method", value: "type:cooking_method" },
-  { icon: "attach_money", label: "Has Extra Cost", value: "extra_cost:>0" },
-  { icon: "money_off", label: "No Extra Cost", value: "extra_cost:0" },
+  { icon: "check_circle", label: "Active", value: "status:active" },
+  { icon: "pause_circle", label: "Inactive", value: "status:inactive" },
+  { icon: "account_tree", label: "Has Parent", value: "parent_id:!null" },
+  { icon: "category", label: "Top Level", value: "parent_id:null" },
+  { icon: "folder", label: "Has Subcategories", value: "children:>0" },
+  { icon: "shopping_bag", label: "Has Products", value: "products:>0" },
+  { icon: "folder_open", label: "Empty Categories", value: "products:0" },
 ];
 
 const filter = ref({
-  field: "name",
+  field: "title",
   value: "",
 });
 const selected = ref({
@@ -240,11 +312,6 @@ const pagination = ref({
   rowsPerPage: 10,
   rowsNumber: 0,
 });
-
-// Dialog state
-const showDialog = ref(false);
-const selectedAttribute = ref({});
-const isEditMode = ref(false);
 
 onMounted(() => {
   onRequest({
@@ -326,7 +393,7 @@ const clearSelectedField = () => {
 const deleteRow = async (id) => {
   $q.dialog({
     title: "Confirm Deletion?",
-    message: "Are you sure you want to completely delete this attribute?",
+    message: "Are you sure you want to completely delete?",
     cancel: true,
     persistent: true,
   })
@@ -336,9 +403,9 @@ const deleteRow = async (id) => {
         .then(() => {
           $q.notify({
             type: "positive",
-            message: "Attribute deleted successfully.",
+            message: "Deleted successfully.",
           });
-          // Refresh the attributes list after deletion
+          // Refresh the products list after deletion
           onRequest({
             pagination: pagination.value,
             filter: undefined,
@@ -348,48 +415,12 @@ const deleteRow = async (id) => {
           console.error("Error deleting:", error);
           $q.notify({
             type: "negative",
-            message: "Failed to delete attribute.",
+            message: "Failed to delete.",
           });
         });
     })
     .onCancel(() => {
       return;
     });
-};
-
-const getTypeColor = (type) => {
-  const colorMap = {
-    material: "brown",
-    sweetness: "pink",
-    spice_level: "red",
-    texture: "orange",
-    temperature: "blue",
-    cooking_method: "purple",
-  };
-  return colorMap[type] || "grey";
-};
-
-const formatType = (type) => {
-  return type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-};
-
-const editAttribute = (attribute) => {
-  selectedAttribute.value = { ...attribute };
-  isEditMode.value = true;
-  showDialog.value = true;
-};
-
-const openAddDialog = () => {
-  selectedAttribute.value = {};
-  isEditMode.value = false;
-  showDialog.value = true;
-};
-
-const onDialogSuccess = () => {
-  // Refresh the table data when dialog operation succeeds
-  onRequest({
-    pagination: pagination.value,
-    filter: undefined,
-  });
 };
 </script>
