@@ -1,19 +1,19 @@
 <template>
   <div class="q-pa-md">
     <q-table
-      no-data-label="No product attribute found"
+      no-data-label="No orders found"
       :dense="$q.screen.lt.md"
       :columns="columns"
       :rows="data"
       row-key="id"
       v-model:pagination="pagination"
       :loading="loading"
-      :filter="filter"
+  :filter="filter.value"
       @request="onRequest"
       binary-state-sort
     >
       <template v-slot:top-left>
-        <div class="text-h6 q-mr-md">Product Attribute</div>
+        <div class="text-h6 q-mr-md">Orders</div>
         <q-chip
           outline
           color="primary"
@@ -125,35 +125,29 @@
         </q-td>
       </template>
 
-      <template v-slot:body-cell-extra_cost="props">
+      <template v-slot:body-cell-status="props">
         <q-td :props="props">
           <q-chip
             size="sm"
             dense
-            :color="parseFloat(props.row.extra_cost) > 0 ? 'green' : 'grey'"
-            :label="`$${parseFloat(props.row.extra_cost).toFixed(2)}`"
+            :color="getStatusColor(props.row.status)"
+            :label="formatType(props.row.status)"
             text-color="white"
+            class="q-ma-xs"
           />
         </q-td>
       </template>
 
-      <template v-slot:body-cell-actions="props">
+      <template v-slot:body-cell-tag="props">
         <q-td :props="props">
-          <q-btn
-            flat
-            round
-            icon="o_delete"
-            color="negative"
-            size="10px"
-            @click="deleteRow(props.row.id)"
-          />
-          <q-btn
-            flat
-            round
-            icon="o_edit"
-            color="primary"
-            size="10px"
-            @click="editAttribute(props.row)"
+          <q-chip
+            v-if="props.row.tag"
+            size="sm"
+            dense
+            color="orange"
+            :label="props.row.tag"
+            text-color="white"
+            class="q-ma-xs"
           />
         </q-td>
       </template>
@@ -173,7 +167,7 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
-import { format, useQuasar } from "quasar";
+import { date as qDate, useQuasar } from "quasar";
 import AttributeDialog from "src/components/dialog/AttributeDialog.vue";
 
 const router = useRouter();
@@ -182,50 +176,69 @@ const API_URL = "/api/orders";
 const data = ref([]);
 
 const columns = [
+  { name: "order_number", label: "Order No.", align: "left", field: "order_number", sortable: true },
+  { name: "user_id", label: "User ID", align: "left", field: "user_id", sortable: true },
+  { name: "type", label: "Type", align: "center", field: "type", sortable: true },
+  { name: "status", label: "Status", align: "center", field: "status", sortable: true },
   {
-    name: "name",
-    label: "Name",
-    align: "left",
-    field: "name",
-    sortable: true,
-  },
-  {
-    name: "type",
-    label: "Type",
-    align: "center",
-    field: "type",
-    sortable: true,
-  },
-  {
-    name: "extra_cost",
-    label: "Extra Cost",
+    name: "final_amount",
+    label: "Final Amount",
     align: "right",
-    field: "extra_cost",
+    field: "final_amount",
     sortable: true,
-    format: (val) => `$${parseFloat(val).toFixed(2)}`,
+    format: (val) => formatCurrency(val),
   },
-  { name: "actions", label: "Actions", align: "center" },
+  {
+    name: "paid_amount",
+    label: "Paid",
+    align: "right",
+    field: "paid_amount",
+    sortable: true,
+    format: (val) => formatCurrency(val),
+  },
+  { name: "payment_method", label: "Payment", align: "left", field: "payment_method", sortable: true },
+  { name: "tag", label: "Tag", align: "center", field: "tag", sortable: true },
+  {
+    name: "created_at",
+    label: "Created At",
+    align: "left",
+    field: "created_at",
+    sortable: true,
+    format: (val) => formatDate(val),
+  },
 ];
 
 const filterFields = [
-  { label: "Name", value: "name" },
+  { label: "Order No.", value: "order_number" },
+  { label: "User ID", value: "user_id" },
   { label: "Type", value: "type" },
-  { label: "Extra Cost", value: "extra_cost" },
+  { label: "Status", value: "status" },
+  { label: "Payment Method", value: "payment_method" },
+  { label: "Tag", value: "tag" },
+  { label: "Note", value: "note" },
+  { label: "Remark", value: "remark" },
 ];
 
 const searchFields = [
-  { icon: "engineering", label: "Material", value: "type:material" },
-  { icon: "local_dining", label: "Sweetness", value: "type:sweetness" },
-  { icon: "whatshot", label: "Spice Level", value: "type:spice_level" },
-  { icon: "texture", label: "Texture", value: "type:texture" },
-  { icon: "thermostat", label: "Temperature", value: "type:temperature" },
-  { icon: "restaurant", label: "Cooking Method", value: "type:cooking_method" },
-  { icon: "attach_money", label: "Has Extra Cost", value: "extra_cost:>0" },
-  { icon: "money_off", label: "No Extra Cost", value: "extra_cost:0" },
+  // Types
+  { icon: "restaurant", label: "Dine In", value: "type:dine_in" },
+  { icon: "takeout_dining", label: "Takeaway", value: "type:takeaway" },
+  { icon: "delivery_dining", label: "Delivery", value: "type:delivery" },
+  // Status
+  { icon: "check_circle", label: "Completed", value: "status:completed" },
+  { icon: "hourglass_top", label: "Pending", value: "status:pending" },
+  { icon: "cancel", label: "Canceled", value: "status:canceled" },
+  // Payment methods
+  { icon: "payments", label: "Cash", value: "payment_method:cash" },
+  { icon: "credit_card", label: "Card", value: "payment_method:card" },
+  { icon: "account_balance", label: "Bank Transfer", value: "payment_method:bank_transfer" },
+  { icon: "account_balance_wallet", label: "Digital Wallet", value: "payment_method:digital_wallet" },
+  // Tag
+  { icon: "priority_high", label: "Urgent", value: "tag:urgent" },
 ];
 
 const filter = ref({
-  field: "name",
+  field: "order_number",
   value: "",
 });
 const selected = ref({
@@ -289,7 +302,7 @@ const onRequest = (props) => {
   loading.value = true;
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
   // Only send filter if value is not empty, and pass a plain object
-  const filterValue = filter.value ? { ...filter.value } : undefined;
+  const filterValue = filter.value.value ? { ...filter.value } : undefined;
   // Only send selected if field is not empty, and pass a plain object
   const selectedValue =
     selected.value && selected.value.field ? { ...selected.value } : undefined;
@@ -359,18 +372,40 @@ const deleteRow = async (id) => {
 
 const getTypeColor = (type) => {
   const colorMap = {
-    material: "brown",
-    sweetness: "pink",
-    spice_level: "red",
-    texture: "orange",
-    temperature: "blue",
-    cooking_method: "purple",
+    dine_in: "teal",
+    takeaway: "orange",
+    delivery: "blue",
   };
   return colorMap[type] || "grey";
 };
 
+const getStatusColor = (status) => {
+  const colorMap = {
+    completed: "green",
+    pending: "orange",
+    canceled: "red",
+    cancelled: "red",
+  };
+  return colorMap[status] || "grey";
+};
+
 const formatType = (type) => {
   return type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+const formatCurrency = (val) => {
+  const num = Number(val);
+  if (Number.isNaN(num)) return "-";
+  return `$${num.toFixed(2)}`;
+};
+
+const formatDate = (val) => {
+  if (!val) return "-";
+  try {
+  return qDate.formatDate(new Date(val), "YYYY-MM-DD HH:mm");
+  } catch (e) {
+    return String(val);
+  }
 };
 
 const editAttribute = (attribute) => {

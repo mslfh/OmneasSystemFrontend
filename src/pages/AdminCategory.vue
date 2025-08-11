@@ -14,13 +14,7 @@
     >
       <template v-slot:top-left>
         <div class="text-h6 q-mr-md">Category</div>
-        <q-chip
-          outline
-          color="primary"
-          icon="add"
-        >
-        Add
-        </q-chip>
+        <q-chip outline color="primary" icon="add"> Add </q-chip>
       </template>
 
       <template v-slot:top-right>
@@ -129,7 +123,11 @@
           <q-chip
             size="12px"
             dense
-            :color="props.row.children && props.row.children.length > 0 ? 'green' : 'grey'"
+            :color="
+              props.row.children && props.row.children.length > 0
+                ? 'green'
+                : 'grey'
+            "
             :label="props.row.children ? props.row.children.length : 0"
             text-color="white"
           />
@@ -141,7 +139,11 @@
           <q-chip
             size="12px"
             dense
-            :color="props.row.products && props.row.products.length > 0 ? 'blue' : 'grey'"
+            :color="
+              props.row.products && props.row.products.length > 0
+                ? 'blue'
+                : 'grey'
+            "
             :label="props.row.products ? props.row.products.length : 0"
             text-color="white"
           />
@@ -251,14 +253,14 @@ const columns = [
     label: "Sub Categories",
     align: "center",
     field: "children",
-    format: (val) => val ? val.length : 0,
+    format: (val) => (val ? val.length : 0),
   },
   {
     name: "products_count",
     label: "Products",
     align: "center",
     field: "products",
-    format: (val) => val ? val.length : 0,
+    format: (val) => (val ? val.length : 0),
   },
   {
     name: "status",
@@ -273,7 +275,7 @@ const columns = [
     align: "center",
     field: "created_at",
     sortable: true,
-    format: (val) => val ? new Date(val).toLocaleDateString() : '',
+    format: (val) => (val ? new Date(val).toLocaleDateString() : ""),
   },
   { name: "actions", label: "Actions", align: "center" },
 ];

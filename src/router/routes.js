@@ -43,6 +43,7 @@ const routes = [
       { path: 'combo', component: () => import('pages/AdminCombo.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'order', component: () => import('pages/AdminOrder.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'dashboard', component: () => import('pages/AdminDashboard.vue'), beforeEnter: adminDeskOnlyGuard },
+      { path: 'setting', component: () => import('pages/AdminSetting.vue'), beforeEnter: adminDeskOnlyGuard },
     ]
   },
   {

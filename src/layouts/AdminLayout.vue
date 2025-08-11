@@ -288,6 +288,21 @@ function getUserInitials() {
             </q-list>
           </q-expansion-item>
 
+
+
+          <!-- Invoice - Only for Admin and Desk -->
+          <q-item
+            to="/admin/order"
+            active-class="q-item-no-link-highlighting"
+          >
+            <q-item-section avatar>
+              <q-icon name="payments" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Order</q-item-label>
+            </q-item-section>
+          </q-item>
+
           <!-- History - Only for Admin and Desk -->
           <q-item
             v-if="false"
@@ -357,19 +372,6 @@ function getUserInitials() {
             </q-list>
           </q-expansion-item>
 
-          <!-- Invoice - Only for Admin and Desk -->
-          <q-item
-            to="/admin/order"
-            active-class="q-item-no-link-highlighting"
-          >
-            <q-item-section avatar>
-              <q-icon name="payments" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>Invoice</q-item-label>
-            </q-item-section>
-          </q-item>
-
           <!-- Voucher - Only for Admin and Desk -->
           <q-item
             v-if="false"
@@ -386,7 +388,6 @@ function getUserInitials() {
 
           <!-- Setting - Only for Admin and Desk -->
           <q-item
-            v-if="false"
             to="/admin/setting"
             active-class="q-item-no-link-highlighting"
           >

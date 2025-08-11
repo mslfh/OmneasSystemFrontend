@@ -8,7 +8,7 @@
         </p>
       </q-card-section>
       <q-separator />
-      <q-card-section class="q-pa-md">
+      <q-card-section v-if="false" class="q-pa-md">
 
         <!-- Placeholder of  booking_reminder_msg -->
         <q-label
