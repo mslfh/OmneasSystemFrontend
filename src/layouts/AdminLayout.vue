@@ -67,11 +67,10 @@ function getUserInitials() {
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header
-      elevated
-      class="bg-white absolute-top q-mx-lg-md q-mt-md"
-      style="right: 8px; border-radius: 4px"
+      class="bg-white absolute-top shadow_custom q-mx-lg q-mt-md q-py-xs"
+      style="right: 8px; border-radius: 6px"
     >
-      <q-toolbar>
+      <q-toolbar class="no-shadow">
         <q-btn
           flat
           dense
@@ -142,7 +141,6 @@ function getUserInitials() {
             </q-item>
           </q-list>
         </q-menu>
-
         <div class="q-gutter-sm row items-center no-wrap">
           <q-btn
             round
@@ -209,7 +207,7 @@ function getUserInitials() {
       show-if-above
       :width="zoomDrawer ? 70 : 250"
       bordered
-      class="bg-white text-grey-8 items-center"
+      class="bg-white text-grey-7 items-center"
     >
       <q-scroll-area
         q-scroll-area
@@ -273,7 +271,7 @@ function getUserInitials() {
                   <q-item-label>Item</q-item-label>
                 </q-item-section>
               </q-item>
-               <q-item
+              <q-item
                 to="/admin/attribute"
                 active-class="q-item-no-link-highlighting"
               >
@@ -284,17 +282,11 @@ function getUserInitials() {
                   <q-item-label>Attribute</q-item-label>
                 </q-item-section>
               </q-item>
-
             </q-list>
           </q-expansion-item>
 
-
-
           <!-- Invoice - Only for Admin and Desk -->
-          <q-item
-            to="/admin/order"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item to="/admin/order" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="payments" />
             </q-item-section>
@@ -400,19 +392,31 @@ function getUserInitials() {
           </q-item>
         </q-list>
       </q-scroll-area>
-      <div class="absolute-top" style="height: 80px; padding-left: 10px">
+
+      <div class="absolute-top" style="height: 100px; padding-left: 10px">
         <div class="absolute-bottom bg-transparent">
-          <q-toolbar class="bg-white text-grey-8">
+          <q-toolbar
+            class="bg-white text-grey-8 drawer-toolbar"
+            :class="{ 'drawer-mini': zoomDrawer }"
+          >
             <q-avatar
               size="40px"
               style="background-color: #f5f5f5"
               @click="zoomLeftDrawer"
+              class="drawer-logo"
             >
-              <img src="../assets/sidebar-dashboard.png" alt="Quasar Logo" />
+              <img src="../assets/sidebar-dashboard.png" alt="Logo" />
             </q-avatar>
             <q-toolbar-title
-              class="text-weight-medium"
-              style="font-size: 1.3rem; letter-spacing: -1px"
+              v-show="!zoomDrawer"
+              class="text-weight-medium text-grey-8"
+              style="
+                font-size: 1.3rem;
+                letter-spacing: -1px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
             >
               {{ APP_TITLE }}
             </q-toolbar-title>
@@ -442,9 +446,32 @@ function getUserInitials() {
     </q-drawer>
 
     <q-page-container class="bg-grey-2">
-      <q-page class="q-pa-lg q-mt-sm">
+      <q-page class="q-pa-md q-mt-sm">
         <router-view />
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
+
+<style lang="css">
+.shadow_custom {
+  box-shadow: 0 3px 8px #303c491f !important;
+}
+.drawer-toolbar {
+  display: flex;
+  align-items: center;
+  height: 100px;
+  padding: 0 8px;
+}
+.drawer-logo {
+  margin: 0 auto;
+  transition: margin 0.2s;
+}
+.drawer-mini .drawer-logo {
+  margin-left: auto;
+  margin-right: auto;
+}
+.drawer-mini .drawer-title {
+  display: none !important;
+}
+</style>

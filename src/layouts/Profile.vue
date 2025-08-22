@@ -38,6 +38,16 @@
       </q-item-section>
     </q-item>
 
+    <!-- Change Password for Admin and Desk roles -->
+    <q-item v-if="canChangePassword" class="q-mb-sm" clickable v-ripple @click="showChangePasswordDialog = true">
+      <q-item-section avatar>
+        <q-avatar text-color="grey" icon="lock" />
+      </q-item-section>
+      <q-item-section>
+        <q-item-label>Change Password</q-item-label>
+      </q-item-section>
+    </q-item>
+
     <q-item class="q-mb-sm" clickable v-ripple @click="handleLogout">
       <q-item-section avatar>
         <q-avatar text-color="grey" icon="logout" />
@@ -46,17 +56,32 @@
         <q-item-label>Log Out</q-item-label>
       </q-item-section>
     </q-item>
+
+    <!-- Change Password Dialog -->
+    <ChangePasswordDialog
+      v-model="showChangePasswordDialog"
+      @success="onPasswordChanged"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getCurrentUser, logout } from '../utils/auth'
+import { ref, onMounted, computed } from 'vue'
+import { getCurrentUser, logout, isAdminOrDesk } from '../utils/auth'
+import ChangePasswordDialog from '../components/dialog/ChangePasswordDialog.vue'
+import { useQuasar } from 'quasar'
 
+const $q = useQuasar()
 const currentUser = ref(null)
+const showChangePasswordDialog = ref(false)
 
 onMounted(() => {
   currentUser.value = getCurrentUser()
+})
+
+// Check if current user can change password (Admin or Desk role)
+const canChangePassword = computed(() => {
+  return isAdminOrDesk()
 })
 
 // Get user initials for avatar display
@@ -79,5 +104,14 @@ function getUserInitials() {
 // Handle logout
 function handleLogout() {
   logout()
+}
+
+// Handle successful password change
+function onPasswordChanged() {
+  $q.notify({
+    type: 'positive',
+    message: 'Password updated successfully',
+    position: 'top'
+  })
 }
 </script>

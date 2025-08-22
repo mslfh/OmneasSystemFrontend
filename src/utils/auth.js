@@ -27,6 +27,16 @@ export function getUserRole() {
 }
 
 /**
+ * Check if current user is Admin or Desk
+ * @returns {boolean}
+ */
+export function isAdminOrDesk() {
+  const role = getUserRole();
+  return role === "Admin" || role === "Desk" || role === "Root";
+}
+
+
+/**
  * Check if current user is Admin
  * @returns {boolean}
  */
@@ -74,17 +84,16 @@ export function canOnlyAccessSchedule() {
  */
 export function isRouteAllowed(path) {
   const role = getUserRole();
-
   if (role === "Staff") {
     const allowedStaffRoutes = [
       "/admin",
       "/admin/schedule",
       "/admin/schedule/week",
-      "/admin/schedule/day"
+      "/admin/schedule/day",
+      "/admin/appointment",
     ];
     return allowedStaffRoutes.includes(path);
   }
-
   // Admin and Desk can access all routes
   return role === "Admin" || role === "Desk";
 }
