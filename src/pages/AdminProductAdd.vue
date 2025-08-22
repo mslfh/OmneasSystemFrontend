@@ -246,13 +246,8 @@
                             <div class="row items-center">
                               <div class="col">
                                 <span>{{ node.name || node.type }}</span>
-                                <!-- 显示已配置的默认食材 -->
-                                <span v-if="node.defaultIngredient" class="text-blue-7 q-ml-sm" style="font-size: 11px">
-                                  (Default: {{ node.defaultIngredient.name }} ${{ node.defaultIngredient.price }})
-                                </span> 
-                                <!-- 显示价格差额 -->
-                                <span v-if="node.additionalPrice !== undefined" class="text-green-7 q-ml-sm" style="font-size: 12px">
-                                  +${{ node.additionalPrice.toFixed(2) }}
+                                <span v-if="node.price" class="text-green-7 q-ml-sm" style="font-size: 12px">
+                                  +${{ node.price }}
                                 </span>
                                 <span v-if="node.description" class="text-grey-7 q-ml-sm" style="font-size: 12px">
                                   - {{ node.description }}
@@ -535,22 +530,6 @@ const groupedIngredients = computed(() => {
   return groups;
 });
 
-// 获取已选择的ingredients按type分组
-const selectedIngredientsByType = computed(() => {
-  const result = {};
-  product.value.ingredients.forEach(ingredientId => {
-    const ingredient = ingredientOptions.value.find(item => item.id === ingredientId);
-    if (ingredient) {
-      const type = ingredient.type || 'Other';
-      if (!result[type]) {
-        result[type] = [];
-      }
-      result[type].push(ingredient);
-    }
-  });
-  return result;
-});
-
 // 切换ingredient选中状态
 function toggleIngredient(item) {
   const index = product.value.ingredients.indexOf(item.id);
@@ -693,38 +672,19 @@ function buildCustomizationTree(items) {
         children: []
       };
     }
-
-    // 计算价格差额
-    const selectedIngredientsOfType = selectedIngredientsByType.value[type] || [];
-    const defaultPrice = selectedIngredientsOfType.length > 0 ? selectedIngredientsOfType[0].price : 0;
-    const additionalPrice = Math.max(0, item.price - defaultPrice);
-
     typeMap[type].children.push({
       id: item.id,
       name: item.name,
       description: item.description,
       price: item.price,
-      additionalPrice: additionalPrice,
-      type: item.type,
-      isDefault: selectedIngredientsOfType.some(ing => ing.id === item.id)
+      type: item.type
     });
   });
 
-  // 为父节点添加默认食材信息
-  Object.values(typeMap).forEach(typeNode => {
-    const selectedIngredientsOfType = selectedIngredientsByType.value[typeNode.type] || [];
-    if (selectedIngredientsOfType.length > 0) {
-      typeNode.defaultIngredient = selectedIngredientsOfType[0];
-      // 默认选中已配置的食材
-      const defaultItem = typeNode.children.find(child => child.isDefault);
-      if (defaultItem && !product.value.customizations.includes(defaultItem.id)) {
-        product.value.customizations.push(defaultItem.id);
-      }
-    }
-  });
-
   return Object.values(typeMap);
-}function onAllPriceBlur() {
+}
+
+function onAllPriceBlur() {
   ["price", "discount", "selling_price"].forEach((field) => {
     let val = product.value[field];
     if (val === "" || val === null || val === undefined || isNaN(Number(val))) {
