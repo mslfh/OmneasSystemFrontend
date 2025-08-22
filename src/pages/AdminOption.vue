@@ -1,7 +1,7 @@
 <template>
   <div class="q-pa-md">
     <q-table
-      no-data-label="No products found"
+      no-data-label="No product attribute found"
       :dense="$q.screen.lt.md"
       :columns="columns"
       :rows="data"
@@ -13,13 +13,13 @@
       binary-state-sort
     >
       <template v-slot:top-left>
-        <div class="text-h6 q-mr-md">Product</div>
+        <div class="text-h6 q-mr-md">Product Attribute</div>
         <q-chip
           outline
           color="primary"
           icon="add"
           clickable
-          @click="router.push('/admin/product/add')"
+          @click="openAddDialog"
         >
         Add
         </q-chip>
@@ -112,48 +112,26 @@
         </q-tr>
       </template>
 
-      <template v-slot:body-cell-image="props">
+      <template v-slot:body-cell-type="props">
         <q-td :props="props">
-          <q-avatar size="40px" rounded>
-            <img :src="props.row.image" :alt="props.row.title" />
-          </q-avatar>
-        </q-td>
-      </template>
-
-      <template v-slot:body-cell-is_featured="props">
-        <q-td :props="props">
-          <q-icon
-            :name="props.row.is_featured ? 'star' : 'star_border'"
-            :color="props.row.is_featured ? 'amber' : 'grey'"
+          <q-chip
             size="sm"
+            dense
+            :color="getTypeColor(props.row.type)"
+            :label="formatType(props.row.type)"
+            text-color="white"
+            class="q-ma-xs"
           />
         </q-td>
       </template>
 
-      <template v-slot:body-cell-categories="props">
-        <q-td :props="props">
-          <div class="q-gutter-xs">
-            <q-chip
-              v-for="category in props.row.categories"
-              :key="category.id"
-              size="sm"
-              dense
-              color="blue-2"
-              text-color="blue-8"
-              :label="category.title"
-              class="q-ma-xs"
-            />
-          </div>
-        </q-td>
-      </template>
-
-      <template v-slot:body-cell-stock="props">
+      <template v-slot:body-cell-extra_cost="props">
         <q-td :props="props">
           <q-chip
-            size="12px"
+            size="sm"
             dense
-            :color="props.row.stock > 0 ? 'green' : 'red'"
-            :label="props.row.stock"
+            :color="parseFloat(props.row.extra_cost) > 0 ? 'green' : 'grey'"
+            :label="`$${parseFloat(props.row.extra_cost).toFixed(2)}`"
             text-color="white"
           />
         </q-td>
@@ -172,57 +150,22 @@
           <q-btn
             flat
             round
-            icon="o_visibility"
-            color="grey"
+            icon="o_edit"
+            color="primary"
             size="10px"
-            @click="
-              router.push({
-                path: '/admin/product/detail',
-                query: { id: props.row.id },
-              })
-            "
-          />
-          <q-btn flat round icon="more_vert" color="grey" size="10px">
-            <q-menu>
-              <q-list style="min-width: 100px">
-                <q-btn
-                  flat
-                  icon="receipt_long"
-                  color="grey"
-                  size="10px"
-                  label="invoice"
-                  @click="
-                    router.push({
-                      path: '/admin/product/invoice',
-                      query: { id: props.row.id },
-                    })
-                  "
-                />
-              </q-list>
-            </q-menu>
-          </q-btn>
-        </q-td>
-      </template>
-
-      <template v-slot:body-cell-status="props">
-        <q-td :props="props">
-          <q-chip
-            size="12px"
-            dense
-            :color="
-              props.row.status === 'active'
-                ? 'green-5'
-                : props.row.status === 'inactive'
-                ? 'red-5'
-                : 'grey'
-            "
-            :label="props.row.status"
-            text-color="white"
-            class="q-mr-sm"
+            @click="editAttribute(props.row)"
           />
         </q-td>
       </template>
     </q-table>
+
+    <!-- Attribute Dialog -->
+    <AttributeDialog
+      v-model="showDialog"
+      :attribute="selectedAttribute"
+      :isEdit="isEditMode"
+      @success="onDialogSuccess"
+    />
   </div>
 </template>
 
@@ -231,92 +174,58 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 import { format, useQuasar } from "quasar";
+import AttributeDialog from "src/components/dialog/AttributeDialog.vue";
 
 const router = useRouter();
 const $q = useQuasar();
-const API_URL = "/api/products";
+const API_URL = "/api/attributes";
 const data = ref([]);
 
 const columns = [
-  { name: "image", label: "Image", align: "center", field: "image" },
-  { name: "code", label: "Code", align: "left", field: "code", sortable: true },
   {
-    name: "title",
-    label: "Title",
+    name: "name",
+    label: "Name",
     align: "left",
-    field: "title",
+    field: "name",
     sortable: true,
   },
   {
-    name: "second_title",
-    label: "Second Title",
-    align: "left",
-    field: "second_title",
+    name: "type",
+    label: "Type",
+    align: "center",
+    field: "type",
+    sortable: true,
   },
   {
-    name: "categories",
-    label: "Categories",
-    align: "left",
-    field: "categories",
-  },
-  {
-    name: "price",
-    label: "Price",
+    name: "extra_cost",
+    label: "Extra Cost",
     align: "right",
-    field: "price",
+    field: "extra_cost",
     sortable: true,
-    format: (val) => `$${val}`,
-  },
-  {
-    name: "selling_price",
-    label: "Selling Price",
-    align: "right",
-    field: "selling_price",
-    sortable: true,
-    format: (val) => `$${val}`,
-  },
-  {
-    name: "stock",
-    label: "Stock",
-    align: "center",
-    field: "stock",
-    sortable: true,
-  },
-  {
-    name: "status",
-    label: "Status",
-    align: "center",
-    field: "status",
-    sortable: true,
-  },
-  {
-    name: "is_featured",
-    label: "Featured",
-    align: "center",
-    field: "is_featured",
+    format: (val) => `$${parseFloat(val).toFixed(2)}`,
   },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
 const filterFields = [
-  { label: "Title", value: "title" },
-  { label: "Code", value: "code" },
-  { label: "Second Title", value: "second_title" },
-  { label: "Description", value: "description" },
-  { label: "Tag", value: "tag" },
+  { label: "Name", value: "name" },
+  { label: "Type", value: "type" },
+  { label: "Extra Cost", value: "extra_cost" },
 ];
 
 const searchFields = [
-  { icon: "star", label: "Featured", value: "is_featured:true" },
-  { icon: "star_border", label: "Not Featured", value: "is_featured:false" },
-  { icon: "check_circle", label: "Active", value: "status:active" },
-  { icon: "pause_circle", label: "Inactive", value: "status:inactive" },
-  { icon: "inventory_2", label: "In Stock", value: "stock:>0" },
-  { icon: "no_backpack", label: "Out of Stock", value: "stock:0" },
+  { icon: "engineering", label: "Material", value: "type:material" },
+  { icon: "local_dining", label: "Sweetness", value: "type:sweetness" },
+  { icon: "whatshot", label: "Spice Level", value: "type:spice_level" },
+  { icon: "texture", label: "Texture", value: "type:texture" },
+  { icon: "thermostat", label: "Temperature", value: "type:temperature" },
+  { icon: "restaurant", label: "Cooking Method", value: "type:cooking_method" },
+  { icon: "attach_money", label: "Has Extra Cost", value: "extra_cost:>0" },
+  { icon: "money_off", label: "No Extra Cost", value: "extra_cost:0" },
 ];
 
 const filter = ref({
-  field: "title",
+  field: "name",
   value: "",
 });
 const selected = ref({
@@ -331,6 +240,11 @@ const pagination = ref({
   rowsPerPage: 10,
   rowsNumber: 0,
 });
+
+// Dialog state
+const showDialog = ref(false);
+const selectedAttribute = ref({});
+const isEditMode = ref(false);
 
 onMounted(() => {
   onRequest({
@@ -412,7 +326,7 @@ const clearSelectedField = () => {
 const deleteRow = async (id) => {
   $q.dialog({
     title: "Confirm Deletion?",
-    message: "Are you sure you want to completely delete?",
+    message: "Are you sure you want to completely delete this attribute?",
     cancel: true,
     persistent: true,
   })
@@ -422,9 +336,9 @@ const deleteRow = async (id) => {
         .then(() => {
           $q.notify({
             type: "positive",
-            message: "Deleted successfully.",
+            message: "Attribute deleted successfully.",
           });
-          // Refresh the products list after deletion
+          // Refresh the attributes list after deletion
           onRequest({
             pagination: pagination.value,
             filter: undefined,
@@ -434,12 +348,48 @@ const deleteRow = async (id) => {
           console.error("Error deleting:", error);
           $q.notify({
             type: "negative",
-            message: "Failed to delete.",
+            message: "Failed to delete attribute.",
           });
         });
     })
     .onCancel(() => {
       return;
     });
+};
+
+const getTypeColor = (type) => {
+  const colorMap = {
+    material: "brown",
+    sweetness: "pink",
+    spice_level: "red",
+    texture: "orange",
+    temperature: "blue",
+    cooking_method: "purple",
+  };
+  return colorMap[type] || "grey";
+};
+
+const formatType = (type) => {
+  return type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+const editAttribute = (attribute) => {
+  selectedAttribute.value = { ...attribute };
+  isEditMode.value = true;
+  showDialog.value = true;
+};
+
+const openAddDialog = () => {
+  selectedAttribute.value = {};
+  isEditMode.value = false;
+  showDialog.value = true;
+};
+
+const onDialogSuccess = () => {
+  // Refresh the table data when dialog operation succeeds
+  onRequest({
+    pagination: pagination.value,
+    filter: undefined,
+  });
 };
 </script>
