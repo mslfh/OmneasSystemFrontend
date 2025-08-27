@@ -1,69 +1,64 @@
 <template>
   <q-page class="bg-grey-1">
-    <!-- 顶部导航栏 -->
-    <q-header elevated class="bg-deep-orange text-white">
-      <q-toolbar>
-        <q-toolbar-title class="text-weight-bold">Choose Dining Type</q-toolbar-title>
-      </q-toolbar>
-    </q-header>
+    <!-- 统一的页面容器 -->
+    <div class="row justify-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <!-- 页面标题 -->
+        <div class="text-h4 text-weight-bold text-grey-8 q-mb-lg text-center">
+          Choose Dining Type
+        </div>
 
-    <div class="q-pa-md">
-      <!-- 就餐方式选择 -->
-      <q-card class="q-mb-md shadow-2 rounded-borders-lg">
-        <q-card-section class="text-center q-pa-lg">
-          <div class="text-h5 text-weight-bold q-mb-md text-grey-8">
-            How would you like to dine?
-          </div>
-          <div class="text-body2 text-grey-6 q-mb-lg">
-            Choose your dining preference
-          </div>
+        <!-- 就餐方式选择 -->
+        <q-card class="q-mb-md shadow-2 rounded-borders-lg">
+          <q-card-section class="text-center q-pa-lg">
+            <div class="text-h5 text-weight-bold q-mb-md text-grey-8">
+              How would you like to dine?
+            </div>
+            <div class="text-body2 text-grey-6 q-mb-lg">
+              Choose your dining preference
+            </div>
 
-          <div class="row q-gutter-md justify-center">
-            <q-card
-              flat
-              bordered
-              class="col-5 cursor-pointer hover-lift dining-option"
-              @click="selectDiningType('takeaway')"
-            >
-              <q-card-section class="text-center q-pa-lg">
-                <q-icon name="shopping_bag" size="3rem" color="deep-orange" class="q-mb-sm" />
-                <div class="text-h6 text-weight-medium">Take Away</div>
-                <div class="text-caption text-grey-6">Order for pickup</div>
-              </q-card-section>
-            </q-card>
+            <div class="row q-gutter-md justify-center">
+              <q-card
+                flat
+                bordered
+                class="col-5 cursor-pointer hover-lift dining-option"
+                @click="selectDiningType('takeaway')"
+              >
+                <q-card-section class="text-center q-pa-lg">
+                  <q-icon name="shopping_bag" size="3rem" color="deep-orange" class="q-mb-sm" />
+                  <div class="text-h6 text-weight-medium">Take Away</div>
+                  <div class="text-caption text-grey-6">Order for pickup</div>
+                </q-card-section>
+              </q-card>
 
-            <q-card
-              flat
-              bordered
-              class="col-5 cursor-pointer hover-lift dining-option"
-              @click="selectDiningType('dinein')"
-            >
-              <q-card-section class="text-center q-pa-lg">
-                <q-icon name="restaurant" size="3rem" color="deep-orange" class="q-mb-sm" />
-                <div class="text-h6 text-weight-medium">Dine In</div>
-                <div class="text-caption text-grey-6">Eat at restaurant</div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </q-card-section>
+              <q-card
+                flat
+                bordered
+                class="col-5 cursor-pointer hover-lift dining-option"
+                @click="selectDiningType('dinein')"
+              >
+                <q-card-section class="text-center q-pa-lg">
+                  <q-icon name="restaurant" size="3rem" color="deep-orange" class="q-mb-sm" />
+                  <div class="text-h6 text-weight-medium">Dine In</div>
+                  <div class="text-caption text-grey-6">Eat at restaurant</div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </q-card-section>
+        </q-card>
 
+        <!-- 额外的信息卡片 -->
+        <q-card flat bordered class="bg-orange-1 q-mb-md">
+          <q-card-section>
+            <div class="text-body2 text-grey-7">
+              <q-icon name="info" color="deep-orange" class="q-mr-sm" />
+              You can change your dining preference later if needed.
+            </div>
+          </q-card-section>
+        </q-card>
 
-        <q-card-section>
-
-           <!-- 额外的信息卡片 -->
-      <q-card flat bordered class="bg-orange-1 q-mb-md">
-        <q-card-section>
-          <div class="text-body2 text-grey-7" width="100%">
-            <q-icon name="info" color="deep-orange" class="q-mr-sm" />
-            You can change your dining preference later if needed.
-          </div>
-        </q-card-section>
-      </q-card>
-        </q-card-section>
-
-      </q-card>
-
-
+      </div>
     </div>
   </q-page>
 </template>

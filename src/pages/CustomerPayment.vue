@@ -9,7 +9,7 @@
 
         <!-- 订单摘要 -->
         <q-card class="q-mb-lg shadow-2 rounded-borders-lg">
-          <q-card-section class="q-pa-md bg-primary text-white">
+          <q-card-section class="q-pa-md bg-deep-orange text-white">
             <div class="text-h6">Order Summary</div>
           </q-card-section>
 
@@ -18,7 +18,7 @@
             <div class="row items-center q-mb-md">
               <q-icon
                 :name="orderInfo.diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'"
-                color="primary"
+                color="deep-orange"
                 size="sm"
                 class="q-mr-sm"
               />
@@ -51,7 +51,7 @@
             <!-- 总价 -->
             <div class="row items-center justify-between">
               <div class="text-h6 text-weight-bold">Total:</div>
-              <div class="text-h6 text-weight-bold text-primary">
+              <div class="text-h6 text-weight-bold text-deep-orange">
                 ${{ orderInfo.total.toFixed(2) }}
               </div>
             </div>
@@ -122,7 +122,7 @@
             <q-option-group
               v-model="selectedPaymentMethod"
               :options="paymentMethods"
-              color="primary"
+              color="deep-orange"
               type="radio"
             >
               <template v-slot:label="opt">
@@ -199,7 +199,7 @@
           />
           <q-btn
             class="col"
-            color="primary"
+            color="deep-orange"
             size="lg"
             label="Place Order"
             icon="payment"
@@ -214,7 +214,7 @@
     <!-- 处理中对话框 -->
     <q-dialog v-model="showProcessingDialog" persistent>
       <q-card class="q-pa-lg text-center" style="min-width: 300px">
-        <q-spinner-hourglass size="50px" color="primary" class="q-mb-md" />
+        <q-spinner-hourglass size="50px" color="deep-orange" class="q-mb-md" />
         <div class="text-h6 q-mb-sm">Processing Payment</div>
         <div class="text-body2 text-grey-6">Please wait while we process your order...</div>
       </q-card>

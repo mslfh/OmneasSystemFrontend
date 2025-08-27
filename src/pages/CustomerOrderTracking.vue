@@ -47,7 +47,7 @@
             <q-stepper
               v-model="currentStep"
               vertical
-              color="primary"
+              color="deep-orange"
               active-color="primary"
               done-color="green"
               class="bg-transparent"

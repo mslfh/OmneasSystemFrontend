@@ -1,39 +1,42 @@
 <template>
   <q-page class="bg-grey-1">
-    <!-- 顶部导航栏 -->
-    <q-header elevated class="bg-deep-orange text-white">
-      <q-toolbar>
-        <q-btn flat round dense icon="arrow_back" @click="$router.go(-1)" />
-        <q-toolbar-title class="text-weight-bold">Order Now</q-toolbar-title>
-        <q-btn flat round dense icon="person" />
-      </q-toolbar>
-    </q-header>
+    <!-- 统一的页面容器 -->
+    <div class="row justify-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <!-- 页面标题 -->
+        <div class="text-h4 text-weight-bold text-grey-8 q-mb-lg text-center">
+          Order Menu
+        </div>
 
-    <div class="q-pa-md">
-      <!-- 就餐方式显示 -->
-      <q-card flat bordered class="q-mb-md bg-orange-1">
-        <q-card-section class="row items-center q-py-sm">
-          <q-icon
-            :name="diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'"
-            color="deep-orange"
-            class="q-mr-sm"
-          />
-          <div class="text-body1 text-weight-medium">
-            {{ diningType === 'takeaway' ? 'Take Away' : 'Dine In' }}
-          </div>
-          <q-space />
-          <q-btn
-            flat
-            dense
-            color="deep-orange"
-            label="Change"
-            size="sm"
-            @click="changeDiningType"
-          />
-        </q-card-section>
-      </q-card>
+        <!-- 就餐方式显示 -->
+        <q-card class="q-mb-lg shadow-2 rounded-borders-lg">
+          <q-card-section class="q-pa-md bg-deep-orange text-white">
+            <div class="row items-center justify-between">
+              <div class="row items-center">
+                <q-icon
+                  :name="diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'"
+                  size="sm"
+                  class="q-mr-sm"
+                />
+                <span class="text-h6">
+                  {{ diningType === 'takeaway' ? 'Take Away Order' : 'Dine In Order' }}
+                </span>
+              </div>
+              <q-btn
+                flat
+                dense
+                icon="edit"
+                text-color="white"
+                @click="changeDiningType"
+                class="q-ml-sm"
+              >
+                <q-tooltip>Change dining type</q-tooltip>
+              </q-btn>
+            </div>
+          </q-card-section>
+        </q-card>
 
-      <!-- 分类标签页 -->
+        <!-- 分类标签页 -->
       <q-tabs
         v-model="currentTab"
         dense
@@ -231,6 +234,8 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    </div>
   </q-page>
 </template>
 
