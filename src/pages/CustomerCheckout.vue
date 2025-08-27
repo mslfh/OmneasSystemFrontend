@@ -3,12 +3,99 @@
     <div class="row justify-center">
       <div class="col-12 col-md-10 col-lg-8">
         <!-- 页面标题 -->
-        <div class="row items-center justify-between q-mb-lg">
-          <div class="text-h4 text-weight-bold text-grey-8">Your Order</div>
-          <q-chip color="primary" text-color="white" size="lg">
-            Total: ${{ totalAmount.toFixed(2) }}
-          </q-chip>
+        <div class="text-h4 text-weight-bold text-grey-8 q-mb-lg text-center">
+          Checkout & Payment
         </div>
+
+        <!-- 订单摘要卡片 -->
+        <q-card class="q-mb-lg shadow-2 rounded-borders-lg">
+          <q-card-section class="q-pa-md bg-deep-orange text-white">
+            <div class="row items-center justify-between">
+              <div class="text-h6">Order Summary</div>
+              <div class="text-h6">${{ totalAmount.toFixed(2) }}</div>
+            </div>
+          </q-card-section>
+
+          <q-card-section class="q-pa-md">
+            <!-- 就餐方式 -->
+            <div class="row items-center q-mb-md">
+              <q-icon
+                :name="diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'"
+                color="deep-orange"
+                size="sm"
+                class="q-mr-sm"
+              />
+              <span class="text-weight-medium">
+                {{ diningType === 'takeaway' ? 'Take Away' : 'Dine In' }}
+              </span>
+            </div>
+
+            <!-- 订单项目简要 -->
+            <div class="text-caption text-grey-6">
+              {{ orderItems.length }} item(s) • Estimated {{ diningType === 'takeaway' ? 'pickup' : 'ready' }}: {{ estimatedTime }}
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <!-- 客户信息卡片 -->
+        <q-card class="q-mb-lg shadow-2 rounded-borders-lg">
+          <q-card-section class="q-pa-md bg-deep-orange text-white">
+            <div class="text-h6">Contact Information</div>
+          </q-card-section>
+
+          <q-card-section class="q-pa-md">
+            <div class="row q-gutter-md">
+              <div class="col-12 col-sm-6">
+                <q-input
+                  v-model="customerInfo.name"
+                  label="Full Name *"
+                  outlined
+                  dense
+                  :rules="[val => !!val || 'Name is required']"
+                />
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-input
+                  v-model="customerInfo.phone"
+                  label="Phone Number *"
+                  outlined
+                  dense
+                  :rules="[val => !!val || 'Phone number is required']"
+                />
+              </div>
+              <div class="col-12" v-if="diningType === 'takeaway'">
+                <q-input
+                  v-model="customerInfo.pickupTime"
+                  label="Preferred Pickup Time"
+                  outlined
+                  dense
+                  type="time"
+                  hint="Leave empty for ASAP"
+                />
+              </div>
+              <div class="col-12" v-if="diningType === 'dinein'">
+                <q-input
+                  v-model="customerInfo.tableNumber"
+                  label="Table Number (Optional)"
+                  outlined
+                  dense
+                  type="number"
+                />
+              </div>
+              <div class="col-12">
+                <q-input
+                  v-model="customerInfo.notes"
+                  label="Special Instructions"
+                  outlined
+                  dense
+                  type="textarea"
+                  rows="2"
+                  hint="Any special requests or dietary requirements"
+                />
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
 
         <!-- 订单项列表 -->
         <div class="q-gutter-md">
@@ -137,13 +224,17 @@
             label="Continue Shopping"
             icon="shopping_cart"
             class="q-px-xl"
+            @click="continueShopping"
           />
           <q-btn
             color="primary"
             size="lg"
-            label="Proceed to Checkout"
-            icon="payment"
+            label="Place Order"
+            icon="check_circle"
             class="q-px-xl"
+            :loading="processing"
+            :disable="!isFormValid"
+            @click="placeOrder"
           />
         </div>
       </div>
@@ -419,6 +510,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+
+const router = useRouter()
+const $q = useQuasar()
 
 // 响应式数据
 const showCustomDialog = ref(false)
@@ -426,6 +522,18 @@ const showReplacementSelectDialog = ref(false)
 const currentItemIndex = ref(-1)
 const currentReplaceIngredient = ref(null)
 const orderItems = ref([])
+const processing = ref(false)
+const diningType = ref('takeaway')
+const estimatedTime = ref('')
+
+// 客户信息
+const customerInfo = ref({
+  name: '',
+  phone: '',
+  pickupTime: '',
+  tableNumber: '',
+  notes: ''
+})
 
 // 假数据
 const mockOrderItems = [
@@ -553,6 +661,10 @@ const currentItem = computed(() => {
 
 const totalAmount = computed(() => {
   return orderItems.value.reduce((sum, item) => sum + item.currentPrice, 0)
+})
+
+const isFormValid = computed(() => {
+  return customerInfo.value.name.trim() && customerInfo.value.phone.trim()
 })
 
 // 方法
@@ -771,10 +883,268 @@ function formatCustomization(custom) {
   return custom.toString()
 }
 
+function continueShopping() {
+  // 保存当前订单状态
+  const orderData = {
+    items: orderItems.value,
+    total: totalAmount.value
+  }
+  sessionStorage.setItem('pendingOrder', JSON.stringify(orderData))
+
+  // 返回到订单页面
+  router.push('/customer/order')
+}
+
+function proceedToPayment() {
+  // 保存当前订单状态到sessionStorage
+  const orderData = {
+    items: orderItems.value,
+    total: totalAmount.value
+  }
+  sessionStorage.setItem('checkoutOrder', JSON.stringify(orderData))
+
+  // 跳转到支付页面
+  router.push('/customer/payment')
+}
+
+async function placeOrder() {
+  if (!isFormValid.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'Please fill in your name and phone number',
+      position: 'top'
+    })
+    return
+  }
+
+  processing.value = true
+
+  try {
+    // 生成订单号
+    const orderNumber = generateOrderNumber()
+
+    // 创建订单数据
+    const orderData = {
+      orderNumber,
+      customerInfo: customerInfo.value,
+      diningType: diningType.value,
+      items: orderItems.value,
+      total: totalAmount.value,
+      status: 'pending', // 不处理支付，直接设为pending
+      createdAt: new Date().toISOString()
+    }
+
+    // 模拟API调用延迟
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    // 保存订单到localStorage（作为订单历史）
+    saveOrderToHistory(orderData)
+
+    // 保存客户信息到localStorage
+    saveCustomerInfo(customerInfo.value)
+
+    // 保存用户点过的餐品信息
+    saveOrderedItems(orderItems.value)
+
+    // 清除购物车缓存
+    sessionStorage.removeItem('pendingOrder')
+    sessionStorage.removeItem('checkoutOrder')
+
+    $q.notify({
+      type: 'positive',
+      message: 'Order placed successfully!',
+      position: 'top'
+    })
+
+    // 跳转到订单确认页面
+    router.push({
+      path: '/confirmation',
+      query: {
+        orderNumber: orderData.orderNumber,
+        status: orderData.status
+      }
+    })
+
+  } catch (error) {
+    console.error('Order placement failed:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to place order. Please try again.',
+      position: 'top'
+    })
+  } finally {
+    processing.value = false
+  }
+}
+
+function generateOrderNumber() {
+  const timestamp = Date.now()
+  const random = Math.floor(Math.random() * 1000)
+  return `ORD-${timestamp}-${random}`
+}
+
+function saveOrderToHistory(orderData) {
+  try {
+    const existingOrders = JSON.parse(localStorage.getItem('orderHistory') || '[]')
+    existingOrders.unshift(orderData) // 添加到数组开头
+
+    // 限制历史记录数量（例如最多保存50个订单）
+    if (existingOrders.length > 50) {
+      existingOrders.splice(50)
+    }
+
+    localStorage.setItem('orderHistory', JSON.stringify(existingOrders))
+  } catch (error) {
+    console.error('Failed to save order to history:', error)
+  }
+}
+
+function saveCustomerInfo(info) {
+  try {
+    // 保存客户基本信息
+    const customerData = {
+      name: info.name,
+      phone: info.phone,
+      lastUpdated: new Date().toISOString()
+    }
+    localStorage.setItem('customerInfo', JSON.stringify(customerData))
+  } catch (error) {
+    console.error('Failed to save customer info:', error)
+  }
+}
+
+function saveOrderedItems(items) {
+  try {
+    // 获取现有的历史餐品
+    const existingItems = JSON.parse(localStorage.getItem('orderedItems') || '[]')
+
+    // 将当前订单的餐品添加到历史记录
+    items.forEach(item => {
+      // 检查是否已存在相同的餐品
+      const existingIndex = existingItems.findIndex(existing => existing.id === item.id)
+
+      if (existingIndex >= 0) {
+        // 更新现有餐品的信息（更新最后订购时间，累计订购次数）
+        existingItems[existingIndex].lastOrdered = new Date().toISOString()
+        existingItems[existingIndex].orderCount = (existingItems[existingIndex].orderCount || 1) + 1
+        existingItems[existingIndex].totalSpent = (existingItems[existingIndex].totalSpent || item.currentPrice) + item.currentPrice
+      } else {
+        // 添加新餐品到历史记录
+        existingItems.push({
+          id: item.id,
+          title: item.title,
+          description: item.description || '',
+          image: item.image || '',
+          price: item.originalPrice || item.currentPrice,
+          category: item.category || 'mains',
+          rating: item.rating || 4.0,
+          cookTime: item.cookTime || '15-20 min',
+          lastOrdered: new Date().toISOString(),
+          orderCount: 1,
+          totalSpent: item.currentPrice,
+          customizations: item.customizations || []
+        })
+      }
+    })
+
+    // 按最后订购时间排序，最新的在前面
+    existingItems.sort((a, b) => new Date(b.lastOrdered) - new Date(a.lastOrdered))
+
+    // 限制历史记录数量（例如最多保存30个餐品）
+    if (existingItems.length > 30) {
+      existingItems.splice(30)
+    }
+
+    localStorage.setItem('orderedItems', JSON.stringify(existingItems))
+  } catch (error) {
+    console.error('Failed to save ordered items:', error)
+  }
+}
+
+function loadSavedCustomerInfo() {
+  try {
+    const customerData = localStorage.getItem('customerInfo')
+    if (customerData) {
+      const parsedData = JSON.parse(customerData)
+      customerInfo.value = { ...customerInfo.value, ...parsedData }
+    }
+  } catch (error) {
+    console.error('Failed to load customer info:', error)
+  }
+}
+
+function calculateEstimatedTime() {
+  const now = new Date()
+  const prepTime = diningType.value === 'takeaway' ? 20 : 15 // 分钟
+  now.setMinutes(now.getMinutes() + prepTime)
+
+  return now.toLocaleTimeString('en-AU', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
 // 生命周期
 onMounted(() => {
-  // 初始化订单数据
-  orderItems.value = [...mockOrderItems]
+  // 从sessionStorage加载确认的订单数据
+  const confirmedOrder = sessionStorage.getItem('confirmedOrder')
+  if (confirmedOrder) {
+    const orderData = JSON.parse(confirmedOrder)
+    orderItems.value = orderData.items || []
+    diningType.value = orderData.diningType || 'takeaway'
+  } else {
+    // 如果没有确认的订单数据，返回菜单页
+    $q.notify({
+      type: 'warning',
+      message: 'No order data found. Please start over.',
+      position: 'top'
+    })
+    router.push('/')
+    return
+  }
+
+  // 加载保存的客户信息
+  loadSavedCustomerInfo()
+
+  // 计算估算时间
+  estimatedTime.value = calculateEstimatedTime()
+
+  // 设置默认取餐时间为30分钟后
+  const now = new Date()
+  now.setMinutes(now.getMinutes() + 30)
+  if (!customerInfo.value.pickupTime) {
+    customerInfo.value.pickupTime = now.toTimeString().slice(0, 5)
+  }
+})
+
+// 生命周期
+onMounted(() => {
+  // 从sessionStorage加载订单数据
+  const pendingOrder = sessionStorage.getItem('pendingOrder')
+  if (pendingOrder) {
+    try {
+      const orderData = JSON.parse(pendingOrder)
+      orderItems.value = orderData.items || [...mockOrderItems]
+      diningType.value = orderData.diningType || 'takeaway'
+    } catch (error) {
+      console.error('Failed to load pending order:', error)
+      orderItems.value = [...mockOrderItems]
+    }
+  } else {
+    // 如果没有待处理订单，使用模拟数据
+    orderItems.value = [...mockOrderItems]
+  }
+
+  // 加载保存的客户信息
+  loadSavedCustomerInfo()
+
+  // 设置默认取餐时间为30分钟后
+  const now = new Date()
+  now.setMinutes(now.getMinutes() + 30)
+  if (!customerInfo.value.pickupTime) {
+    customerInfo.value.pickupTime = now.toTimeString().slice(0, 5)
+  }
 })
 </script>
 
@@ -789,6 +1159,14 @@ onMounted(() => {
 
 .shadow-2 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bg-deep-orange {
+  background-color: #FF5722 !important;
+}
+
+.text-deep-orange {
+  color: #FF5722 !important;
 }
 
 /* 定制弹窗样式 */

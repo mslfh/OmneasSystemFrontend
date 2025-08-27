@@ -1,208 +1,209 @@
 <template>
-
   <q-layout view="hHh lpR fFf">
-    <q-header class="bg-grey-1 text-grey-8" elevated  :inset-shadow="!$q.screen.gt.sm">
-      <q-toolbar class="GNL__toolbar">
+    <q-header class="bg-white text-grey-8 shadow-2" height-hint="64">
+      <q-toolbar class="q-px-md">
+        <!-- 返回按钮 (仅在非首页显示) -->
+        <q-btn
+          v-if="$route.path !== '/'"
+          flat
+          round
+          icon="arrow_back"
+          color="grey-7"
+          size="md"
+          @click="goBack"
+        />
 
-        <q-toolbar-title shrink class="row items-center no-wrap">
-          <!-- <img width="100px" height="40px" src="../assets/sidebar-dashboard.png" /> -->
+        <q-toolbar-title class="text-weight-bold text-h6 text-deep-orange">
+          <q-icon name="restaurant" size="sm" class="q-mr-sm" />
+          OmnEats
         </q-toolbar-title>
 
         <q-space />
-        <q-space />
 
-        <div class="q-gutter-sm row items-center no-wrap hidden">
-          <q-btn
-            v-if="$q.screen.gt.sm"
-            round
-            dense
-            flat
-            color="text-grey-7"
-            icon="apps"
+        <!-- 进度指示器 -->
+        <div class="row items-center q-gutter-xs q-mr-md" v-if="showProgress">
+          <div
+            v-for="(step, index) in progressSteps"
+            :key="index"
+            class="progress-dot"
+            :class="{ 'active': index <= currentStepIndex, 'completed': index < currentStepIndex }"
           >
-            <q-tooltip>Google Apps</q-tooltip>
-          </q-btn>
-          <q-btn round dense flat color="grey-8" icon="notifications">
-            <q-badge color="deep-orange-5" text-color="white" floating> 2 </q-badge>
-            <q-tooltip>Notifications</q-tooltip>
-          </q-btn>
-
-          <q-btn round flat>
-            <q-avatar size="26px">
-              <img src="https://cdn.quasar.dev/img/avatar5.jpg" />
-            </q-avatar>
-            <q-menu>
-              <q-list style="min-width: 200px">
-                <profile></profile>
-                <q-card class="text-center no-shadow no-border"> </q-card>
-              </q-list>
-            </q-menu>
-          </q-btn>
+            <q-icon
+              v-if="index < currentStepIndex"
+              name="check"
+              size="14px"
+              color="white"
+            />
+          </div>
         </div>
+
+        <!-- 用户菜单 -->
+        <q-btn round flat icon="account_circle" size="md" color="grey-7">
+          <q-menu anchor="bottom right" self="top right" class="shadow-4">
+            <q-list style="min-width: 180px" class="q-py-sm">
+              <q-item clickable v-close-popup @click="goToProfile">
+                <q-item-section avatar>
+                  <q-icon name="history" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Order History</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup @click="goToProfile">
+                <q-item-section avatar>
+                  <q-icon name="person" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Profile</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator class="q-my-sm" />
+              <q-item clickable v-close-popup>
+                <q-item-section avatar>
+                  <q-icon name="settings" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Settings</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
     <q-page-container>
-          <router-view />
+      <router-view />
     </q-page-container>
   </q-layout>
 </template>
 
 <script>
-import { fasGlobeAmericas, fasFlask } from "@quasar/extras/fontawesome-v5";
-import { defineComponent } from "vue";
-import { ref } from "vue";
-import { useQuasar } from "quasar";
-import Profile from "./Profile.vue";
-
-const links1 = [
-  { icon: "move_to_inbox", text: "Inbox" },
-  { icon: "star", text: "Stared" },
-  { icon: "send", text: "Sent" },
-  { icon: "error", text: "Spam" },
-];
-const links2 = [
-  { icon: "flag", text: "Updates", color: "text-orange" },
-  { icon: "group", text: "Social", color: "text-red" },
-  { icon: "label", text: "Promos", color: "text-indigo-8" },
-  { icon: "forum", text: "Forums", color: "text-teal" },
-];
+import { defineComponent, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
 
 export default defineComponent({
   name: "CustomerLayout",
-  components: {
-    Profile,
-  },
   setup() {
-    const $q = useQuasar();
+    const router = useRouter();
+    const route = useRoute();
 
-    // $q.screen.setSizes({ sm: 300, md: 500, lg: 1000, xl: 2000 })
+    const progressSteps = [
+      { name: 'Order', path: '/' },
+      { name: 'Confirm', path: '/confirm' },
+      { name: 'Payment', path: '/checkout' },
+      { name: 'Complete', path: '/confirmation' }
+    ];
 
-    const leftDrawerOpen = ref(false);
-    const miniState = ref(false);
+    const currentStepIndex = computed(() => {
+      const currentPath = route.path;
+      const stepIndex = progressSteps.findIndex(step => step.path === currentPath);
+      return stepIndex >= 0 ? stepIndex : 0;
+    });
+
+    const showProgress = computed(() => {
+      const progressPaths = ['/', '/confirm', '/checkout', '/confirmation'];
+      return progressPaths.includes(route.path);
+    });
+
+    function goBack() {
+      router.go(-1);
+    }
+
+    function goToProfile() {
+      router.push('/profile');
+    }
 
     return {
-      slide: ref(1),
-      autoplay: ref(true),
-      leftDrawerOpen,
-      toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value;
-      },
-      miniState,
-      toogleMiniState() {
-        miniState.value = !miniState.value;
-      },
-      search: "",
-      showAdvanced: ref(false),
-      showDateOptions: ref(false),
-      exactPhrase: "",
-      hasWords: "",
-      excludeWords: "",
-      byWebsite: "",
-      byDate: "Any time",
-      links1,
-      links2,
-      mail_data: [
-        {
-          name: "Pratik Patel",
-          avatar: "https://avatars2.githubusercontent.com/u/34883558?s=400&v=4",
-          date: "March 12, 2019",
-        },
-        {
-          name: "Pratik Patel",
-          avatar: "https://avatars2.githubusercontent.com/u/34883558?s=400&v=4",
-          date: "March 22, 2019",
-        },
-        {
-          name: "Pratik Patel",
-          avatar: "https://avatars2.githubusercontent.com/u/34883558?s=400&v=4",
-          date: "March 12, 2019",
-        },
-        {
-          name: "Winfield Stapforth",
-          avatar: "https://cdn.quasar.dev/img/avatar6.jpg",
-          date: "March 22, 2019",
-        },
-        {
-          name: "Jeff Galbraith",
-          avatar: "https://cdn.quasar.dev/team/jeff_galbraith.jpg",
-          date: "March 12, 2019",
-        },
-        {
-          name: "Jeff Galbraith",
-          avatar: "https://cdn.quasar.dev/team/jeff_galbraith.jpg",
-          date: "March 22, 2019",
-        },
-        {
-          name: "Razvan Stoenescu",
-          avatar: "https://cdn.quasar.dev/team/razvan_stoenescu.jpeg",
-          date: "March 12, 2019",
-        },
-        {
-          name: "Razvan Stoenescu",
-          avatar: "https://cdn.quasar.dev/team/razvan_stoenescu.jpeg",
-          date: "March 22, 2019",
-        },
-        {
-          name: "John Doe",
-          avatar: "https://cdn.quasar.dev/img/boy-avatar.png",
-          date: "March 12, 2019",
-        },
-        {
-          name: "Pratik Patel",
-          avatar: "https://cdn.quasar.dev/img/boy-avatar.png",
-          date: "March 22, 2019",
-        },
-      ],
+      progressSteps,
+      currentStepIndex,
+      showProgress,
+      goBack,
+      goToProfile
     };
-  },
-  mounted() {
-    this.mail_data = this.mail_data.map(function (item) {
-      item["msg"] =
-        "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem, eius reprehenderit eos corrupti\n" +
-        "              commodi magni quaerat ex numquam, dolorum officiis modi facere maiores architecto suscipit iste\n" +
-        "              eveniet doloribus ullam aliquid.";
-      return item;
-    });
   },
 });
 </script>
 
-<style>
-.GNL__toolbar {
-  height: 64px;
+<style scoped>
+/* 深橙色主题 */
+.text-deep-orange {
+  color: #FF5722 !important;
 }
 
-.GNL__toolbar-input {
-  width: 55%;
+.bg-deep-orange {
+  background-color: #FF5722 !important;
 }
 
-.GNL__drawer-item {
-  line-height: 24px;
-  border-radius: 0 24px 24px 0;
-  margin-right: 12px;
+/* Header 阴影 */
+.shadow-2 {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.GNL__drawer-item .q-item__section--avatar .q-icon {
-  color: #5f6368;
+.shadow-4 {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.GNL__drawer-item .q-item__label {
-  color: #3c4043;
-  letter-spacing: 0.01785714em;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.25rem;
+/* 进度指示器样式 */
+.progress-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
-.GNL__drawer-footer-link {
-  color: inherit;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.75rem;
+.progress-dot.active {
+  background-color: #FF5722;
+  color: white;
 }
 
-.GNL__drawer-footer-link:hover {
-  color: #000;
+.progress-dot.completed {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.progress-dot:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 2px;
+  background-color: #e0e0e0;
+  transition: background-color 0.3s ease;
+}
+
+.progress-dot.completed:not(:last-child)::after {
+  background-color: #4CAF50;
+}
+
+/* 菜单项悬停效果 */
+.q-item {
+  border-radius: 8px;
+  margin: 2px 8px;
+  transition: background-color 0.2s ease;
+}
+
+.q-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* 响应式调整 */
+@media (max-width: 600px) {
+  .progress-dot {
+    width: 16px;
+    height: 16px;
+  }
+
+  .progress-dot:not(:last-child)::after {
+    width: 6px;
+    right: -9px;
+  }
 }
 </style>

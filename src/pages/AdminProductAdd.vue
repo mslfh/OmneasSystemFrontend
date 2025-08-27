@@ -1021,7 +1021,6 @@ const isFormValid = computed(() => {
     product.value.title &&
     product.value.price >= 0 &&
     product.value.selling_price >= 0 &&
-    product.value.stock >= 0 &&
     product.value.status
   );
 });
