@@ -1,19 +1,20 @@
 import { roleGuard, adminDeskOnlyGuard, defaultRouteGuard } from './guards';
 
 const routes = [
-  //Customer routes
-  // {
-    // path: '/',
-    // component: () => import('layouts/CustomerLayout.vue'),
-  //   children: [
-  //     // { path: '', component: () => import('pages/CustomerIndex.vue') },
-  //     { path: '', component: () => import('pages/CustomerBooking.vue') },
-  //     { path: '/old', component: () => import('pages/CustomerBookingSelectTime.vue') },
-  //     { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
-  //     { path: 'profile', component: () => import('pages/CustomerProfile.vue') },
-  //     { path: 'profile/detail', component: () => import('src/pages/CustomerProfileDetail.vue') },
-  //   ]
-  // },
+  // Customer routes
+  {
+    path: '/',
+    component: () => import('layouts/CustomerLayout.vue'),
+    children: [
+       { path: 'order/customize', component: () => import('pages/OrderCustomization.vue'), beforeEnter: adminDeskOnlyGuard },
+      // { path: '', component: () => import('pages/CustomerIndex.vue') },
+      // { path: '', component: () => import('pages/CustomerBooking.vue') },
+      // { path: '/old', component: () => import('pages/CustomerBookingSelectTime.vue') },
+      // { path: 'appointment', component: () => import('pages/CustomerAppointment.vue') },
+      // { path: 'profile', component: () => import('pages/CustomerProfile.vue') },
+      // { path: 'profile/detail', component: () => import('src/pages/CustomerProfileDetail.vue') },
+    ]
+  },
 
   //Admin routes
 
@@ -39,7 +40,7 @@ const routes = [
       { path: 'product', component: () => import('pages/AdminProduct.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'product/detail', component: () => import('pages/AdminProductDetail.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'product/add', component: () => import('pages/AdminProductAdd.vue'), beforeEnter: adminDeskOnlyGuard },
-      { path: 'category', component: () => import('pages/AdminCategory.vue'), beforeEnter: adminDeskOnlyGuard },
+       { path: 'category', component: () => import('pages/AdminCategory.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'item', component: () => import('pages/AdminItem.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'option', component: () => import('pages/AdminOption.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'attribute', component: () => import('pages/AdminAttribute.vue'), beforeEnter: adminDeskOnlyGuard },

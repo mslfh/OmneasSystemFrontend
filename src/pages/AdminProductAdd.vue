@@ -135,7 +135,6 @@
                           v-model:expanded="categoryExpanded"
                           :loading="loadingCategories"
                           :ticked-color="'primary'"
-                          default-expand-all
                         >
                           <template v-slot:default-header="{ node }">
                             <div class="row items-center">
@@ -153,9 +152,7 @@
                         </q-tree>
                       </div>
                       <div class="col-12 col-md-6">
-                        <div class="text-subtitle2 q-mb-sm">
-                          Ingredients by Type
-                        </div>
+                        <div class="text-subtitle2 q-mb-sm">Ingredients</div>
                         <div
                           v-for="(items, type) in groupedIngredients"
                           :key="type"
@@ -164,9 +161,9 @@
                           <q-expansion-item
                             popup
                             :label="type"
-                            :caption="`${items.length} items available`"
+                            :caption="getSelectedItemsCaption(type)"
                             dense
-                            class="bg-grey-1 rounded-borders"
+                            class="text-caption bg-grey-1 rounded-borders"
                           >
                             <q-list dense>
                               <q-item
@@ -190,7 +187,7 @@
                                   />
                                 </q-item-section>
                                 <q-item-section>
-                                  <q-item-label class="text-body2">{{
+                                  <q-item-label class="text-subtitle3">{{
                                     item.label
                                   }}</q-item-label>
                                 </q-item-section>
@@ -281,7 +278,9 @@
                         >
                           <q-icon name="o_lock" size="md" class="q-mb-sm" />
                           <div>Product customization is disabled</div>
-                          <div class="text-caption">Enable customization to configure ingredient options</div>
+                          <div class="text-caption">
+                            Enable customization to configure ingredient options
+                          </div>
                         </div>
 
                         <div
@@ -358,8 +357,12 @@
                                     "
                                     popup
                                     icon="o_dashboard_customize"
-                                    :label="getCustomizationLabel(ingredient.id)"
-                                    :caption="getCustomizationCaption(ingredient.id)"
+                                    :label="
+                                      getCustomizationLabel(ingredient.id)
+                                    "
+                                    :caption="
+                                      getCustomizationCaption(ingredient.id)
+                                    "
                                     dense
                                     class="bg-grey-2 rounded-borders"
                                     default-opened
@@ -438,7 +441,9 @@
                                                   : ''
                                               "
                                             >
-                                              <div class="row items-center no-wrap">
+                                              <div
+                                                class="row items-center no-wrap"
+                                              >
                                                 <div class="col-auto q-mr-xs">
                                                   <q-checkbox
                                                     :model-value="
@@ -459,12 +464,25 @@
                                                     size="sm"
                                                   />
                                                 </div>
-                                                <div class="col q-mr-sm text-left" style="min-width: 0;">
-                                                  <div class="text-body2 ellipsis">
+                                                <div
+                                                  class="col q-mr-sm text-left"
+                                                  style="min-width: 0"
+                                                >
+                                                  <div
+                                                    class="text-body2 ellipsis"
+                                                  >
                                                     {{ replacement.name }}
                                                   </div>
-                                                  <div class="text-caption text-grey-6 ellipsis">
-                                                    ${{ replacement.price || 0 }} - {{ replacement.description }}
+                                                  <div
+                                                    class="text-caption text-grey-6 ellipsis"
+                                                  >
+                                                    ${{
+                                                      replacement.price || 0
+                                                    }}
+                                                    -
+                                                    {{
+                                                      replacement.description
+                                                    }}
                                                   </div>
                                                 </div>
                                                 <div class="col-auto q-mr-xs">
@@ -489,7 +507,7 @@
                                                     step="0.5"
                                                     dense
                                                     outlined
-                                                    style="width: 65px"
+                                                    style="width: 75px"
                                                     :disable="
                                                       !isReplacementEnabled(
                                                         ingredient.id,
@@ -500,7 +518,11 @@
                                                 </div>
                                                 <!-- Extra price input for replaceable_variable mode -->
                                                 <div
-                                                  v-if="getCustomizationMode(ingredient.id) === 'replaceable_variable'"
+                                                  v-if="
+                                                    getCustomizationMode(
+                                                      ingredient.id
+                                                    ) === 'replaceable_variable'
+                                                  "
                                                   class="col-auto"
                                                 >
                                                   <q-input
@@ -524,7 +546,7 @@
                                                     step="0.5"
                                                     dense
                                                     outlined
-                                                    style="width: 65px"
+                                                    style="width: 75px"
                                                     :disable="
                                                       !isReplacementEnabled(
                                                         ingredient.id,
@@ -881,477 +903,8 @@
 </template>
 
 <script setup>
-const categorySelected = ref(null);
-const categoryExpanded = ref([]);
-
-// 优化：使用 Map 进行快速查找
-const ingredientMap = ref(new Map());
-const ingredientsByType = ref(new Map());
-const selectedIngredientsMap = ref(new Map());
-const customizationsMap = ref(new Map());
-
-// 按type分组的ingredients计算属性 - 优化版
-const groupedIngredients = computed(() => {
-  return Object.fromEntries(ingredientsByType.value);
-});
-
-// 优化：创建 ingredient 查找映射
-function buildIngredientMaps() {
-  ingredientMap.value.clear();
-  ingredientsByType.value.clear();
-
-  ingredientOptions.value.forEach((item) => {
-    ingredientMap.value.set(item.id, item);
-
-    const type = item.type || "Other";
-    if (!ingredientsByType.value.has(type)) {
-      ingredientsByType.value.set(type, []);
-    }
-    ingredientsByType.value.get(type).push(item);
-  });
-}
-
-// 优化：创建选中 ingredients 映射
-function buildSelectedIngredientsMap() {
-  selectedIngredientsMap.value.clear();
-  product.value.ingredients.forEach((ing) => {
-    selectedIngredientsMap.value.set(ing.id, ing);
-  });
-}
-
-// 优化：创建 customizations 映射
-function buildCustomizationsMap() {
-  customizationsMap.value.clear();
-  product.value.customizations.forEach((custom) => {
-    customizationsMap.value.set(custom.ingredientId, custom);
-  });
-}
-
-// 规格单位选项
-const unitOptions = ref([
-  { label: "Piece", value: "piece" },
-  { label: "Several", value: "several" },
-]);
-
-// 定制化模式选项
-const customizationModes = ref([
-  {
-    label: "Replaceable + Variable",
-    value: "replaceable_variable",
-    description: "Customer can change quantity and replace with other items",
-  },
-  {
-    label: "Replaceable",
-    value: "replaceable",
-    description: "Customer can replace with other items",
-  },
-  {
-    label: "Variable",
-    value: "variable",
-    description: "Customer can change quantity",
-  },
-  { label: "Fixed", value: "fixed", description: "Cannot be customized" },
-]);
-
-// 切换ingredient选中状态 - 优化版
-function toggleIngredient(item) {
-  const existingIndex = product.value.ingredients.findIndex(
-    (ing) => ing.id === item.id
-  );
-
-  if (existingIndex > -1) {
-    product.value.ingredients.splice(existingIndex, 1);
-    selectedIngredientsMap.value.delete(item.id);
-    // 同时删除相关的customization
-    const customIndex = product.value.customizations.findIndex(c => c.ingredientId === item.id);
-    if (customIndex > -1) {
-      product.value.customizations.splice(customIndex, 1);
-      customizationsMap.value.delete(item.id);
-    }
-  } else {
-    const newIngredient = {
-      id: item.id,
-      quantity: 1,
-      unit: unitOptions.value[0].label,
-    };
-    product.value.ingredients.push(newIngredient);
-    selectedIngredientsMap.value.set(item.id, newIngredient);
-  }
-}
-
-// 检查ingredient是否被选中 - 优化版
-function isIngredientSelected(itemId) {
-  return selectedIngredientsMap.value.has(itemId);
-}
-
-// 获取ingredient的数量 - 优化版
-function getIngredientQuantity(itemId) {
-  const ingredient = selectedIngredientsMap.value.get(itemId);
-  return ingredient ? ingredient.quantity : 1;
-}
-
-// 获取ingredient的单位 - 优化版
-function getIngredientUnit(itemId) {
-  const ingredient = selectedIngredientsMap.value.get(itemId);
-  return ingredient ? ingredient.unit : "several";
-}
-
-// 更新ingredient数量 - 优化版
-function updateIngredientQuantity(itemId, quantity) {
-  const ingredient = selectedIngredientsMap.value.get(itemId);
-  if (ingredient) {
-    ingredient.quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
-  }
-}
-
-// 更新ingredient单位 - 优化版
-function updateIngredientUnit(itemId, unit) {
-  const ingredient = selectedIngredientsMap.value.get(itemId);
-  if (ingredient) {
-    ingredient.unit = unit;
-  }
-}
-
-// 格式化数量和单位显示
-function formatQuantityUnit(quantity, unit) {
-  const unitLabel =
-    unitOptions.value.find((opt) => opt.value === unit)?.label || "Several";
-  return `${quantity} ${unitLabel}`;
-}
-
-// 获取选中的 ingredients 的详细信息 - 优化版
-const selectedIngredientsWithDetails = computed(() => {
-  return product.value.ingredients.map((ing) => {
-    const itemDetail = ingredientMap.value.get(ing.id);
-    return {
-      ...ing,
-      name: itemDetail?.name || itemDetail?.label || "Unknown",
-      type: itemDetail?.type || "Other",
-      price: itemDetail?.price || 0,
-      description: itemDetail?.description || "",
-    };
-  });
-});
-
-// 获取定制化模式 - 优化版
-function getCustomizationMode(ingredientId) {
-  const customization = customizationsMap.value.get(ingredientId);
-  return customization ? customization.mode : "replaceable_variable"; // 修改默认模式
-}
-
-// 获取定制化标签
-function getCustomizationLabel(ingredientId) {
-  const mode = getCustomizationMode(ingredientId);
-  switch (mode) {
-    case 'replaceable':
-      return 'Available Replacements';
-    case 'variable':
-      return 'Quantity Pricing';
-    case 'replaceable_variable':
-      return 'Replacements & Quantity';
-    default:
-      return 'Configuration';
-  }
-}
-
-// 获取定制化说明
-function getCustomizationCaption(ingredientId) {
-  const mode = getCustomizationMode(ingredientId);
-  switch (mode) {
-    case 'replaceable':
-      return 'Configure replacement options';
-    case 'variable':
-      return 'Set pricing for quantity changes';
-    case 'replaceable_variable':
-      return 'Configure replacements and quantity pricing';
-    default:
-      return 'Configure customization options';
-  }
-}
-
-// 更新定制化模式 - 优化版
-function updateCustomizationMode(ingredientId, mode) {
-  let customization = customizationsMap.value.get(ingredientId);
-
-  if (customization) {
-    customization.mode = mode;
-  } else {
-    customization = {
-      ingredientId: ingredientId,
-      mode: mode,
-      replacements: {},
-      enabledReplacements: [],
-      replacementExtras: {}, // 新增：存储每个替换选项的extra价格
-      quantityPricing: {
-        extra: 0,
-        reduce: 0,
-      },
-    };
-    product.value.customizations.push(customization);
-    customizationsMap.value.set(ingredientId, customization);
-  }
-
-  // 确保新增的属性存在
-  if (!customization.replacementExtras) {
-    customization.replacementExtras = {};
-  }
-}// 获取替换选项 - 优化版，使用缓存
-const replacementOptionsCache = ref(new Map());
-
-function getReplacementOptions(ingredient) {
-  const cacheKey = `${ingredient.type}_${ingredient.id}`;
-  if (replacementOptionsCache.value.has(cacheKey)) {
-    return replacementOptionsCache.value.get(cacheKey);
-  }
-
-  const typeIngredients = ingredientsByType.value.get(ingredient.type) || [];
-  const options = typeIngredients.filter(item => item.id !== ingredient.id);
-
-  replacementOptionsCache.value.set(cacheKey, options);
-  return options;
-}
-
-// 全选/全不选替换选项 - 优化版
-function selectAllReplacements(ingredientId, selectAll) {
-  let customization = customizationsMap.value.get(ingredientId);
-
-  if (!customization) {
-    customization = {
-      ingredientId: ingredientId,
-      mode: "replaceable",
-      replacements: {},
-      enabledReplacements: [],
-      replacementExtras: {},
-      quantityPricing: { extra: 0, reduce: 0 },
-    };
-    product.value.customizations.push(customization);
-    customizationsMap.value.set(ingredientId, customization);
-  }
-
-  if (!customization.enabledReplacements) {
-    customization.enabledReplacements = [];
-  }
-  if (!customization.replacements) {
-    customization.replacements = {};
-  }
-  if (!customization.replacementExtras) {
-    customization.replacementExtras = {};
-  }
-
-  // 获取当前 ingredient 的详细信息
-  const ingredientDetail = ingredientMap.value.get(ingredientId);
-  if (ingredientDetail) {
-    const replacementOptions = getReplacementOptions(ingredientDetail);
-    const originalPrice = parseFloat(ingredientDetail.price) || 0;
-
-    if (selectAll) {
-      // 全选：添加所有未选中的替换选项并自动计算价格差
-      replacementOptions.forEach((replacement) => {
-        if (!customization.enabledReplacements.includes(replacement.id)) {
-          customization.enabledReplacements.push(replacement.id);
-
-          // 自动计算价格差
-          const replacementPrice = parseFloat(replacement.price) || 0;
-          const priceDiff = Math.max(0, replacementPrice - originalPrice);
-          customization.replacements[replacement.id] = priceDiff;
-
-          // 为replaceable_variable模式初始化extra价格
-          if (customization.mode === 'replaceable_variable') {
-            if (!customization.replacementExtras[replacement.id]) {
-              customization.replacementExtras[replacement.id] = 0;
-            }
-          }
-        }
-      });
-    } else {
-      // 全不选：移除所有替换选项
-      const replacementIds = new Set(replacementOptions.map(r => r.id));
-      customization.enabledReplacements = customization.enabledReplacements.filter(
-        id => !replacementIds.has(id)
-      );
-    }
-  }
-}// 检查替换选项是否启用 - 优化版
-function isReplacementEnabled(ingredientId, replacementId) {
-  const customization = customizationsMap.value.get(ingredientId);
-  if (!customization || !customization.enabledReplacements) {
-    return true; // 默认全选
-  }
-  return customization.enabledReplacements.includes(replacementId);
-}
-
-// 切换替换选项的启用状态 - 优化版
-function toggleReplacement(ingredientId, replacementId, enabled) {
-  let customization = customizationsMap.value.get(ingredientId);
-
-  if (!customization) {
-    customization = {
-      ingredientId: ingredientId,
-      mode: "replaceable",
-      replacements: {},
-      enabledReplacements: [],
-      replacementExtras: {},
-      quantityPricing: { extra: 0, reduce: 0 },
-    };
-    product.value.customizations.push(customization);
-    customizationsMap.value.set(ingredientId, customization);
-  }
-
-  if (!customization.enabledReplacements) {
-    customization.enabledReplacements = [];
-  }
-  if (!customization.replacements) {
-    customization.replacements = {};
-  }
-  if (!customization.replacementExtras) {
-    customization.replacementExtras = {};
-  }
-
-  const index = customization.enabledReplacements.indexOf(replacementId);
-  if (enabled && index === -1) {
-    customization.enabledReplacements.push(replacementId);
-
-    // 自动计算价格差：使用缓存的ingredient数据
-    const originalIngredient = ingredientMap.value.get(ingredientId);
-    const replacementIngredient = ingredientMap.value.get(replacementId);
-
-    if (originalIngredient && replacementIngredient) {
-      const originalPrice = parseFloat(originalIngredient.price) || 0;
-      const replacementPrice = parseFloat(replacementIngredient.price) || 0;
-      const priceDiff = Math.max(0, replacementPrice - originalPrice);
-      customization.replacements[replacementId] = priceDiff;
-
-      // 为replaceable_variable模式初始化extra价格
-      if (customization.mode === 'replaceable_variable') {
-        if (!customization.replacementExtras[replacementId]) {
-          customization.replacementExtras[replacementId] = 0;
-        }
-      }
-    }
-  } else if (!enabled && index > -1) {
-    customization.enabledReplacements.splice(index, 1);
-  }
-}// 获取替换价格差 - 优化版
-function getReplacementPriceDiff(ingredientId, replacementId) {
-  const customization = customizationsMap.value.get(ingredientId);
-
-  // 如果已经设置了价格差，直接返回
-  if (
-    customization &&
-    customization.replacements &&
-    customization.replacements[replacementId] !== undefined
-  ) {
-    return customization.replacements[replacementId];
-  }
-
-  // 如果没有设置，自动计算默认价格差
-  const originalIngredient = ingredientMap.value.get(ingredientId);
-  const replacementIngredient = ingredientMap.value.get(replacementId);
-
-  if (originalIngredient && replacementIngredient) {
-    const originalPrice = parseFloat(originalIngredient.price) || 0;
-    const replacementPrice = parseFloat(replacementIngredient.price) || 0;
-    return Math.max(0, replacementPrice - originalPrice);
-  }
-
-  return 0;
-}
-
-// 获取替换选项的额外价格
-function getReplacementExtraPrice(ingredientId, replacementId) {
-  const customization = customizationsMap.value.get(ingredientId);
-  if (customization && customization.replacementExtras) {
-    return customization.replacementExtras[replacementId] || 0;
-  }
-  return 0;
-}
-
-// 更新替换选项的额外价格
-function updateReplacementExtraPrice(ingredientId, replacementId, extraPrice) {
-  let customization = customizationsMap.value.get(ingredientId);
-
-  if (!customization) {
-    customization = {
-      ingredientId: ingredientId,
-      mode: "replaceable_variable",
-      replacements: {},
-      enabledReplacements: [],
-      replacementExtras: {},
-      quantityPricing: { extra: 0, reduce: 0 },
-    };
-    product.value.customizations.push(customization);
-    customizationsMap.value.set(ingredientId, customization);
-  }
-
-  if (!customization.replacementExtras) {
-    customization.replacementExtras = {};
-  }
-
-  customization.replacementExtras[replacementId] = parseFloat(extraPrice) || 0;
-}
-// 更新替换价格差 - 优化版
-function updateReplacementPriceDiff(ingredientId, replacementId, priceDiff) {
-  let customization = customizationsMap.value.get(ingredientId);
-
-  if (!customization) {
-    customization = {
-      ingredientId: ingredientId,
-      mode: "replaceable",
-      replacements: {},
-      enabledReplacements: [],
-      replacementExtras: {},
-      quantityPricing: { extra: 0, reduce: 0 },
-    };
-    product.value.customizations.push(customization);
-    customizationsMap.value.set(ingredientId, customization);
-  }
-
-  if (!customization.replacements) {
-    customization.replacements = {};
-  }
-  if (!customization.enabledReplacements) {
-    customization.enabledReplacements = [];
-  }
-  if (!customization.replacementExtras) {
-    customization.replacementExtras = {};
-  }
-
-  customization.replacements[replacementId] = parseFloat(priceDiff) || 0;
-}// 获取数量定价 - 优化版
-function getQuantityPricing(ingredientId, type) {
-  const customization = customizationsMap.value.get(ingredientId);
-  return customization && customization.quantityPricing
-    ? customization.quantityPricing[type] || 0
-    : 0;
-}
-
-// 更新数量定价 - 优化版
-function updateQuantityPricing(ingredientId, type, price) {
-  let customization = customizationsMap.value.get(ingredientId);
-
-  if (!customization) {
-    customization = {
-      ingredientId: ingredientId,
-      mode: "variable",
-      replacements: {},
-      enabledReplacements: [],
-      replacementExtras: {},
-      quantityPricing: { extra: 0, reduce: 0 },
-    };
-    product.value.customizations.push(customization);
-    customizationsMap.value.set(ingredientId, customization);
-  }
-
-  if (!customization.quantityPricing) {
-    customization.quantityPricing = { extra: 0, reduce: 0 };
-  }
-  if (!customization.replacementExtras) {
-    customization.replacementExtras = {};
-  }
-
-  customization.quantityPricing[type] = parseFloat(price) || 0;
-}import { useQuasar } from "quasar";
-import { ref, computed, watch } from "vue";
+import { useQuasar } from "quasar";
+import { ref, computed, watch, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRouter } from "vue-router";
 
@@ -1359,7 +912,19 @@ const router = useRouter();
 const $q = useQuasar();
 const formRef = ref(null);
 
+// State refs
 const saving = ref(false);
+const categorySelected = ref(null);
+const categoryExpanded = ref([]);
+const loadingCategories = ref(false);
+const loadingIngredients = ref(false);
+
+// Optimized data structures
+const ingredientMap = ref(new Map());
+const ingredientsByType = ref(new Map());
+const selectedIngredientsMap = ref(new Map());
+const customizationsMap = ref(new Map());
+const replacementOptionsCache = ref(new Map());
 
 // Product data model
 const product = ref({
@@ -1380,107 +945,60 @@ const product = ref({
   tag: "",
   sort: 1,
   is_featured: false,
-  customizable: true, // 新增：控制是否启用自定义功能
-  categories: [], // 必须始终为数组
-  ingredients: [], // 改为对象数组，包含 id、quantity 和 unit
-  customizations: [], // 改为对象数组，包含 ingredient 定制化配置
+  customizable: true,
+  categories: [],
+  ingredients: [],
+  customizations: [],
 });
 
-const categoryOptions = ref([]); // 原始数据
-const categoryTree = ref([]); // 树结构数据
+// Data refs
+const categoryOptions = ref([]);
+const categoryTree = ref([]);
 const ingredientOptions = ref([]);
-const loadingCategories = ref(false);
-const loadingIngredients = ref(false);
 
-async function fetchCategories() {
-  loadingCategories.value = true;
-  try {
-    const res = await api.get("/api/categories/active");
-    if (res.data.data) {
-      categoryOptions.value = res.data.data;
-      categoryTree.value = buildCategoryTree(categoryOptions.value);
-    } else {
-      categoryOptions.value = [];
-      categoryTree.value = [];
-    }
-    // 扁平转树结构
-    function buildCategoryTree(list) {
-      const map = {};
-      const roots = [];
-      list.forEach((item) => {
-        map[item.id] = { ...item, children: [] };
-      });
-      list.forEach((item) => {
-        if (item.parent_id && map[item.parent_id]) {
-          map[item.parent_id].children.push(map[item.id]);
-        } else {
-          roots.push(map[item.id]);
-        }
-      });
-      return roots;
-    }
-  } catch (e) {
-    categoryOptions.value = [];
-  } finally {
-    loadingCategories.value = false;
-  }
-}
-async function fetchIngredients() {
-  loadingIngredients.value = true;
-  try {
-    const res = await api.get("/api/items/active");
-    if (Array.isArray(res.data.data)) {
-      ingredientOptions.value = res.data.data.map((item) => ({
-        label: item.name,
-        value: item.id,
-        description: item.description,
-        type: item.type,
-        price: item.price,
-        id: item.id,
-        name: item.name,
-      }));
+// Options
+const unitOptions = ref([
+  { label: "Several", value: "several" },
+  { label: "Piece", value: "piece" },
+]);
 
-      // 构建优化的映射
-      buildIngredientMaps();
-    } else {
-      ingredientOptions.value = [];
-    }
-  } catch (e) {
-    ingredientOptions.value = [];
-  } finally {
-    loadingIngredients.value = false;
-  }
-}
+const customizationModes = ref([
+  {
+    label: "Replaceable + Variable",
+    value: "replaceable_variable",
+    description: "Customer can change quantity and replace with other items",
+  },
+  {
+    label: "Replaceable",
+    value: "replaceable",
+    description: "Customer can replace with other items",
+  },
+  {
+    label: "Variable",
+    value: "variable",
+    description: "Customer can change quantity",
+  },
+  { label: "Fixed", value: "fixed", description: "Cannot be customized" },
+]);
 
-fetchCategories();
-fetchIngredients();
+// Computed properties
+const groupedIngredients = computed(() => {
+  return Object.fromEntries(ingredientsByType.value);
+});
 
-// 初始化映射
-function initializeMaps() {
-  buildSelectedIngredientsMap();
-  buildCustomizationsMap();
-}
-
-// 组件挂载时初始化映射
-initializeMaps();
-
-function onAllPriceBlur() {
-  ["price", "discount", "selling_price"].forEach((field) => {
-    let val = product.value[field];
-    if (val === "" || val === null || val === undefined || isNaN(Number(val))) {
-      product.value[field] = "0.00";
-    } else {
-      product.value[field] = Number(val).toFixed(2);
-    }
+const selectedIngredientsWithDetails = computed(() => {
+  return product.value.ingredients.map((ing) => {
+    const itemDetail = ingredientMap.value.get(ing.id);
+    return {
+      ...ing,
+      name: itemDetail?.name || itemDetail?.label || "Unknown",
+      type: itemDetail?.type || "Other",
+      price: itemDetail?.price || 0,
+      description: itemDetail?.description || "",
+    };
   });
-}
-function onPriceInput(field, val) {
-  let filtered = String(val).replace(/[^\d.]/g, "");
-  filtered = filtered.replace(/(\..*)\./g, "$1");
-  product.value[field] = filtered;
-}
+});
 
-// Computed property for image list string
 const imageListString = computed({
   get() {
     if (product.value.image_list && Array.isArray(product.value.image_list)) {
@@ -1497,7 +1015,6 @@ const imageListString = computed({
   },
 });
 
-// Computed property to check if form is valid
 const isFormValid = computed(() => {
   return (
     product.value.code &&
@@ -1509,42 +1026,538 @@ const isFormValid = computed(() => {
   );
 });
 
-// Auto-calculate selling price when price or discount changes
-const calculateSellingPrice = () => {
+// Utility functions
+function buildCategoryTree(list) {
+  const map = {};
+  const roots = [];
+  list.forEach((item) => {
+    map[item.id] = { ...item, children: [] };
+  });
+  list.forEach((item) => {
+    if (item.parent_id && map[item.parent_id]) {
+      map[item.parent_id].children.push(map[item.id]);
+    } else {
+      roots.push(map[item.id]);
+    }
+  });
+  return roots;
+}
+
+function buildIngredientMaps() {
+  ingredientMap.value.clear();
+  ingredientsByType.value.clear();
+
+  ingredientOptions.value.forEach((item) => {
+    ingredientMap.value.set(item.id, item);
+
+    const type = item.type || "Other";
+    if (!ingredientsByType.value.has(type)) {
+      ingredientsByType.value.set(type, []);
+    }
+    ingredientsByType.value.get(type).push(item);
+  });
+}
+
+function buildSelectedIngredientsMap() {
+  selectedIngredientsMap.value.clear();
+  product.value.ingredients.forEach((ing) => {
+    selectedIngredientsMap.value.set(ing.id, ing);
+  });
+}
+
+function buildCustomizationsMap() {
+  customizationsMap.value.clear();
+  product.value.customizations.forEach((custom) => {
+    customizationsMap.value.set(custom.ingredientId, custom);
+  });
+}
+
+function initializeMaps() {
+  buildSelectedIngredientsMap();
+  buildCustomizationsMap();
+}
+
+// Price handling functions
+function onAllPriceBlur() {
+  ["price", "discount", "selling_price"].forEach((field) => {
+    let val = product.value[field];
+    if (val === "" || val === null || val === undefined || isNaN(Number(val))) {
+      product.value[field] = "0.00";
+    } else {
+      product.value[field] = Number(val).toFixed(2);
+    }
+  });
+}
+
+function onPriceInput(field, val) {
+  let filtered = String(val).replace(/[^\d.]/g, "");
+  filtered = filtered.replace(/(\..*)\./g, "$1");
+  product.value[field] = filtered;
+}
+
+function calculateSellingPrice() {
   if (product.value.price && product.value.discount >= 0) {
     product.value.selling_price = Math.max(
       0,
       product.value.price - product.value.discount
+    ).toFixed(2);
+  }
+}
+
+// Ingredient management functions
+function toggleIngredient(item) {
+  const existingIndex = product.value.ingredients.findIndex(
+    (ing) => ing.id === item.id
+  );
+
+  if (existingIndex > -1) {
+    product.value.ingredients.splice(existingIndex, 1);
+    selectedIngredientsMap.value.delete(item.id);
+
+    const customIndex = product.value.customizations.findIndex(
+      (c) => c.ingredientId === item.id
     );
+    if (customIndex > -1) {
+      product.value.customizations.splice(customIndex, 1);
+      customizationsMap.value.delete(item.id);
+    }
+  } else {
+    const newIngredient = {
+      id: item.id,
+      quantity: 1,
+      unit: unitOptions.value[0].label,
+    };
+    product.value.ingredients.push(newIngredient);
+    selectedIngredientsMap.value.set(item.id, newIngredient);
   }
-};
+}
 
-// Watch for price changes to auto-calculate selling price
-watch(() => product.value.price, calculateSellingPrice);
-watch(() => product.value.discount, calculateSellingPrice);
+function isIngredientSelected(itemId) {
+  return selectedIngredientsMap.value.has(itemId);
+}
 
-// Watch for customizable changes to clear customizations when disabled
-watch(() => product.value.customizable, (newValue) => {
-  if (!newValue) {
-    // Clear all customizations when customizable is disabled
-    product.value.customizations = [];
-    customizationsMap.value.clear();
+function getIngredientQuantity(itemId) {
+  const ingredient = selectedIngredientsMap.value.get(itemId);
+  return ingredient ? ingredient.quantity : 1;
+}
+
+function getIngredientUnit(itemId) {
+  const ingredient = selectedIngredientsMap.value.get(itemId);
+  return ingredient ? ingredient.unit : "several";
+}
+
+function updateIngredientQuantity(itemId, quantity) {
+  const ingredient = selectedIngredientsMap.value.get(itemId);
+  if (ingredient) {
+    ingredient.quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
   }
-});
+}
 
-// Watch for ingredients changes to maintain maps
-watch(() => product.value.ingredients, () => {
-  buildSelectedIngredientsMap();
-}, { deep: true });
+function updateIngredientUnit(itemId, unit) {
+  const ingredient = selectedIngredientsMap.value.get(itemId);
+  if (ingredient) {
+    ingredient.unit = unit;
+  }
+}
 
-// Watch for customizations changes to maintain maps
-watch(() => product.value.customizations, () => {
-  buildCustomizationsMap();
-}, { deep: true });
+function formatQuantityUnit(quantity, unit) {
+  const unitLabel =
+    unitOptions.value.find((opt) => opt.value === unit)?.label || "Several";
+  return `${quantity} ${unitLabel}`;
+}
 
-const saveProduct = async () => {
+// Get selected items caption for a specific type
+function getSelectedItemsCaption(type) {
+  const typeItems = ingredientsByType.value.get(type) || [];
+  const selectedItems = typeItems.filter(item => isIngredientSelected(item.id));
+
+  if (selectedItems.length === 0) {
+    return `${typeItems.length} items available`;
+  } else if (selectedItems.length <= 3) {
+    const names = selectedItems.map(item => item.name || item.label).join(', ');
+    return ` ${names}`;
+  } else {
+    const firstThree = selectedItems.slice(0, 3).map(item => item.name || item.label).join(', ');
+    return ` ${firstThree} +${selectedItems.length - 3} more`;
+  }
+}
+
+// Customization functions
+function getCustomizationMode(ingredientId) {
+  const customization = customizationsMap.value.get(ingredientId);
+  return customization ? customization.mode : "fixed";
+}
+
+function getCustomizationLabel(ingredientId) {
+  const mode = getCustomizationMode(ingredientId);
+  const labels = {
+    replaceable: "Available Replacements",
+    variable: "Quantity Pricing",
+    replaceable_variable: "Replacements & Quantity",
+    fixed: "No Customization",
+    default: "Select Customization Mode",
+  };
+  return labels[mode] || labels.default;
+}
+
+function getCustomizationCaption(ingredientId) {
+  const mode = getCustomizationMode(ingredientId);
+  const captions = {
+    replaceable: "Configure replacement options",
+    variable: "Set pricing for quantity changes",
+    replaceable_variable: "Configure replacements and quantity pricing",
+    fixed: "This ingredient cannot be customized",
+    default: "Choose a customization mode from the dropdown above",
+  };
+  return captions[mode] || captions.default;
+}
+
+function updateCustomizationMode(ingredientId, mode) {
+  let customization = customizationsMap.value.get(ingredientId);
+
+  // Get ingredient details to access extra_price
+  const ingredientDetail = ingredientMap.value.get(ingredientId);
+  const defaultExtraPrice = (mode === 'variable' || mode === 'replaceable_variable')
+    ? (parseFloat(ingredientDetail?.extra_price) || 0)
+    : 0;
+
+  if (customization) {
+    const oldMode = customization.mode;
+    customization.mode = mode;
+
+    // Update extra price when mode changes to variable or replaceable_variable
+    if ((mode === 'variable' || mode === 'replaceable_variable') &&
+        (oldMode !== 'variable' && oldMode !== 'replaceable_variable')) {
+      if (!customization.quantityPricing) {
+        customization.quantityPricing = { extra: defaultExtraPrice, reduce: 0 };
+      } else {
+        customization.quantityPricing.extra = defaultExtraPrice;
+      }
+    }
+
+    // Initialize replacementExtras when switching to replaceable_variable mode
+    if (mode === 'replaceable_variable' && oldMode !== 'replaceable_variable') {
+      if (!customization.replacementExtras) {
+        customization.replacementExtras = {};
+      }
+      // Initialize extra prices for already enabled replacements
+      if (customization.enabledReplacements && customization.enabledReplacements.length > 0) {
+        customization.enabledReplacements.forEach(replacementId => {
+          if (customization.replacementExtras[replacementId] === undefined) {
+            const replacementDetail = ingredientMap.value.get(replacementId);
+            const replacementExtraPrice = parseFloat(replacementDetail?.extra_price) || 0;
+            customization.replacementExtras[replacementId] = replacementExtraPrice;
+          }
+        });
+      }
+    }
+  } else {
+    customization = {
+      ingredientId: ingredientId,
+      mode: mode,
+      replacements: {},
+      enabledReplacements: [],
+      replacementExtras: {},
+      quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
+    };
+    product.value.customizations.push(customization);
+    customizationsMap.value.set(ingredientId, customization);
+  }
+
+  if (!customization.replacementExtras) {
+    customization.replacementExtras = {};
+  }
+}function getReplacementOptions(ingredient) {
+  const cacheKey = `${ingredient.type}_${ingredient.id}`;
+  if (replacementOptionsCache.value.has(cacheKey)) {
+    return replacementOptionsCache.value.get(cacheKey);
+  }
+
+  const typeIngredients = ingredientsByType.value.get(ingredient.type) || [];
+  const options = typeIngredients.filter((item) => item.id !== ingredient.id);
+
+  replacementOptionsCache.value.set(cacheKey, options);
+  return options;
+}
+
+function selectAllReplacements(ingredientId, selectAll) {
+  let customization = customizationsMap.value.get(ingredientId);
+
+  if (!customization) {
+    // Get ingredient details to access extra_price
+    const ingredientDetail = ingredientMap.value.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
+
+    customization = {
+      ingredientId: ingredientId,
+      mode: "replaceable",
+      replacements: {},
+      enabledReplacements: [],
+      replacementExtras: {},
+      quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
+    };
+    product.value.customizations.push(customization);
+    customizationsMap.value.set(ingredientId, customization);
+  }
+
+  if (!customization.enabledReplacements)
+    customization.enabledReplacements = [];
+  if (!customization.replacements) customization.replacements = {};
+  if (!customization.replacementExtras) customization.replacementExtras = {};
+
+  const ingredientDetail = ingredientMap.value.get(ingredientId);
+  if (ingredientDetail) {
+    const replacementOptions = getReplacementOptions(ingredientDetail);
+    const originalPrice = parseFloat(ingredientDetail.price) || 0;
+
+    if (selectAll) {
+      replacementOptions.forEach((replacement) => {
+        if (!customization.enabledReplacements.includes(replacement.id)) {
+          customization.enabledReplacements.push(replacement.id);
+
+          const replacementPrice = parseFloat(replacement.price) || 0;
+          const priceDiff = Math.max(0, replacementPrice - originalPrice);
+          customization.replacements[replacement.id] = priceDiff;
+
+          if (customization.mode === "replaceable_variable") {
+            if (!customization.replacementExtras[replacement.id]) {
+              // Use the replacement ingredient's extra_price as default
+              const replacementExtraPrice = parseFloat(replacement.extra_price) || 0;
+              customization.replacementExtras[replacement.id] = replacementExtraPrice;
+            }
+          }
+        }
+      });
+    } else {
+      const replacementIds = new Set(replacementOptions.map((r) => r.id));
+      customization.enabledReplacements =
+        customization.enabledReplacements.filter(
+          (id) => !replacementIds.has(id)
+        );
+    }
+  }
+}
+
+function isReplacementEnabled(ingredientId, replacementId) {
+  const customization = customizationsMap.value.get(ingredientId);
+  if (!customization || !customization.enabledReplacements) {
+    return false;
+  }
+  return customization.enabledReplacements.includes(replacementId);
+}
+
+function toggleReplacement(ingredientId, replacementId, enabled) {
+  let customization = customizationsMap.value.get(ingredientId);
+
+  if (!customization) {
+    // Get ingredient details to access extra_price
+    const ingredientDetail = ingredientMap.value.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
+
+    customization = {
+      ingredientId: ingredientId,
+      mode: "replaceable",
+      replacements: {},
+      enabledReplacements: [],
+      replacementExtras: {},
+      quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
+    };
+    product.value.customizations.push(customization);
+    customizationsMap.value.set(ingredientId, customization);
+  }
+
+  if (!customization.enabledReplacements)
+    customization.enabledReplacements = [];
+  if (!customization.replacements) customization.replacements = {};
+  if (!customization.replacementExtras) customization.replacementExtras = {};
+
+  const index = customization.enabledReplacements.indexOf(replacementId);
+  if (enabled && index === -1) {
+    customization.enabledReplacements.push(replacementId);
+
+    const originalIngredient = ingredientMap.value.get(ingredientId);
+    const replacementIngredient = ingredientMap.value.get(replacementId);
+
+    if (originalIngredient && replacementIngredient) {
+      const originalPrice = parseFloat(originalIngredient.price) || 0;
+      const replacementPrice = parseFloat(replacementIngredient.price) || 0;
+      const priceDiff = Math.max(0, replacementPrice - originalPrice);
+      customization.replacements[replacementId] = priceDiff;
+
+      if (customization.mode === "replaceable_variable") {
+        if (!customization.replacementExtras[replacementId]) {
+          // Use the replacement ingredient's extra_price as default
+          const replacementExtraPrice = parseFloat(replacementIngredient.extra_price) || 0;
+          customization.replacementExtras[replacementId] = replacementExtraPrice;
+        }
+      }
+    }
+  } else if (!enabled && index > -1) {
+    customization.enabledReplacements.splice(index, 1);
+  }
+}
+
+function getReplacementPriceDiff(ingredientId, replacementId) {
+  if (!isReplacementEnabled(ingredientId, replacementId)) {
+    return 0;
+  }
+
+  const customization = customizationsMap.value.get(ingredientId);
+  if (
+    customization &&
+    customization.replacements &&
+    customization.replacements[replacementId] !== undefined
+  ) {
+    return customization.replacements[replacementId];
+  }
+
+  const originalIngredient = ingredientMap.value.get(ingredientId);
+  const replacementIngredient = ingredientMap.value.get(replacementId);
+
+  if (originalIngredient && replacementIngredient) {
+    const originalPrice = parseFloat(originalIngredient.price) || 0;
+    const replacementPrice = parseFloat(replacementIngredient.price) || 0;
+    return Math.max(0, replacementPrice - originalPrice);
+  }
+
+  return 0;
+}
+
+function getReplacementExtraPrice(ingredientId, replacementId) {
+  if (!isReplacementEnabled(ingredientId, replacementId)) {
+    return 0;
+  }
+
+  const customization = customizationsMap.value.get(ingredientId);
+  if (customization && customization.replacementExtras) {
+    // If there's a specific value set for this replacement, return it
+    if (customization.replacementExtras[replacementId] !== undefined) {
+      return customization.replacementExtras[replacementId];
+    }
+  }
+
+  // If no specific value set, return the replacement ingredient's extra_price as default
+  const replacementIngredient = ingredientMap.value.get(replacementId);
+  return parseFloat(replacementIngredient?.extra_price) || 0;
+}
+
+function updateReplacementExtraPrice(ingredientId, replacementId, extraPrice) {
+  const customization = customizationsMap.value.get(ingredientId);
+  if (!customization || !isReplacementEnabled(ingredientId, replacementId)) {
+    return;
+  }
+
+  if (!customization.replacementExtras) {
+    customization.replacementExtras = {};
+  }
+
+  customization.replacementExtras[replacementId] = parseFloat(extraPrice) || 0;
+}
+
+function updateReplacementPriceDiff(ingredientId, replacementId, priceDiff) {
+  const customization = customizationsMap.value.get(ingredientId);
+  if (!customization || !isReplacementEnabled(ingredientId, replacementId)) {
+    return;
+  }
+
+  if (!customization.replacements) {
+    customization.replacements = {};
+  }
+  if (!customization.replacementExtras) {
+    customization.replacementExtras = {};
+  }
+
+  customization.replacements[replacementId] = parseFloat(priceDiff) || 0;
+}
+
+function getQuantityPricing(ingredientId, type) {
+  const customization = customizationsMap.value.get(ingredientId);
+  return customization && customization.quantityPricing
+    ? customization.quantityPricing[type] || 0
+    : 0;
+}
+
+function updateQuantityPricing(ingredientId, type, price) {
+  let customization = customizationsMap.value.get(ingredientId);
+
+  if (!customization) {
+    // Get ingredient details to access extra_price
+    const ingredientDetail = ingredientMap.value.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
+
+    customization = {
+      ingredientId: ingredientId,
+      mode: "variable",
+      replacements: {},
+      enabledReplacements: [],
+      replacementExtras: {},
+      quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
+    };
+    product.value.customizations.push(customization);
+    customizationsMap.value.set(ingredientId, customization);
+  }
+
+  if (!customization.quantityPricing) {
+    // Get ingredient details to access extra_price for existing customizations
+    const ingredientDetail = ingredientMap.value.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
+    customization.quantityPricing = { extra: defaultExtraPrice, reduce: 0 };
+  }
+  if (!customization.replacementExtras) {
+    customization.replacementExtras = {};
+  }
+
+  customization.quantityPricing[type] = parseFloat(price) || 0;
+}
+
+// API functions
+async function fetchCategories() {
+  loadingCategories.value = true;
   try {
-    // Validate form
+    const res = await api.get("/api/categories/active");
+    if (res.data.data) {
+      categoryOptions.value = res.data.data;
+      categoryTree.value = buildCategoryTree(categoryOptions.value);
+    } else {
+      categoryOptions.value = [];
+      categoryTree.value = [];
+    }
+  } catch (e) {
+    categoryOptions.value = [];
+  } finally {
+    loadingCategories.value = false;
+  }
+}
+
+async function fetchIngredients() {
+  loadingIngredients.value = true;
+  try {
+    const res = await api.get("/api/items/active");
+    if (Array.isArray(res.data.data)) {
+      ingredientOptions.value = res.data.data.map((item) => ({
+        label: item.name,
+        value: item.id,
+        description: item.description,
+        type: item.type,
+        price: item.price,
+        extra_price: item.extra_price,
+        id: item.id,
+        name: item.name,
+      }));
+
+      buildIngredientMaps();
+    } else {
+      ingredientOptions.value = [];
+    }
+  } catch (e) {
+    ingredientOptions.value = [];
+  } finally {
+    loadingIngredients.value = false;
+  }
+}
+
+async function saveProduct() {
+  try {
     const isValid = await formRef.value.validate();
     if (!isValid) {
       $q.notify({
@@ -1558,26 +1571,18 @@ const saveProduct = async () => {
 
     saving.value = true;
 
-    // Prepare data for submission
     const submitData = { ...product.value };
 
-    // Convert boolean values to integers for backend
     submitData.is_featured = submitData.is_featured ? 1 : 0;
     submitData.viewable = submitData.viewable ? 1 : 0;
     submitData.customizable = submitData.customizable ? 1 : 0;
 
-    // 确保 ingredients 数据格式正确（如果后端期望的是简单的ID数组，需要转换）
-    // 如果后端支持数量信息，保持原格式；如果只需要ID，可以解注释下面的行
-    // submitData.ingredients = submitData.ingredients.map(ing => ing.id);
-
-    // Ensure image_list is an array
     if (typeof submitData.image_list === "string") {
       submitData.image_list = submitData.image_list
         .split("\n")
         .filter((url) => url.trim());
     }
 
-    // Remove empty strings and ensure proper data types
     if (!submitData.image) delete submitData.image;
     if (!submitData.second_title) delete submitData.second_title;
     if (!submitData.acronym) delete submitData.acronym;
@@ -1594,7 +1599,6 @@ const saveProduct = async () => {
       timeout: 3000,
     });
 
-    // Navigate to product detail page
     router.push({
       path: "/admin/product/detail",
       query: { id: response.data.id },
@@ -1610,16 +1614,38 @@ const saveProduct = async () => {
   } finally {
     saving.value = false;
   }
-};
+}
 
-const imageError = () => {
+function imageError() {
   $q.notify({
     type: "warning",
     message: "Invalid image URL",
     position: "top",
     timeout: 2000,
   });
-};
+}
+
+// Watchers - reduced to essential only
+watch(
+  [() => product.value.price, () => product.value.discount],
+  calculateSellingPrice
+);
+
+watch(
+  () => product.value.customizable,
+  (newValue) => {
+    if (!newValue) {
+      product.value.customizations = [];
+      customizationsMap.value.clear();
+    }
+  }
+);
+
+// Lifecycle hooks
+onMounted(async () => {
+  await Promise.all([fetchCategories(), fetchIngredients()]);
+  initializeMaps();
+});
 </script>
 
 <style scoped>

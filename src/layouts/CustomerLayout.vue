@@ -5,7 +5,7 @@
       <q-toolbar class="GNL__toolbar">
 
         <q-toolbar-title shrink class="row items-center no-wrap">
-          <img width="100px" height="40px" src="../assets/logo.png" />
+          <!-- <img width="100px" height="40px" src="../assets/sidebar-dashboard.png" /> -->
         </q-toolbar-title>
 
         <q-space />
