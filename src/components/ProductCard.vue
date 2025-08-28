@@ -17,7 +17,7 @@
 
       <!-- 热销标签 -->
       <q-badge
-        v-if="isPopular"
+        v-if="product.isPopular"
         color="red"
         class="absolute-top-left q-ma-sm"
         label="Popular"
@@ -39,46 +39,77 @@
         label="Previously Ordered"
       />
 
-      <!-- 订购次数标签（仅对历史餐品显示） -->
+      <!-- 库存状态 -->
       <q-badge
-        v-if="product.orderCount && product.orderCount > 1"
+        v-if="product.stock <= 5 && product.stock > 0"
         color="orange"
-        class="absolute-top-right q-ma-sm q-mt-xl"
-        :label="`${product.orderCount}x ordered`"
+        class="absolute-top-right q-ma-sm"
+        :label="`Only ${product.stock} left`"
+        size="sm"
+      />
+      <q-badge
+        v-else-if="product.stock === 0"
+        color="negative"
+        class="absolute-top-right q-ma-sm"
+        label="Out of Stock"
         size="sm"
       />
 
-      <!-- 评分 -->
-      <div class="absolute-top-right q-ma-sm">
-        <q-chip color="white" text-color="black" dense size="sm">
+      <!-- <div class="absolute-top-right q-ma-sm">
+        <q-chip outline color="amber" text-color="black"  dense size="sm">
           <q-icon name="star" color="amber" size="xs" class="q-mr-xs" />
           {{ product.rating }}
         </q-chip>
-      </div>
+      </div> -->
     </div>
 
     <!-- 产品信息 -->
-    <q-card-section class="q-pa-md">
-      <div class="text-h6 text-weight-medium q-mb-xs ellipsis">
-        {{ product.title }}
+    <q-card-section class="q-pa-md q-pb-none">
+      <div class="row items-center q-mb-xs">
+        <div class="text-h6 text-weight-medium ellipsis">{{ product.title }}</div>
+        <q-chip
+          outline
+          v-if="product.code"
+          color="orange-5"
+          size="sm"
+          dense
+          class="q-ml-sm"
+        >
+          {{ product.code }}
+        </q-chip>
       </div>
       <div class="text-body2 text-grey-6 q-mb-sm ellipsis-2-lines">
         {{ product.description }}
       </div>
 
-      <div class="row items-center justify-between q-mb-sm">
-        <div class="text-h6 text-weight-bold text-deep-orange">
-          ${{ product.price.toFixed(2) }}
-        </div>
+      <div v-if="product.tags && product.tags.length > 0" class="q-mb-sm">
         <q-chip
-          color="orange-1"
-          text-color="orange-8"
+          v-for="tag in product.tags"
+          :key="tag"
+          color="grey-2"
+          text-color="grey-7"
           size="sm"
           dense
-          icon="schedule"
+          class="q-mr-xs q-mb-xs"
         >
-          {{ product.cookTime }}
+          {{ tag }}
         </q-chip>
+      </div>
+
+      <div class="row items-center justify-between ">
+        <div class="text-h6 text-weight-bold text-deep-orange">
+          <div v-if="product.originalPrice && product.originalPrice !== product.price" class="row items-center q-gutter-xs">
+            <span class="text-body2 text-grey-6" style="text-decoration: line-through;">
+              ${{ product.originalPrice.toFixed(2) }}
+            </span>
+            <span class="text-h6 text-weight-bold text-deep-orange">
+              ${{ product.price.toFixed(2) }}
+            </span>
+          </div>
+          <div v-else>
+            ${{ product.price.toFixed(2) }}
+          </div>
+        </div>
       </div>
 
       <!-- 历史餐品额外信息 -->

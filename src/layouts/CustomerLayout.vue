@@ -38,7 +38,7 @@
         </div>
 
         <!-- 用户菜单 -->
-        <q-btn round flat icon="account_circle" size="md" color="grey-7">
+        <q-btn v-if="false" round flat icon="account_circle" size="md" color="grey-7">
           <q-menu anchor="bottom right" self="top right" class="shadow-4">
             <q-list style="min-width: 180px" class="q-py-sm">
               <q-item clickable v-close-popup @click="goToProfile">
@@ -72,7 +72,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-page-container>
+    <q-page-container class="bg-grey-1  q-mt-md">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -126,23 +126,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 深橙色主题 */
-.text-deep-orange {
-  color: #FF5722 !important;
-}
-
-.bg-deep-orange {
-  background-color: #FF5722 !important;
-}
-
-/* Header 阴影 */
-.shadow-2 {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.shadow-4 {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
 
 /* 进度指示器样式 */
 .progress-dot {

@@ -218,7 +218,7 @@
             @click="continueShopping"
           />
           <q-btn
-            color="primary"
+            color="deep-orange-5"
             size="lg"
             label="Place Order"
             icon="check_circle"
@@ -920,7 +920,7 @@ function continueShopping() {
   sessionStorage.setItem('pendingOrder', JSON.stringify(orderData))
 
   // 返回到订单页面
-  router.push('/customer/order')
+  router.push('/')
 }
 
 function proceedToPayment() {
