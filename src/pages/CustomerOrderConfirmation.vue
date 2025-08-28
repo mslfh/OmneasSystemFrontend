@@ -50,7 +50,7 @@
               <div class="text-caption text-grey-6">
                 {{ orderInfo.diningType === 'takeaway' ? 'Estimated Pickup Time' : 'Estimated Ready Time' }}
               </div>
-              <div class="text-h6 text-primary text-weight-bold">
+              <div class="text-h6 text-orange text-weight-bold">
                 {{ estimatedTime }}
               </div>
             </div>
@@ -61,7 +61,7 @@
             <div class="row items-center q-mb-md">
               <q-icon
                 :name="orderInfo.diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'"
-                color="primary"
+                color="deep-orange"
                 size="sm"
                 class="q-mr-sm"
               />
@@ -115,7 +115,7 @@
             <!-- 总价 -->
             <div class="row items-center justify-between">
               <div class="text-h6 text-weight-bold">Total Paid:</div>
-              <div class="text-h6 text-weight-bold text-primary">
+              <div class="text-h6 text-weight-bold text-orange">
                 ${{ orderInfo.total.toFixed(2) }}
               </div>
             </div>
@@ -126,7 +126,7 @@
         <div class="q-gutter-md">
           <!-- 跟踪订单按钮 -->
           <q-btn
-            color="primary"
+            color="deep-orange"
             size="lg"
             label="Track Your Order"
             icon="track_changes"
@@ -159,7 +159,7 @@
           <!-- 回到首页 -->
           <q-btn
             flat
-            color="primary"
+            color="deep-orange"
             size="md"
             label="Back to Menu"
             icon="restaurant_menu"
@@ -178,7 +178,7 @@
               <q-btn
                 flat
                 dense
-                color="primary"
+                color="deep-orange"
                 icon="phone"
                 label="Call Us"
                 size="sm"
@@ -187,7 +187,7 @@
               <q-btn
                 flat
                 dense
-                color="primary"
+                color="deep-orange"
                 icon="chat"
                 label="Chat Support"
                 size="sm"
@@ -199,36 +199,6 @@
       </div>
     </div>
 
-    <!-- SMS/Email 通知对话框 -->
-    <q-dialog v-model="showNotificationDialog">
-      <q-card class="q-pa-md" style="min-width: 300px">
-        <q-card-section class="q-pb-none">
-          <div class="text-h6">Order Notifications</div>
-        </q-card-section>
-
-        <q-card-section>
-          <div class="text-body2 q-mb-md">
-            Get updates about your order status
-          </div>
-
-          <q-toggle
-            v-model="notifications.sms"
-            label="SMS notifications"
-            color="primary"
-          />
-          <q-toggle
-            v-model="notifications.email"
-            label="Email notifications"
-            color="primary"
-          />
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Skip" v-close-popup />
-          <q-btn color="primary" label="Save" @click="saveNotificationSettings" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
@@ -246,12 +216,6 @@ const orderNumber = ref('')
 const orderStatus = ref('pending')
 const orderTime = ref(new Date())
 const estimatedTime = ref('')
-const showNotificationDialog = ref(false)
-
-const notifications = ref({
-  sms: true,
-  email: false
-})
 
 const orderInfo = ref({
   diningType: 'takeaway',
@@ -379,16 +343,6 @@ function openChat() {
   })
 }
 
-function saveNotificationSettings() {
-  // 保存通知设置
-  console.log('Notification settings:', notifications.value)
-  $q.notify({
-    type: 'positive',
-    message: 'Notification preferences saved',
-    position: 'top'
-  })
-  showNotificationDialog.value = false
-}
 
 function calculateEstimatedTime() {
   const now = new Date()
@@ -441,12 +395,6 @@ onMounted(() => {
   // 计算预计时间
   estimatedTime.value = calculateEstimatedTime()
 
-  // 2秒后显示通知设置对话框（如果需要）
-  setTimeout(() => {
-    if (orderStatus.value === 'pending') {
-      showNotificationDialog.value = true
-    }
-  }, 2000)
 })
 
 function loadMockData() {

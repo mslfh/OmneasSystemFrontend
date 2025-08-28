@@ -45,53 +45,44 @@
 
           <q-card-section class="q-pa-md">
             <div class="row q-gutter-md">
-              <div class="col-12 col-sm-6">
+              <div class="col-12">
                 <q-input
                   v-model="customerInfo.name"
                   label="Full Name *"
                   outlined
                   dense
-                  :rules="[val => !!val || 'Name is required']"
-                />
-              </div>
-              <div class="col-12 col-sm-6">
-                <q-input
-                  v-model="customerInfo.phone"
-                  label="Phone Number *"
-                  outlined
-                  dense
-                  :rules="[val => !!val || 'Phone number is required']"
-                />
-              </div>
-              <div class="col-12" v-if="diningType === 'takeaway'">
-                <q-input
-                  v-model="customerInfo.pickupTime"
-                  label="Preferred Pickup Time"
-                  outlined
-                  dense
-                  type="time"
-                  hint="Leave empty for ASAP"
-                />
-              </div>
-              <div class="col-12" v-if="diningType === 'dinein'">
-                <q-input
-                  v-model="customerInfo.tableNumber"
-                  label="Table Number (Optional)"
-                  outlined
-                  dense
-                  type="number"
                 />
               </div>
               <div class="col-12">
                 <q-input
                   v-model="customerInfo.notes"
-                  label="Special Instructions"
+                  label="Any Comments"
                   outlined
                   dense
                   type="textarea"
-                  rows="2"
-                  hint="Any special requests or dietary requirements"
+                  rows="3"
+                  hint="Please leave any comments or special requests here"
                 />
+
+                <!-- Preset Comment Chips -->
+                <div class="q-mt-md">
+                  <div class="text-caption text-grey-6 q-mb-sm">Quick Options:</div>
+                  <div class="row q-gutter-xs">
+                    <q-chip
+                      v-for="chip in commentChips"
+                      :key="chip"
+                      :selected="selectedChips.includes(chip)"
+                      clickable
+                      color="deep-orange"
+                      text-color="white"
+                      size="sm"
+                      @click="toggleChip(chip)"
+                      :outline="!selectedChips.includes(chip)"
+                    >
+                      {{ chip }}
+                    </q-chip>
+                  </div>
+                </div>
               </div>
             </div>
           </q-card-section>
@@ -233,7 +224,6 @@
             icon="check_circle"
             class="q-px-xl"
             :loading="processing"
-            :disable="!isFormValid"
             @click="placeOrder"
           />
         </div>
@@ -535,6 +525,24 @@ const customerInfo = ref({
   notes: ''
 })
 
+// 预设的备注选项
+const commentChips = [
+  'Extra Sauce',
+  'Mild',
+  'Not Spicy',
+  'Less Salt',
+  'Extra Cheese',
+  'No Onions',
+  'Well Done',
+  'Medium Rare',
+  'Extra Hot',
+  'On the Side',
+  'No Ice',
+  'Less Sugar'
+]
+
+const selectedChips = ref([])
+
 // 假数据
 const mockOrderItems = [
   {
@@ -663,11 +671,31 @@ const totalAmount = computed(() => {
   return orderItems.value.reduce((sum, item) => sum + item.currentPrice, 0)
 })
 
-const isFormValid = computed(() => {
-  return customerInfo.value.name.trim() && customerInfo.value.phone.trim()
-})
 
 // 方法
+function toggleChip(chip) {
+  const index = selectedChips.value.indexOf(chip)
+  if (index > -1) {
+    // 如果已选中，则移除
+    selectedChips.value.splice(index, 1)
+  } else {
+    // 如果未选中，则添加
+    selectedChips.value.push(chip)
+  }
+
+  // 更新notes字段，将选中的chips添加到现有notes中
+  const existingNotes = customerInfo.value.notes.replace(/,?\s*(Extra Sauce|Mild|Not Spicy|Less Salt|Extra Cheese|No Onions|Well Done|Medium Rare|Extra Hot|On the Side|No Ice|Less Sugar)/g, '').trim()
+  const chipText = selectedChips.value.length > 0 ? selectedChips.value.join(', ') : ''
+
+  if (existingNotes && chipText) {
+    customerInfo.value.notes = existingNotes + ', ' + chipText
+  } else if (chipText) {
+    customerInfo.value.notes = chipText
+  } else {
+    customerInfo.value.notes = existingNotes
+  }
+}
+
 function openCustomization(index) {
   currentItemIndex.value = index
   showCustomDialog.value = true
@@ -908,7 +936,7 @@ function proceedToPayment() {
 }
 
 async function placeOrder() {
-  if (!isFormValid.value) {
+  if (!customerInfo.value.name.trim()) {
     $q.notify({
       type: 'negative',
       message: 'Please fill in your name and phone number',
@@ -1094,14 +1122,10 @@ onMounted(() => {
     orderItems.value = orderData.items || []
     diningType.value = orderData.diningType || 'takeaway'
   } else {
-    // 如果没有确认的订单数据，返回菜单页
-    $q.notify({
-      type: 'warning',
-      message: 'No order data found. Please start over.',
-      position: 'top'
-    })
-    router.push('/')
-    return
+    // 如果没有确认的订单数据，使用模拟数据进行测试
+    console.log('No order data found, using mock data for testing')
+    orderItems.value = mockOrderItems
+    diningType.value = 'takeaway'
   }
 
   // 加载保存的客户信息

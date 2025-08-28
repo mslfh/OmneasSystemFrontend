@@ -393,10 +393,11 @@ const cartItemsCount = computed(() => {
 })
 
 const totalAmount = computed(() => {
-  return cartItems.value.reduce((sum, item) => {
+  const total = cartItems.value.reduce((sum, item) => {
     const product = products.value.find(p => p.id === item.id)
     return sum + (product ? product.price * item.quantity : 0)
   }, 0)
+  return Number(total.toFixed(2))
 })
 
 // 购物车中的完整商品信息
@@ -472,6 +473,18 @@ function decreaseQuantity(cartItem) {
   } else {
     const index = cartItems.value.indexOf(cartItem)
     cartItems.value.splice(index, 1)
+    // 如果购物车清空，自动关闭弹窗并跳转回菜单
+    if (cartItems.value.length === 0) {
+      showCart.value = false
+      $q.notify({
+        type: 'info',
+        message: 'Your cart is empty. Redirecting to menu...',
+        position: 'top'
+      })
+      setTimeout(() => {
+        router.push('/')
+      }, 1200)
+    }
   }
 }
 
@@ -493,14 +506,14 @@ function proceedToCheckout() {
       return {
         ...product,
         quantity: cartItem.quantity,
-        currentPrice: product.price * cartItem.quantity,
+        currentPrice: Number((product.price * cartItem.quantity).toFixed(2)),
         customizations: []
       }
     }),
-    total: totalAmount.value
+    total: Number(totalAmount.value.toFixed(2))
   }
 
-  // 将订单数据存储到sessionStorage或pinia store
+  // 将订单数据存储到sessionStorage
   sessionStorage.setItem('pendingOrder', JSON.stringify(orderData))
 
   // 跳转到确认页面
@@ -519,9 +532,6 @@ onMounted(() => {
     router.push('/')
     return
   }
-
-  // 初始化数据
-  console.log('Order page mounted')
 
   // 加载用户历史点过的餐品
   loadUserOrderedItems()
@@ -543,15 +553,12 @@ function loadPendingOrder() {
     const pendingOrder = sessionStorage.getItem('pendingOrder')
     if (pendingOrder) {
       const orderData = JSON.parse(pendingOrder)
-
-      // 恢复购物车项目
+      // 恢复购物车项目，补全 id 和 quantity
       if (orderData.items && orderData.items.length > 0) {
         cartItems.value = orderData.items.map(item => ({
           id: item.id,
           quantity: item.quantity || 1
         }))
-
-        // 切换到已点菜品标签页
         currentTab.value = 'ordered'
       }
     }

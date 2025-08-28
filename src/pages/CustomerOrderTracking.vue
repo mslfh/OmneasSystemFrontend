@@ -333,7 +333,7 @@ function getCurrentStatusColor() {
   switch (currentStep.value) {
     case 1: return 'orange'
     case 2: return 'blue'
-    case 3: return 'purple'
+    case 3: return 'deep-orange'
     case 4: return 'green'
     case 5: return 'green'
     default: return 'grey'
