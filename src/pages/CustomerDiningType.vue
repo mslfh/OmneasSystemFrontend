@@ -4,7 +4,7 @@
     <div class="row justify-center">
       <div class="col-12 col-md-8 col-lg-6">
         <!-- 页面标题 -->
-        <div class="text-h4 text-weight-bold text-grey-8 q-mb-lg text-center">
+        <div class="text-h4 text-weight-bold text-grey-7 q-mb-lg text-center">
           Choose Dining Type
         </div>
 

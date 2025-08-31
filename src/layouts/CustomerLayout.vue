@@ -15,7 +15,7 @@
 
         <q-toolbar-title class="text-weight-bold text-h6 text-deep-orange">
           <q-icon name="restaurant" size="sm" class="q-mr-sm" />
-          OmnEats
+          <!-- OmnEats -->
         </q-toolbar-title>
 
         <q-space />

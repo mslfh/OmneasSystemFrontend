@@ -4,7 +4,7 @@
     <div class="relative-position">
       <q-img
         :src="product.image"
-        style="height: 200px"
+        :style="{ height: $q.screen.lt.sm ? '120px' : '140px' }"
         fit="cover"
         class="product-image"
       >
@@ -19,7 +19,7 @@
       <q-badge
         v-if="product.isPopular"
         color="red"
-        class="absolute-top-left q-ma-sm"
+        :class="['absolute-top-left', $q.screen.lt.sm ? 'q-ma-xs' : 'q-ma-sm']"
         label="Popular"
       />
 
@@ -27,7 +27,7 @@
       <q-badge
         v-if="isOrdered"
         color="green"
-        class="absolute-top-left q-ma-sm"
+        :class="['absolute-top-left', $q.screen.lt.sm ? 'q-ma-xs' : 'q-ma-sm']"
         label="Ordered"
       />
 
@@ -35,7 +35,7 @@
       <q-badge
         v-if="product.isHistorical"
         color="purple"
-        class="absolute-top-left q-ma-sm"
+        :class="['absolute-top-left', $q.screen.lt.sm ? 'q-ma-xs' : 'q-ma-sm']"
         label="Previously Ordered"
       />
 
@@ -43,14 +43,14 @@
       <q-badge
         v-if="product.stock <= 5 && product.stock > 0"
         color="orange"
-        class="absolute-top-right q-ma-sm"
+        :class="['absolute-top-right', $q.screen.lt.sm ? 'q-ma-xs' : 'q-ma-sm']"
         :label="`Only ${product.stock} left`"
         size="sm"
       />
       <q-badge
         v-else-if="product.stock === 0"
         color="negative"
-        class="absolute-top-right q-ma-sm"
+        :class="['absolute-top-right', $q.screen.lt.sm ? 'q-ma-xs' : 'q-ma-sm']"
         label="Out of Stock"
         size="sm"
       />
@@ -64,21 +64,21 @@
     </div>
 
     <!-- 产品信息 -->
-    <q-card-section class="q-pa-md q-pb-none">
+    <q-card-section :class="['q-pb-none', $q.screen.lt.sm ? 'q-pa-sm' : 'q-pa-md']">
       <div class="row items-center q-mb-xs">
-        <div class="text-h6 text-weight-medium ellipsis">{{ product.title }}</div>
+        <div :class="['text-weight-medium ellipsis', $q.screen.lt.sm ? 'text-subtitle1' : 'text-h6']">{{ product.title }}</div>
         <q-chip
           outline
           v-if="product.code"
           color="orange-5"
           size="sm"
           dense
-          class="q-ml-sm"
+          :class="[$q.screen.lt.sm ? 'q-ml-xs' : 'q-ml-sm']"
         >
           {{ product.code }}
         </q-chip>
       </div>
-      <div class="text-body2 text-grey-6 q-mb-sm ellipsis-2-lines">
+      <div :class="['q-mb-sm ellipsis-2-lines', $q.screen.lt.sm ? 'text-caption' : 'text-body2 text-grey-6']">
         {{ product.description }}
       </div>
 
@@ -90,30 +90,30 @@
           text-color="grey-7"
           size="sm"
           dense
-          class="q-mr-xs q-mb-xs"
+          class="q-mr-xs q-mb-xs q-screen-lt-sm:q-mr-xs q-screen-lt-sm:q-mb-xs"
         >
           {{ tag }}
         </q-chip>
       </div>
 
-      <div class="row items-center justify-between ">
-        <div class="text-h6 text-weight-bold text-deep-orange">
-          <div v-if="product.originalPrice && product.originalPrice !== product.price" class="row items-center q-gutter-xs">
-            <span class="text-body2 text-grey-6" style="text-decoration: line-through;">
+      <div class="row items-center justify-between">
+        <div :class="['text-weight-bold text-deep-orange', $q.screen.lt.sm ? 'text-subtitle1' : 'text-h6']">
+          <div v-if="product.originalPrice && product.originalPrice !== product.price" :class="['row items-center', $q.screen.lt.sm ? 'q-gutter-xs' : 'q-gutter-xs']">
+            <span :class="['text-grey-6', $q.screen.lt.sm ? 'text-caption' : 'text-body2']" style="text-decoration: line-through;">
               ${{ product.originalPrice.toFixed(2) }}
             </span>
-            <span class="text-h6 text-weight-bold text-deep-orange">
+            <span :class="['text-weight-bold text-deep-orange', $q.screen.lt.sm ? 'text-subtitle1' : 'text-h6']">
               ${{ product.price.toFixed(2) }}
             </span>
           </div>
-          <div v-else>
+          <div v-else :class="['text-weight-bold text-deep-orange', $q.screen.lt.sm ? 'text-subtitle1' : 'text-h6']">
             ${{ product.price.toFixed(2) }}
           </div>
         </div>
       </div>
 
       <!-- 历史餐品额外信息 -->
-      <div v-if="product.isHistorical" class="text-caption text-purple-8 q-mb-sm">
+      <div v-if="product.isHistorical" :class="['text-purple-8 q-mb-sm', $q.screen.lt.sm ? 'text-body2' : 'text-caption']">
         <div v-if="product.lastOrdered">
           Last ordered: {{ formatLastOrdered(product.lastOrdered) }}
         </div>
@@ -124,13 +124,14 @@
     </q-card-section>
 
     <!-- 操作按钮 -->
-    <q-card-actions class="q-pa-md q-pt-none">
+    <q-card-actions :class="['q-pt-none', $q.screen.lt.sm ? 'q-pa-sm' : 'q-pa-md']">
       <div v-if="currentQuantity === 0" class="full-width">
         <q-btn
           color="deep-orange"
           label="Add to Cart"
           icon="add_shopping_cart"
-          class="full-width"
+          :class="['full-width', $q.screen.lt.sm ? 'text-caption' : '']"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="addToCart"
         />
       </div>
@@ -141,9 +142,10 @@
           dense
           color="grey-6"
           icon="remove"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="removeFromCart"
         />
-        <div class="text-h6 text-weight-bold q-mx-md">
+        <div :class="['text-weight-bold', $q.screen.lt.sm ? 'text-subtitle1 q-mx-sm' : 'text-h6 q-mx-md']">
           {{ currentQuantity }}
         </div>
         <q-btn
@@ -151,6 +153,7 @@
           dense
           color="deep-orange"
           icon="add"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="addToCart"
         />
       </div>

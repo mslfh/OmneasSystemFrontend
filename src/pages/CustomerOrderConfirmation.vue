@@ -10,7 +10,7 @@
             :color="orderStatus === 'paid' ? 'green' : 'orange'"
             class="q-mb-md"
           />
-          <div class="text-h4 text-weight-bold text-grey-8 q-mb-sm">
+          <div class="text-h4 text-weight-bold text-grey-7 q-mb-sm">
             {{ getStatusTitle() }}
           </div>
           <div class="text-body1 text-grey-6">

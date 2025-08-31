@@ -12,12 +12,18 @@
           <q-card-section class="q-pa-md bg-deep-orange text-white">
             <div class="row items-center">
               <q-icon
-                :name="diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'"
+                :name="
+                  diningType === 'takeaway' ? 'shopping_bag' : 'restaurant'
+                "
                 size="sm"
                 class="q-mr-sm"
               />
               <span class="text-h6">
-                {{ diningType === 'takeaway' ? 'Take Away Order' : 'Dine In Order' }}
+                {{
+                  diningType === "takeaway"
+                    ? "Take Away Order"
+                    : "Dine In Order"
+                }}
               </span>
             </div>
           </q-card-section>
@@ -44,45 +50,68 @@
 
                 <!-- 商品信息 -->
                 <div class="col">
-                  <div class="text-weight-medium text-body1">{{ item.title }}</div>
-                  <div class="text-caption text-grey-6 q-mb-sm">{{ item.description }}</div>
+                  <div class="text-weight-medium text-body1">
+                    {{ item.title }}
+                  </div>
+                  <div class="text-caption text-grey-6 q-mb-sm">
+                    {{ item.description }}
+                  </div>
 
                   <!-- 定制选项显示 -->
                   <div v-if="item.customizations.length > 0" class="q-mb-sm">
-                    <div class="text-caption text-weight-medium text-deep-orange">Customizations:</div>
-                    <div class="text-caption text-grey-7">
-                      <div v-for="custom in item.customizations" :key="custom.id" class="q-mb-xs">
+                    <div
+                      class="text-caption text-weight-medium text-deep-orange q-mb-xs"
+                    >
+                      Customizations:
+                    </div>
+                    <div class="customization-tags">
+                      <q-chip
+                        v-for="custom in item.customizations"
+                        :key="custom.id"
+                        size="sm"
+                        :color="getCustomizationColor(custom)"
+                        text-color="white"
+                        class="q-mr-xs q-mb-xs"
+                      >
                         {{ formatCustomization(custom) }}
-                      </div>
+                      </q-chip>
                     </div>
                   </div>
 
                   <!-- 数量和价格 -->
                   <div class="row items-center justify-between">
-                    <div class="text-caption text-grey-6">Qty: {{ item.quantity || 1 }}</div>
-                    <div class="text-weight-bold text-primary">${{ item.currentPrice.toFixed(2) }}</div>
+                    <div class="text-caption text-grey-6">
+                      Qty: {{ item.quantity || 1 }}
+                    </div>
+                    <div class="text-weight-bold text-orange">
+                      ${{ item.currentPrice.toFixed(2) }}
+                    </div>
                   </div>
 
                   <!-- 操作按钮 -->
-                  <div class="row items-center justify-between q-mt-sm">
-                    <q-btn
-                      v-if="item.customizable"
-                      flat
-                      dense
-                      color="deep-orange"
-                      label="Customize"
-                      icon="tune"
-                      size="sm"
-                      @click="openCustomization(index)"
-                    />
-                    <q-btn
-                      flat
-                      dense
-                      color="negative"
-                      icon="delete"
-                      size="sm"
-                      @click="removeItem(index)"
-                    />
+                  <div class="row items-center q-mt-sm">
+                    <div class="col-auto">
+                      <q-btn
+                        v-if="item.customizable"
+                        flat
+                        dense
+                        color="deep-orange"
+                        label="Customize"
+                        icon="tune"
+                        size="sm"
+                        @click="openCustomization(index)"
+                      />
+                    </div>
+                    <div class="col-auto q-ml-auto">
+                      <q-btn
+                        flat
+                        dense
+                        color="grey-6"
+                        icon="delete"
+                        size="sm"
+                        @click="removeItem(index)"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -92,7 +121,9 @@
             <q-separator class="q-my-lg" />
             <div class="row items-center justify-between">
               <div class="text-h6 text-weight-bold">Total:</div>
-              <div class="text-h6 text-weight-bold text-deep-orange">${{ totalAmount.toFixed(2) }}</div>
+              <div class="text-h6 text-weight-bold text-deep-orange">
+                ${{ totalAmount.toFixed(2) }}
+              </div>
             </div>
           </q-card-section>
         </q-card>
@@ -122,98 +153,247 @@
     </div>
 
     <!-- 定制弹窗 -->
-    <q-dialog v-model="showCustomDialog" persistent>
-      <q-card style="min-width: 400px; max-width: 600px">
-        <q-card-section class="q-pb-none">
+    <q-dialog v-model="showCustomDialog">
+      <q-card
+        :style="
+          $q.screen.lt.sm
+            ? {minWidth: '330px', maxWidth: '600px' }
+            : { minWidth: '400px', maxWidth: '600px' }
+        "
+      >
+        <q-card-section class="bg-deep-orange text-white">
           <div class="text-h6">Customize {{ currentItem?.title }}</div>
         </q-card-section>
 
         <q-card-section class="q-py-md" v-if="currentItem">
           <div class="q-gutter-md">
-            <!-- 配料定制 -->
-            <div v-for="ingredient in currentItem.ingredients" :key="ingredient.id">
-              <div class="row items-center justify-between q-mb-sm">
-                <div class="text-weight-medium">{{ ingredient.name }}</div>
-                <q-chip
-                  :color="getCustomizationModeColor(ingredient.mode)"
-                  :text-color="getCustomizationModeTextColor(ingredient.mode)"
-                  :icon="getCustomizationModeIcon(ingredient.mode)"
-                  size="sm"
+            <!-- 可定制配料组 -->
+            <div v-if="Object.keys(groupedIngredients.customizable).length > 0" class="ingredient-group">
+              <div class="group-header">
+                <q-icon name="tune" color="deep-orange" class="q-mr-sm" />
+                <span class="group-title text-deep-orange">Customizable Ingredients</span>
+              </div>
+
+              <div
+                v-for="(ingredients, type) in groupedIngredients.customizable"
+                :key="`customizable-${type}`"
+                class="type-section"
+              >
+                <div class="type-header">
+                  {{ type }}
+                </div>
+
+                <div
+                  v-for="ingredient in ingredients"
+                  :key="ingredient.id"
+                  class="q-mb-md q-pa-sm"
+                  style="background: white; border-radius: 6px;"
                 >
-                  {{ getCustomizationModeLabel(ingredient.mode) }}
-                </q-chip>
-              </div>
+                  <div class="row items-center justify-between q-mb-sm">
+                    <!-- 配料名称 -->
+                    <div class="text-weight-medium">
+                      {{ ingredient.name }}
+                      <!-- 替换按钮（如果适用） -->
+                    <q-btn
+                      v-if="
+                        ingredient.mode === 'replaceable' ||
+                        ingredient.mode === 'replaceable_variable'
+                      "
+                      flat
+                      dense
+                      color="deep-orange"
+                      label="Change"
+                      icon="swap_horiz"
+                      size="sm"
+                      @click="showReplacementDialog(ingredient)"
+                    >
+                      <q-tooltip>Change</q-tooltip>
+                    </q-btn>
+                    </div>
 
-              <!-- 数量调整 -->
-              <div v-if="ingredient.mode === 'variable' || ingredient.mode === 'replaceable_variable'">
-                <div class="row items-center q-gutter-sm q-mb-sm">
-                  <q-btn
-                    round
-                    dense
-                    size="sm"
-                    icon="remove"
-                    color="grey-6"
-                    @click="decreaseQuantity(ingredient)"
-                  />
-                  <span class="text-weight-medium">{{ ingredient.currentQuantity }}</span>
-                  <q-btn
-                    round
-                    dense
-                    size="sm"
-                    icon="add"
-                    color="primary"
-                    @click="increaseQuantity(ingredient)"
-                  />
+                    <!-- 控制按钮组 -->
+                    <div class="row items-center q-gutter-sm">
+                      <!-- 数量调整按钮（如果适用） -->
+                      <div
+                        v-if="
+                          ingredient.mode === 'variable' ||
+                          ingredient.mode === 'replaceable_variable'
+                        "
+                        class="row items-center q-gutter-xs"
+                      >
+                        <q-btn
+                          round
+                          dense
+                          size="8px"
+                          icon="remove"
+                          color="grey-6"
+                          @click="decreaseQuantity(ingredient)"
+                        />
+                        <span class="text-weight-medium text-caption">{{
+                          ingredient.currentQuantity
+                        }}</span>
+                        <q-btn
+                          round
+                          dense
+                          size="8px"
+                          icon="add"
+                          color="deep-orange-6"
+                          @click="increaseQuantity(ingredient)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 价格信息（如果有数量调整） -->
+                  <div
+                    v-if="
+                      ingredient.mode === 'variable' ||
+                      ingredient.mode === 'replaceable_variable'
+                    "
+                    class="text-caption text-grey-6 q-mb-sm"
+                  >
+                    {{ getQuantityPriceInfo(ingredient) }}
+                  </div>
                 </div>
-                <div class="text-caption text-grey-6">
-                  {{ getQuantityPriceInfo(ingredient) }}
+              </div>
+            </div>
+
+            <!-- 固定配料组 -->
+            <div v-if="Object.keys(groupedIngredients.fixed).length > 0" class="ingredient-group">
+              <div class="group-header">
+                <q-icon name="flatware" color="deep-orange-6" class="q-mr-sm" />
+                <span class="group-title text-deep-orange-6">Standard Ingredients</span>
+              </div>
+
+              <!-- 提示信息 -->
+              <div class="info-notice">
+                <div class="row items-center">
+                  <span class="text-caption text-grey-7">
+                     <q-icon name="info" color="grey-6" size="xs" />
+                    <strong> Note:</strong>Please add special requests when checkout if you'd like to change these.
+                  </span>
                 </div>
               </div>
 
-              <!-- 替换选项 -->
-              <div v-if="ingredient.mode === 'replaceable' || ingredient.mode === 'replaceable_variable'">
-                <q-btn
-                  flat
-                  dense
-                  color="deep-orange"
-                  :label="`Replace with: ${getCurrentReplacementName(ingredient)}`"
-                  icon="swap_horiz"
-                  class="full-width"
-                  @click="showReplacementDialog(ingredient)"
-                />
-              </div>
+              <div
+                v-for="(ingredients, type) in groupedIngredients.fixed"
+                :key="`fixed-${type}`"
+                class="type-section"
+              >
+                <div class="type-header">
+                  {{ type }}
+                </div>
 
-              <q-separator class="q-my-md" />
+                <div
+                  v-for="ingredient in ingredients"
+                  :key="ingredient.id"
+                  class="q-mb-md q-pa-sm"
+                  style="background: white; border-radius: 6px;"
+                >
+                  <div class="row items-center justify-between">
+                    <div class="text-weight-medium text-grey-6">
+                      {{ ingredient.name }}
+                    </div>
+                    <div class="text-caption text-grey-5">
+                      Standard • Qty: {{ ingredient.currentQuantity }}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey" @click="closeCustomization" />
-          <q-btn label="Apply Changes" color="deep-orange" @click="applyCustomization" />
+          <q-btn flat label="Close" color="grey" @click="closeCustomization" />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
     <!-- 替换选择弹窗 -->
-    <q-dialog v-model="showReplacementSelectDialog" persistent>
-      <q-card style="min-width: 300px">
+    <q-dialog v-model="showReplacementSelectDialog">
+      <q-card
+      :style="
+          $q.screen.lt.sm
+            ? {minWidth: '330px', maxHeight: '600px' }
+            : { minWidth: '400px', maxWidth: '600px' }
+        ">
         <q-card-section class="q-pb-none">
-          <div class="text-h6">Replace {{ currentReplaceIngredient?.name }}</div>
+          <div class="text-h6">
+            Replace {{ currentReplaceIngredient?.name }}
+          </div>
         </q-card-section>
 
         <q-card-section>
-          <q-option-group
-            v-model="currentReplaceIngredient.replacementId"
-            :options="currentReplaceIngredient?.replacementOptions || []"
-            color="deep-orange"
-            @update:model-value="selectReplacement"
-          />
+          <q-list separator>
+            <q-item
+              v-for="option in currentReplaceIngredient?.replacementOptions ||
+              []"
+              :key="option.value"
+              clickable
+              @click="selectReplacement(option.value)"
+              :class="{
+                'bg-deep-orange-1':
+                  currentReplaceIngredient?.replacementId === option.value,
+              }"
+            >
+              <q-item-section avatar>
+                <q-radio
+                  :model-value="currentReplaceIngredient?.replacementId"
+                  :val="option.value"
+                  color="deep-orange"
+                  @update:model-value="selectReplacement"
+                />
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label class="text-weight-medium">{{
+                  option.name
+                }}</q-item-label>
+                <q-item-label caption class="text-grey-6">{{
+                  option.type
+                }}</q-item-label>
+                <q-item-label caption class="text-grey-5 q-mt-xs">{{
+                  option.description
+                }}</q-item-label>
+              </q-item-section>
+
+              <q-item-section side>
+                <div class="text-right">
+                  <div
+                    class="text-weight-medium"
+                    :class="
+                      option.price_change >= 0
+                        ? 'text-deep-orange'
+                        : 'text-green'
+                    "
+                  >
+                    {{ option.price_change >= 0 ? "+" : "" }}${{
+                      option.price_change.toFixed(2)
+                    }}
+                  </div>
+                  <div class="text-caption text-grey-6">
+                    {{
+                      option.price_change === 0
+                        ? "No change"
+                        : option.price_change > 0
+                        ? "Extra cost"
+                        : "Discount"
+                    }}
+                  </div>
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey" @click="closeReplacementDialog" />
-          <q-btn label="Confirm" color="deep-orange" @click="confirmReplacement" />
+          <q-btn
+            flat
+            label="Cancel"
+            color="grey"
+            @click="closeReplacementDialog"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -221,336 +401,767 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useQuasar } from "quasar";
+import axios from "axios";
 
-const router = useRouter()
-const $q = useQuasar()
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
-// 响应式数据
-const showCustomDialog = ref(false)
-const showReplacementSelectDialog = ref(false)
-const currentItemIndex = ref(-1)
-const currentReplaceIngredient = ref(null)
-const orderItems = ref([])
-const diningType = ref('takeaway')
+const router = useRouter();
+const $q = useQuasar();
 
+// ====================
+// 响应式数据定义
+// ====================
+
+/** 定制弹窗显示状态 */
+const showCustomDialog = ref(false);
+
+/** 替换选择弹窗显示状态 */
+const showReplacementSelectDialog = ref(false);
+
+/** 当前正在定制的商品索引 */
+const currentItemIndex = ref(-1);
+
+/** 当前正在替换的配料 */
+const currentReplaceIngredient = ref(null);
+
+/** 订单商品列表 */
+const orderItems = ref([]);
+
+/** 就餐类型 */
+const diningType = ref("takeaway");
+
+/** 所有配料详细信息缓存 */
+const bulkItemsCache = ref(new Map());
+
+// ====================
 // 计算属性
+// ====================
+
+/** 当前正在定制的商品 */
 const currentItem = computed(() => {
-  return currentItemIndex.value >= 0 ? orderItems.value[currentItemIndex.value] : null
-})
+  return currentItemIndex.value >= 0
+    ? orderItems.value[currentItemIndex.value]
+    : null;
+});
 
+/** 按可更改性和类型分组的配料列表 */
+const groupedIngredients = computed(() => {
+  if (!currentItem.value || !currentItem.value.ingredients) {
+    return {};
+  }
+
+  const groups = {
+    customizable: [], // 可更改的配料
+    fixed: [] // 不可更改的配料
+  };
+
+  // 按可更改性分组
+  currentItem.value.ingredients.forEach(ingredient => {
+    if (ingredient.mode === 'fixed') {
+      groups.fixed.push(ingredient);
+    } else {
+      groups.customizable.push(ingredient);
+    }
+  });
+
+  // 对每个组内的配料按类型分组
+  const groupByType = (ingredients) => {
+    const typeGroups = {};
+    ingredients.forEach(ingredient => {
+      // 使用配料对象的type属性
+      const ingredientType = ingredient.type || 'Other';
+
+      if (!typeGroups[ingredientType]) {
+        typeGroups[ingredientType] = [];
+      }
+      typeGroups[ingredientType].push(ingredient);
+    });
+    return typeGroups;
+  };
+
+  return {
+    customizable: groupByType(groups.customizable),
+    fixed: groupByType(groups.fixed)
+  };
+});
+
+/** 订单总金额 */
 const totalAmount = computed(() => {
-  return orderItems.value.reduce((sum, item) => sum + item.currentPrice, 0)
-})
+  return orderItems.value.reduce((sum, item) => sum + item.currentPrice, 0);
+});
 
-// 方法
+// ====================
+// 定制弹窗相关方法
+// ====================
+
+/**
+ * 打开定制弹窗
+ * @param {number} index - 商品在订单列表中的索引
+ */
 function openCustomization(index) {
-  currentItemIndex.value = index
-  showCustomDialog.value = true
+  currentItemIndex.value = index;
+  showCustomDialog.value = true;
 }
 
+/**
+ * 关闭定制弹窗
+ */
 function closeCustomization() {
-  showCustomDialog.value = false
-  currentItemIndex.value = -1
+  showCustomDialog.value = false;
+  currentItemIndex.value = -1;
 }
 
+/**
+ * 从订单中移除商品
+ * @param {number} index - 要移除的商品索引
+ */
 function removeItem(index) {
-  orderItems.value.splice(index, 1)
+  orderItems.value.splice(index, 1);
 
-  // 如果没有商品了，返回到菜单页面
+  // 如果没有商品了，提示用户
   if (orderItems.value.length === 0) {
     $q.notify({
-      type: 'info',
-      message: 'Your cart is empty. Redirecting to menu...',
-      position: 'top'
-    })
-    setTimeout(() => {
-      router.push('/')
-    }, 1500)
+      type: "info",
+      message: "Your cart is empty. Redirecting to menu...",
+      position: "top",
+    });
   }
 }
 
+// ====================
+// 配料定制模式相关方法
+// ====================
+
+/**
+ * 获取定制模式的颜色
+ * @param {string} mode - 定制模式
+ * @returns {string} 颜色类名
+ */
 function getCustomizationModeColor(mode) {
   const colors = {
-    fixed: 'grey-4',
-    variable: 'blue',
-    replaceable: 'orange',
-    replaceable_variable: 'purple'
-  }
-  return colors[mode] || 'grey'
+    fixed: "grey-4",
+    variable: "blue",
+    replaceable: "orange",
+    replaceable_variable: "purple",
+  };
+
+  return colors[mode] || "grey";
 }
 
+/**
+ * 获取定制模式文本颜色
+ * @param {string} mode - 定制模式
+ * @returns {string} 文本颜色类名
+ */
 function getCustomizationModeTextColor(mode) {
   const colors = {
-    fixed: 'grey-8',
-    variable: 'white',
-    replaceable: 'white',
-    replaceable_variable: 'white'
-  }
-  return colors[mode] || 'white'
+    fixed: "grey-8",
+    variable: "white",
+    replaceable: "white",
+    replaceable_variable: "white",
+  };
+
+  return colors[mode] || "white";
 }
 
+/**
+ * 获取定制模式的图标
+ * @param {string} mode - 定制模式
+ * @returns {string} 图标名称
+ */
 function getCustomizationModeIcon(mode) {
   const icons = {
-    fixed: 'lock',
-    variable: 'tune',
-    replaceable: 'swap_horiz',
-    replaceable_variable: 'settings'
-  }
-  return icons[mode] || 'help'
+    fixed: "lock",
+    variable: "tune",
+    replaceable: "swap_horiz",
+    replaceable_variable: "settings",
+  };
+
+  return icons[mode] || "help";
 }
 
+/**
+ * 获取定制模式的标签文本
+ * @param {string} mode - 定制模式
+ * @returns {string} 标签文本
+ */
 function getCustomizationModeLabel(mode) {
   const labels = {
-    fixed: 'Fixed',
-    variable: 'Variable',
-    replaceable: 'Replaceable',
-    replaceable_variable: 'Replaceable + Variable'
-  }
-  return labels[mode] || 'Unknown'
+    fixed: "Fixed",
+    variable: "Variable",
+    replaceable: "Replaceable",
+    replaceable_variable: "Replaceable + Variable",
+  };
+
+  return labels[mode] || "Unknown";
 }
 
+// ====================
+// 数量调整相关方法
+// ====================
+
+/**
+ * 增加配料数量
+ * @param {Object} ingredient - 配料对象
+ */
 function increaseQuantity(ingredient) {
   if (ingredient.currentQuantity < 10) {
-    ingredient.currentQuantity++
-    recalculateItemPrice()
+    ingredient.currentQuantity++;
+    recalculateItemPrice();
+    autoApplyCustomization();
   }
 }
 
+/**
+ * 减少配料数量
+ * @param {Object} ingredient - 配料对象
+ */
 function decreaseQuantity(ingredient) {
   if (ingredient.currentQuantity > 0) {
-    ingredient.currentQuantity--
-    recalculateItemPrice()
+    ingredient.currentQuantity--;
+    recalculateItemPrice();
+    autoApplyCustomization();
   }
 }
 
+/**
+ * 获取数量价格信息
+ * @param {Object} ingredient - 配料对象
+ * @returns {string} 价格信息文本
+ */
+function getQuantityPriceInfo(ingredient) {
+  const quantityDiff = ingredient.currentQuantity - ingredient.originalQuantity;
+
+  if (quantityDiff > 0) {
+    const extraCost = quantityDiff * ingredient.extra_price;
+    return `+$${extraCost.toFixed(2)} for extra`;
+  } else if (quantityDiff < 0) {
+    return "Reduced portion";
+  }
+
+  return "Standard portion";
+}
+
+// ====================
+// 替换选择相关方法
+// ====================
+
+/**
+ * 显示替换选择弹窗
+ * @param {Object} ingredient - 要替换的配料对象
+ */
 function showReplacementDialog(ingredient) {
-  currentReplaceIngredient.value = ingredient
-  showReplacementSelectDialog.value = true
+  currentReplaceIngredient.value = ingredient;
+  showReplacementSelectDialog.value = true;
+  // 数据已经在缓存中，不需要再次调用API
 }
 
+/**
+ * 关闭替换选择弹窗
+ */
 function closeReplacementDialog() {
-  showReplacementSelectDialog.value = false
-  currentReplaceIngredient.value = null
+  showReplacementSelectDialog.value = false;
+  currentReplaceIngredient.value = null;
 }
 
-function selectReplacement(option) {
+/**
+ * 选择替换选项
+ * @param {number|string} value - 选中的替换项ID
+ */
+function selectReplacement(value) {
   if (currentReplaceIngredient.value) {
-    currentReplaceIngredient.value.replacementId = option
-  }
-}
+    currentReplaceIngredient.value.replacementId = value;
 
-function confirmReplacement() {
-  if (currentReplaceIngredient.value) {
-    const selectedReplacement = currentReplaceIngredient.value.replacementOptions.find(
-      opt => opt.value === currentReplaceIngredient.value.replacementId
-    )
+    // 立即应用更改
+    const selectedReplacement =
+      currentReplaceIngredient.value.replacementOptions.find(
+        (opt) => opt.value === value
+      );
 
     if (selectedReplacement) {
-      currentReplaceIngredient.value.displayName = selectedReplacement.label.replace(' (Original)', '')
+      currentReplaceIngredient.value.displayName = selectedReplacement.name;
     }
 
-    recalculateItemPrice()
+    recalculateItemPrice();
+    autoApplyCustomization();
+
+    // 显示成功提示
+    $q.notify({
+      type: "positive",
+      color: "orange-8",
+      message: `Replaced with ${selectedReplacement?.name || 'selected option'}`,
+      position: "top",
+    });
+
+    // 关闭弹窗
+    closeReplacementDialog();
   }
-  closeReplacementDialog()
 }
 
+/**
+ * 获取当前替换配料的显示名称
+ * @param {Object} ingredient - 配料对象
+ * @returns {string} 显示名称
+ */
 function getCurrentReplacementName(ingredient) {
+  if (!ingredient.replacementOptions) {
+    return ingredient.name;
+  }
+
   const current = ingredient.replacementOptions.find(
-    opt => opt.value === ingredient.replacementId
-  )
-  return current ? current.label.replace(' (Original)', '') : ingredient.name
+    (opt) => opt.value === ingredient.replacementId
+  );
+
+  return current ? current.name : ingredient.name;
 }
 
+// ====================
+// 价格计算相关方法
+// ====================
+
+/**
+ * 重新计算当前商品的价格
+ */
 function recalculateItemPrice() {
-  if (!currentItem.value) return
+  if (!currentItem.value) {
+    return;
+  }
 
-  let totalPrice = currentItem.value.originalPrice
-  let priceAdjustment = 0
+  let totalPrice = currentItem.value.originalPrice;
+  let priceAdjustment = 0;
 
-  currentItem.value.ingredients.forEach(ingredient => {
+  currentItem.value.ingredients.forEach((ingredient) => {
     // 数量变化的价格调整
-    const quantityDiff = ingredient.currentQuantity - ingredient.originalQuantity
+    const quantityDiff =
+      ingredient.currentQuantity - ingredient.originalQuantity;
     if (quantityDiff !== 0) {
-      priceAdjustment += quantityDiff * ingredient.extra_price
+      priceAdjustment += quantityDiff * ingredient.extra_price;
     }
 
     // 替换的价格调整
-    if (ingredient.replacementId && ingredient.replacementId !== ingredient.id) {
-      const replacement = ingredient.replacementOptions.find(opt => opt.value === ingredient.replacementId)
+    if (
+      ingredient.replacementId &&
+      ingredient.replacementId !== ingredient.id
+    ) {
+      const replacement = ingredient.replacementOptions.find(
+        (opt) => opt.value === ingredient.replacementId
+      );
+
       if (replacement) {
-        priceAdjustment += replacement.price_change || 0
+        priceAdjustment += replacement.price_change || 0;
       }
     }
-  })
+  });
 
-  currentItem.value.currentPrice = Math.max(0, totalPrice + priceAdjustment)
+  currentItem.value.currentPrice = Math.max(0, totalPrice + priceAdjustment);
 }
 
-function getQuantityPriceInfo(ingredient) {
-  const quantityDiff = ingredient.currentQuantity - ingredient.originalQuantity
-  if (quantityDiff > 0) {
-    const extraCost = quantityDiff * ingredient.extra_price
-    return `+$${extraCost.toFixed(2)} for extra`
-  } else if (quantityDiff < 0) {
-    return `Reduced portion`
+// ====================
+// 定制应用相关方法
+// ====================
+
+/**
+ * 自动应用定制更改
+ */
+function autoApplyCustomization() {
+  if (!currentItem.value) {
+    return;
   }
-  return 'Standard portion'
-}
-
-function applyCustomization() {
-  if (!currentItem.value) return
 
   // 更新定制信息
-  const customizations = []
+  const customizations = [];
 
-  currentItem.value.ingredients.forEach(ingredient => {
+  currentItem.value.ingredients.forEach((ingredient) => {
     // 记录数量变化
     if (ingredient.currentQuantity !== ingredient.originalQuantity) {
-      const change = ingredient.currentQuantity > ingredient.originalQuantity ?
-        `+${ingredient.currentQuantity - ingredient.originalQuantity}` :
-        `${ingredient.currentQuantity - ingredient.originalQuantity}`
-      const priceChange = (ingredient.currentQuantity - ingredient.originalQuantity) * ingredient.extra_price
+      const change =
+        ingredient.currentQuantity > ingredient.originalQuantity
+          ? `+${ingredient.currentQuantity - ingredient.originalQuantity}`
+          : `${ingredient.currentQuantity - ingredient.originalQuantity}`;
+
+      const priceChange =
+        (ingredient.currentQuantity - ingredient.originalQuantity) *
+        ingredient.extra_price;
 
       customizations.push({
-        type: 'quantity',
+        type: "quantity",
         ingredientName: ingredient.name,
         change: change,
-        priceChange: priceChange
-      })
+        priceChange: priceChange,
+        originalQuantity: ingredient.originalQuantity,
+        currentQuantity: ingredient.currentQuantity,
+      });
     }
 
     // 记录替换
-    if (ingredient.replacementId && ingredient.replacementId !== ingredient.id) {
-      const replacement = ingredient.replacementOptions.find(opt => opt.value === ingredient.replacementId)
+    if (
+      ingredient.replacementId &&
+      ingredient.replacementId !== ingredient.id
+    ) {
+      const replacement = ingredient.replacementOptions.find(
+        (opt) => opt.value === ingredient.replacementId
+      );
+
       if (replacement) {
         customizations.push({
-          type: 'replacement',
+          type: "replacement",
           originalName: ingredient.name,
-          replacementName: replacement.label.replace(' (Original)', ''),
-          priceChange: replacement.price_change || 0
-        })
+          replacementName: replacement.name,
+          priceChange: replacement.price_change || 0,
+        });
       }
     }
-  })
+  });
 
-  currentItem.value.customizations = customizations
-
-  $q.notify({
-    type: 'positive',
-    message: 'Customization applied!',
-    position: 'top'
-  })
-
-  closeCustomization()
+  currentItem.value.customizations = customizations;
 }
 
+/**
+ * 格式化定制信息显示文本
+ * @param {Object} custom - 定制对象
+ * @returns {string} 格式化后的文本
+ */
 function formatCustomization(custom) {
-  if (custom.type === 'quantity') {
-    const sign = custom.priceChange >= 0 ? '+' : ''
-    return `${custom.ingredientName} ${custom.change} (${sign}$${custom.priceChange.toFixed(2)})`
-  } else if (custom.type === 'replacement') {
-    const sign = custom.priceChange >= 0 ? '+' : ''
-    return `${custom.originalName} → ${custom.replacementName} (${sign}$${custom.priceChange.toFixed(2)})`
+  if (custom.type === "quantity") {
+    // 解析change字符串，获取数量变化
+    const changeNum = parseInt(custom.change);
+    const ingredientName = custom.ingredientName;
+
+    if (changeNum === 0) {
+      return `${ingredientName} (Standard)`;
+    } else if (changeNum < 0) {
+      // 如果减少到0，显示"No itemName"
+      if (custom.currentQuantity === 0) {
+        return `No ${ingredientName}`;
+      } else {
+        return `Less ${ingredientName} (${changeNum})`;
+      }
+    } else {
+      // 如果增加，显示"Extra itemName"
+      return `Extra ${ingredientName} (+${changeNum})`;
+    }
+  } else if (custom.type === "replacement") {
+    const sign = custom.priceChange >= 0 ? "+" : "";
+    return `${custom.originalName} → ${custom.replacementName}`;
   }
-  return custom.toString()
+
+  return custom.toString();
 }
 
+/**
+ * 获取定制标签的颜色
+ * @param {Object} custom - 定制对象
+ * @returns {string} Quasar颜色名称
+ */
+function getCustomizationColor(custom) {
+  if (custom.type === "quantity") {
+    if (custom.currentQuantity === 0) return 'negative'
+    if (custom.currentQuantity > custom.originalQuantity) return 'positive'
+    if (custom.currentQuantity < custom.originalQuantity) return 'warning'
+    return 'primary'
+  } else if (custom.type === "replacement") {
+    return 'info'
+  }
+  return 'primary'
+}
+
+// ====================
+// 数据获取相关方法
+// ====================
+
+/**
+ * 从缓存中获取配料详细信息
+ * @param {Array} ids - 配料ID数组
+ * @returns {Map} 配料详细信息映射
+ */
+function getBulkItemsDetails(ids) {
+  const details = new Map();
+
+  // 从缓存中获取数据
+  ids.forEach((id) => {
+    if (bulkItemsCache.value.has(id)) {
+      details.set(id, bulkItemsCache.value.get(id));
+    }
+  });
+
+  return details;
+}
+
+/**
+ * 构建配料对象列表
+ * @param {Object} data - API返回的定制数据
+ * @returns {Array} 配料对象数组
+ */
+function buildIngredients(data) {
+  const { items, customizationItems } = data;
+
+  // 创建customizationItems的映射
+  const customMap = {};
+  customizationItems.forEach((custom) => {
+    customMap[custom.item_id] = custom;
+  });
+
+  // 收集所有需要的配料IDs
+  const allIngredientIds = new Set();
+
+  // 添加所有基础配料
+  items.forEach((item) => {
+    allIngredientIds.add(item.id);
+  });
+
+  // 添加所有可替换的配料
+  customizationItems.forEach((custom) => {
+    if (
+      custom.mode === "replaceable" ||
+      custom.mode === "replaceable_variable"
+    ) {
+      const replacementList = custom.replacement_list || [];
+      replacementList.forEach((id) => allIngredientIds.add(id));
+    }
+  });
+
+  // 获取所有配料的详细信息
+  const ingredientDetails = getBulkItemsDetails(Array.from(allIngredientIds));
+
+  return items.map((item) => {
+    const custom = customMap[item.id];
+    const details = ingredientDetails.get(item.id);
+
+    const ingredient = {
+      id: item.id,
+      name: details ? details.name : item.name,
+      type: details ? details.type : 'Other',
+      mode: custom ? custom.mode : "fixed",
+      originalQuantity: item.quantity || 1,
+      currentQuantity: item.quantity || 1,
+      extra_price: 0,
+      displayName: details ? details.name : item.name,
+    };
+
+    if (custom) {
+      try {
+        const quantityPrice = custom.quantity_price || {};
+        ingredient.extra_price = quantityPrice.extra || 0;
+      } catch (e) {
+        console.error("Error parsing quantity_price:", e);
+      }
+
+      if (
+        custom.mode === "replaceable" ||
+        custom.mode === "replaceable_variable"
+      ) {
+        ingredient.replacementId = item.id;
+        ingredient.replacementOptions = [
+          {
+            label: `${details ? details.name : item.name} (Original)`,
+            value: item.id,
+            price_change: 0,
+            name: details ? details.name : item.name,
+            type: details ? details.type : "Original",
+            description: details ? details.description : "Original ingredient",
+          },
+        ];
+
+        try {
+          const replacementList = custom.replacement_list || [];
+          const replacementDiff = custom.replacement_diff || {};
+
+          replacementList.forEach((repId) => {
+            const repDetails = ingredientDetails.get(repId);
+            const priceChange =
+              replacementDiff[repId.toString()] || replacementDiff[repId] || 0;
+
+            ingredient.replacementOptions.push({
+              label: repDetails ? repDetails.name : `Item ${repId}`,
+              value: repId,
+              price_change: priceChange,
+              name: repDetails ? repDetails.name : `Item ${repId}`,
+              type: repDetails ? repDetails.type : "Alternative",
+              description: repDetails
+                ? repDetails.description
+                : "Alternative ingredient",
+            });
+          });
+        } catch (e) {
+          console.error("Error parsing replacement data:", e);
+        }
+      }
+    }
+
+    return ingredient;
+  });
+}
+
+// ====================
+// 导航相关方法
+// ====================
+
+/**
+ * 继续购物，返回菜单页面
+ */
 function continueShopping() {
   // 保存当前订单状态
   const orderData = {
     items: orderItems.value,
     total: totalAmount.value,
-    diningType: diningType.value
-  }
-  sessionStorage.setItem('pendingOrder', JSON.stringify(orderData))
+    diningType: diningType.value,
+  };
+
+  sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
 
   // 返回到订单页面
-  router.push('/')
+  router.push("/");
 }
 
+/**
+ * 继续结账流程
+ */
 function proceedToCheckout() {
   if (orderItems.value.length === 0) {
     $q.notify({
-      type: 'negative',
-      message: 'Your cart is empty',
-      position: 'top'
-    })
-    return
+      type: "negative",
+      message: "Your cart is empty",
+      position: "top",
+    });
+
+    return;
   }
 
   // 保存确认后的订单状态到sessionStorage
   const orderData = {
     items: orderItems.value,
     total: totalAmount.value,
-    diningType: diningType.value
-  }
-  sessionStorage.setItem('confirmedOrder', JSON.stringify(orderData))
+    diningType: diningType.value,
+  };
+
+  sessionStorage.setItem("confirmedOrder", JSON.stringify(orderData));
 
   // 跳转到支付页面（填写个人信息）
-  router.push('/checkout')
+  router.push("/checkout");
 }
 
-// 生命周期
-onMounted(() => {
+// ====================
+// 生命周期钩子
+// ====================
+
+/**
+ * 组件挂载时的初始化逻辑
+ */
+onMounted(async () => {
   // 从sessionStorage加载订单数据
-  const pendingOrder = sessionStorage.getItem('pendingOrder')
+  const pendingOrder = sessionStorage.getItem("pendingOrder");
+
   if (pendingOrder) {
-    const orderData = JSON.parse(pendingOrder)
-    orderItems.value = orderData.items || []
-    diningType.value = orderData.diningType || 'takeaway'
-  } else {
-    // 如果没有待处理的订单，使用模拟数据
-    orderItems.value = [
-      {
-        id: 1,
-        title: "Margherita Pizza",
-        description: "Classic pizza with fresh tomatoes, mozzarella, and basil",
-        image: "/src/assets/products/jeroen-den-otter-iKmm0okt6Q4-unsplash.jpg",
-        originalPrice: 18.99,
-        currentPrice: 18.99,
-        customizable: true,
-        customizations: [],
-        quantity: 1,
-        ingredients: [
-          {
-            id: 1,
-            name: "Mozzarella Cheese",
-            mode: "variable",
-            originalQuantity: 1,
-            currentQuantity: 1,
-            extra_price: 2.50
-          },
-          {
-            id: 2,
-            name: "Tomato Sauce",
-            mode: "replaceable",
-            originalQuantity: 1,
-            currentQuantity: 1,
-            replacementId: 2,
-            replacementOptions: [
-              { label: "Tomato Sauce (Original)", value: 2, price_change: 0 },
-              { label: "BBQ Sauce", value: 3, price_change: 1.00 },
-              { label: "Pesto Sauce", value: 4, price_change: 2.00 }
-            ]
+    const orderData = JSON.parse(pendingOrder);
+    orderItems.value = orderData.items || [];
+    diningType.value = orderData.diningType || "takeaway";
+
+    // 为每个商品初始化ingredients
+    orderItems.value.forEach((item) => {
+      item.ingredients = [];
+    });
+
+    // 为可定制商品获取定制数据
+    const customizableItems = orderItems.value.filter(
+      (item) => item.customizable
+    );
+
+    if (customizableItems.length > 0) {
+      try {
+        // 并行获取所有定制数据
+        const customizationPromises = customizableItems.map(async (item) => {
+          const response = await axios.get(
+            `${VITE_API_URL}/api/get-product-customization/${item.id}`
+          );
+
+          if (response.data.success) {
+            return { itemId: item.id, data: response.data.data };
           }
-        ]
+
+          return null;
+        });
+
+        const customizationResults = await Promise.all(customizationPromises);
+
+        // 收集所有需要获取详细信息的配料IDs
+        const allIngredientIds = new Set();
+
+        customizationResults.forEach((result) => {
+          if (result && result.data) {
+            const { items, customizationItems } = result.data;
+
+            // 添加所有基础配料
+            items.forEach((item) => {
+              allIngredientIds.add(item.id);
+            });
+
+            // 添加所有可替换的配料
+            customizationItems.forEach((custom) => {
+              if (
+                custom.mode === "replaceable" ||
+                custom.mode === "replaceable_variable"
+              ) {
+                const replacementList = custom.replacement_list || [];
+                replacementList.forEach((id) => allIngredientIds.add(id));
+              }
+            });
+          }
+        });
+
+        // 获取所有配料的详细信息
+        if (allIngredientIds.size > 0) {
+          try {
+            const idsString = Array.from(allIngredientIds).join(",");
+            const bulkResponse = await axios.get(
+              `${VITE_API_URL}/api/get-bulk-items/${idsString}`
+            );
+
+            if (bulkResponse.data.success) {
+              const bulkItems = bulkResponse.data.data;
+
+              // 缓存详细信息
+              bulkItems.forEach((item) => {
+                bulkItemsCache.value.set(item.id, item);
+              });
+            }
+          } catch (bulkError) {
+            console.error("Error fetching bulk items:", bulkError);
+          }
+        }
+
+        // 构建ingredients
+        customizationResults.forEach((result) => {
+          if (result) {
+            const item = orderItems.value.find((i) => i.id === result.itemId);
+
+            if (item) {
+              item.ingredients = buildIngredients(result.data);
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching customizations:", error);
       }
-    ]
+    }
+  } else {
+    // 如果没有待处理的订单，设置空数组
+    orderItems.value = [];
   }
 
   // 如果没有商品，返回菜单页
   if (orderItems.value.length === 0) {
     $q.notify({
-      type: 'info',
-      message: 'Your cart is empty. Redirecting to menu...',
-      position: 'top'
-    })
-    router.push('/')
+      type: "info",
+      message: "Your cart is empty. Redirecting to menu...",
+      position: "top",
+    });
+
+    router.push("/");
   }
-})
+});
 </script>
 
 <style scoped>
@@ -567,16 +1178,79 @@ onMounted(() => {
 }
 
 .bg-deep-orange {
-  background-color: #FF5722 !important;
+  background-color: #ff5722 !important;
 }
 
 .text-deep-orange {
-  color: #FF5722 !important;
+  color: #ff5722 !important;
 }
 
 /* 定制弹窗样式 */
 .q-dialog .q-card {
   border-radius: 12px;
+}
+
+/* 分组样式 */
+.ingredient-group {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.group-title {
+  font-weight: 600;
+  color: #424242;
+}
+
+.type-section {
+  margin-bottom: 16px;
+}
+
+.type-header {
+  font-weight: 500;
+  color: #616161;
+  margin-bottom: 8px;
+  padding-left: 12px;
+  border-left: 3px solid #ff5722;
+}
+
+/* 提示信息样式 */
+.info-notice {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%);
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  position: relative;
+}
+
+.info-notice::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #2196f3, #1976d2);
+  border-radius: 4px 0 0 4px;
+}
+
+.info-notice .q-icon {
+  opacity: 0.8;
+}
+
+.info-notice .text-caption {
+  line-height: 1.4;
+  font-weight: 400;
 }
 
 /* 按钮组样式优化 */
@@ -587,6 +1261,27 @@ onMounted(() => {
 /* 选项组样式 */
 .q-option-group .q-radio {
   margin-bottom: 8px;
+}
+
+/* 定制标签样式 */
+.customization-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.customization-tags .q-chip {
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.customization-tags .q-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* 响应式调整 */

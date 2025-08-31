@@ -4,7 +4,7 @@
     <div class="row justify-center">
       <div class="col-12 col-md-8 col-lg-6">
         <!-- 页面标题 -->
-        <div class="text-h4 text-weight-bold text-grey-8 q-mb-lg text-center">
+        <div class="text-h4 text-weight-bold text-grey-7 q-mb-lg text-center">
           Order Menu
         </div>
 
@@ -134,7 +134,7 @@
           <q-tab-panel name="popular" class="q-pa-sm">
             <div class="row q-col-gutter-md">
               <div
-                class="col-12 col-sm-6 col-md-4"
+                class="col-6 col-md-4"
                 v-for="item in popularItems"
               >
                 <product-card
@@ -152,7 +152,7 @@
           <q-tab-panel name="all" class="q-pa-sm">
             <div class="row q-col-gutter-md">
               <div
-                class="col-12 col-sm-6 col-md-4"
+                class="col-6 col-md-4"
                 v-for="item in filteredProducts"
               >
                 <product-card
@@ -303,7 +303,7 @@ import { ref, computed, onMounted } from "vue";
 import ProductCard from "../components/ProductCard.vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
-const { VITE_API_URL } = import.meta.env;
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 const router = useRouter();
 
@@ -512,6 +512,7 @@ function proceedToCheckout() {
 onMounted(async () => {
   try {
     const response = await axios.get(`${VITE_API_URL}/api/get-products`);
+    console.log(`${VITE_API_URL}/api/get-products`);
     if (response.data.success) {
       products.value = response.data.data
         .map((item) => ({
@@ -522,9 +523,8 @@ onMounted(async () => {
           originalPrice: parseFloat(item.price),
           price: parseFloat(item.selling_price),
           image: item.image,
-          category: item.tag.split(",")[0].toLowerCase(),
           isPopular: item.is_featured,
-          tags: item.tag.split(",").map((tag) => tag.trim().toLowerCase()),
+          tags: item.tag ? item.tag.split(",").map((tag) => tag.trim().toLowerCase()) : [],
           code: item.code,
           stock: item.stock,
           sort: item.sort,
@@ -533,7 +533,7 @@ onMounted(async () => {
         .sort((a, b) => {
           if (a.sort !== b.sort) return a.sort - b.sort;
           if (b.isPopular !== a.isPopular) return b.isPopular - a.isPopular;
-          return a.id - b.id;
+          return a.title.length - b.title.length;
         });
     } else {
       console.error("Failed to fetch products:", response.data.message);
