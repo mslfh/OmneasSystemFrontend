@@ -187,6 +187,7 @@
           />
         </q-btn>
       </q-page-sticky>
+
       <!-- 购物车弹窗 -->
       <q-dialog v-model="showCart" position="bottom">
         <q-card
@@ -396,6 +397,19 @@ const totalAmount = computed(() => {
 
 const cartItemsWithDetails = computed(() => {
   return cartItems.value.map((cartItem) => {
+    // If this cartItem contains a customization snapshot, prefer that data
+    if (cartItem.snapshot) {
+      return {
+        id: cartItem.id,
+        title: cartItem.snapshot.title || cartItem.snapshot.name || 'Item',
+        price: cartItem.currentPrice || cartItem.snapshot.price || 0,
+        image: cartItem.snapshot.image || '',
+        quantity: cartItem.quantity,
+        snapshot: cartItem.snapshot,
+        customized: true,
+      };
+    }
+
     const product = products.value.find((p) => p.id === cartItem.id);
     if (product) {
       return {
@@ -432,7 +446,20 @@ function selectCategory(categoryId) {
 }
 
 function addToCart(product) {
-  const existingItem = cartItems.value.find((item) => item.id === product.id);
+  // product may be a simple product or a customized snapshot object
+  if (product && product.customized && product.snapshot) {
+    // push the customized snapshot as a cart item with its own id (keep original id for reference)
+    cartItems.value.push({
+      id: product.id,
+      quantity: product.quantity || 1,
+      snapshot: product.snapshot,
+      currentPrice: product.currentPrice || product.snapshot.price || 0,
+      customized: true,
+    });
+    return;
+  }
+
+  const existingItem = cartItems.value.find((item) => item.id === product.id && !item.snapshot);
   if (existingItem) {
     existingItem.quantity++;
   } else {
@@ -444,7 +471,14 @@ function addToCart(product) {
 }
 
 function removeFromCart(product) {
-  const existingItem = cartItems.value.find((item) => item.id === product.id);
+  // product may be a cart detail object from the UI
+  let existingItem = null;
+  if (product && product.snapshot) {
+    existingItem = cartItems.value.find((item) => item.snapshot === product.snapshot || (item.snapshot && item.snapshot.id === product.snapshot.id));
+  } else {
+    existingItem = cartItems.value.find((item) => item.id === product.id && !item.snapshot);
+  }
+
   if (existingItem) {
     if (existingItem.quantity > 1) {
       existingItem.quantity--;
@@ -488,18 +522,44 @@ function proceedToCheckout() {
     });
     return;
   }
+  // Build order data preserving snapshots for customized items
+  const items = cartItems.value.map((cartItem) => {
+    if (cartItem.snapshot) {
+      // snapshot already contains ingredients and other metadata
+      return {
+        id: cartItem.id,
+        title: cartItem.snapshot.title || 'Item',
+        description: cartItem.snapshot.description || '',
+        image: cartItem.snapshot.image || '',
+        quantity: cartItem.quantity || 1,
+        customizable: true,
+        originalPrice: cartItem.snapshot.originalPrice || cartItem.snapshot.price || 0,
+        price: cartItem.snapshot.price || cartItem.currentPrice || 0,
+        currentPrice: Number(((cartItem.currentPrice || cartItem.snapshot.price || 0) * (cartItem.quantity || 1)).toFixed(2)),
+        ingredients: cartItem.snapshot.ingredients || [],
+        customizations: cartItem.snapshot.customizations || [],
+      };
+    }
+
+    const product = products.value.find((p) => p.id === cartItem.id) || {};
+    return {
+      id: cartItem.id,
+      title: product.title || 'Item',
+      description: product.description || '',
+      image: product.image || '',
+      quantity: cartItem.quantity || 1,
+      customizable: product.customizable || false,
+      originalPrice: product.originalPrice || product.price || 0,
+      price: product.price || 0,
+      currentPrice: Number(((product.price || 0) * (cartItem.quantity || 1)).toFixed(2)),
+      ingredients: [],
+      customizations: [],
+    };
+  });
 
   const orderData = {
     diningType: diningType.value,
-    items: cartItems.value.map((cartItem) => {
-      const product = products.value.find((p) => p.id === cartItem.id);
-      return {
-        ...product,
-        quantity: cartItem.quantity,
-        currentPrice: Number((product.price * cartItem.quantity).toFixed(2)),
-        customizations: [],
-      };
-    }),
+    items,
     total: Number(totalAmount.value.toFixed(2)),
   };
 
