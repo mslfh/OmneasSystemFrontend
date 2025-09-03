@@ -58,6 +58,17 @@
         size="sm"
       />
 
+      <!-- 产品代码 - 显示在右下角 -->
+      <q-chip
+        v-if="product.code"
+        color="deep-orange-4"
+        size="10px"
+        dense
+        :class="['absolute-bottom-right text-white', $q.screen.lt.sm ? 'q-ma-xs' : 'q-ma-sm']"
+      >
+        {{ product.code }}
+      </q-chip>
+
       <!-- <div class="absolute-top-right q-ma-sm">
         <q-chip outline color="amber" text-color="black"  dense size="sm">
           <q-icon name="star" color="amber" size="xs" class="q-mr-xs" />
@@ -79,16 +90,6 @@
         >
           {{ product.title }}
         </div>
-        <q-chip
-          outline
-          v-if="product.code"
-          color="orange-5"
-          size="sm"
-          dense
-          :class="[$q.screen.lt.sm ? 'q-ml-xs' : 'q-ml-sm']"
-        >
-          {{ product.code }}
-        </q-chip>
       </div>
       <div
         :class="[

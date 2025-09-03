@@ -32,7 +32,7 @@
         <!-- 订单项目列表 -->
         <q-card class="q-mb-lg shadow-2 rounded-borders-lg">
           <q-card-section class="q-pa-md">
-            <div class="text-h6 q-mb-md">Your Items</div>
+            <div class="text-h6 q-pb-md ">Your Items</div>
             <div class="q-gutter-md">
               <div
                 v-for="(item, index) in orderItems"
@@ -118,7 +118,38 @@
               </div>
             </div>
           </q-card-section>
+           <q-card-section class="q-pa-md bg-deep-orange text-white">
+            <div class="row items-center justify-between">
+              <div class="text-h6">Order Total</div>
+              <div class="text-h5 text-weight-bold">
+                ${{ totalAmount.toFixed(2) }}
+              </div>
+            </div>
+          </q-card-section>
         </q-card>
+
+
+        <!-- 底部操作按钮 -->
+        <div class="row justify-center q-mt-xl q-gutter-md">
+          <q-btn
+            color="grey-6"
+            outline
+            size="lg"
+            label="Continue Shopping"
+            icon="shopping_cart"
+            class="q-px-xl"
+            @click="continueShopping"
+          />
+          <q-btn
+            color="deep-orange-5"
+            size="lg"
+            label="Proceed to Checkout"
+            icon="arrow_forward"
+            class="q-px-xl"
+            :disable="orderItems.length === 0"
+            @click="proceedToCheckout"
+          />
+        </div>
       </div>
     </div>
 
@@ -280,6 +311,8 @@ function removeItem(index) {
       position: "top",
     });
   }
+  // 保存更改
+  saveChangesToSessionStorage();
 }
 
 // ====================
@@ -786,7 +819,7 @@ function continueShopping() {
   sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
 
   // 返回到订单页面
-  router.push("/");
+  router.push("/order");
 }
 
 /**
@@ -964,7 +997,7 @@ onMounted(async () => {
       position: "top",
     });
 
-    router.push("/");
+    router.push("/order");
   }
 });
 </script>

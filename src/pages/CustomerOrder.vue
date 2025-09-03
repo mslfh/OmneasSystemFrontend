@@ -361,10 +361,14 @@ const popularItems = computed(() => {
   return products.value
     .filter((item) => item.isPopular)
     .map((product) => {
-      const cartItem = cartItems.value.find((item) => item.id === product.id);
+      // 计算该产品的总数量（包括所有定制化版本）
+      const totalQuantity = cartItems.value
+        .filter(item => item.id === product.id)
+        .reduce((sum, item) => sum + item.quantity, 0);
+
       return {
         ...product,
-        quantity: cartItem ? cartItem.quantity : 0,
+        quantity: totalQuantity,
       };
     });
 });
@@ -383,10 +387,14 @@ const historicalOrderedItems = computed(() => {
     return orderedItems.value;
   }
   return userOrderedItems.value.map((item) => {
-    const cartItem = cartItems.value.find((ci) => ci.id === item.id);
+    // 计算该产品的总数量（包括所有定制化版本）
+    const totalQuantity = cartItems.value
+      .filter(cartItem => cartItem.id === item.id)
+      .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
     return {
       ...item,
-      quantity: cartItem ? cartItem.quantity : 0,
+      quantity: totalQuantity,
       isHistorical: true,
     };
   });
@@ -402,10 +410,14 @@ const filteredProducts = computed(() => {
     );
   }
   return filtered.map((product) => {
-    const cartItem = cartItems.value.find((item) => item.id === product.id);
+    // 计算该产品的总数量（包括所有定制化版本）
+    const totalQuantity = cartItems.value
+      .filter(item => item.id === product.id)
+      .reduce((sum, item) => sum + item.quantity, 0);
+
     return {
       ...product,
-      quantity: cartItem ? cartItem.quantity : 0,
+      quantity: totalQuantity,
     };
   });
 });
@@ -514,15 +526,18 @@ function addToCart(product) {
 }
 
 function removeFromCart(product) {
-  // product may be a cart detail object from the UI
-  let existingItem = null;
-  if (product && product.snapshot) {
-    existingItem = cartItems.value.find((item) => item.snapshot === product.snapshot || (item.snapshot && item.snapshot.id === product.snapshot.id));
-  } else {
-    existingItem = cartItems.value.find((item) => item.id === product.id && !item.snapshot);
+  console.log('Removing from cart:', product); // 调试日志
+
+  // 找到第一个匹配的商品（优先找普通商品，如果没有则找定制商品）
+  let existingItem = cartItems.value.find((item) => item.id === product.id && !item.snapshot);
+
+  // 如果没找到普通商品，尝试找定制商品
+  if (!existingItem) {
+    existingItem = cartItems.value.find((item) => item.id === product.id);
   }
 
   if (existingItem) {
+    console.log('Found existing item to remove:', existingItem); // 调试日志
     if (existingItem.quantity > 1) {
       existingItem.quantity--;
     } else {
@@ -530,6 +545,8 @@ function removeFromCart(product) {
       cartItems.value.splice(index, 1);
     }
     saveCartToSessionStorage(); // 保存到 sessionStorage
+  } else {
+    console.log('No existing item found for removal'); // 调试日志
   }
 }
 
@@ -764,7 +781,7 @@ onMounted(async () => {
     userOrderedItems.value = JSON.parse(storedUserOrders);
   }
 
-  // 从 sessionStorage 加载购物车数据（如果有的话）
+  // 从 sessionStorage 加载购物车数据（在产品数据加载完成后）
   const pendingOrder = sessionStorage.getItem("pendingOrder");
   if (pendingOrder) {
     try {
