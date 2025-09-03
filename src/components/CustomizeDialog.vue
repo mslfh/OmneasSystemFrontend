@@ -84,7 +84,7 @@ const props = defineProps({
   getQuantityPriceInfo: { type: Function, default: null }
 })
 
-const emit = defineEmits(['update:modelValue', 'open-replacement', 'increase-quantity', 'decrease-quantity', 'close'])
+const emit = defineEmits(['update:modelValue', 'open-replacement', 'increase-quantity', 'decrease-quantity', 'close', 'update-product'])
 
 const $q = useQuasar()
 
@@ -122,12 +122,21 @@ function openReplacement (ingredient) {
   emit('open-replacement', ingredient)
 }
 
-function increase (ingredient) {
-  emit('increase-quantity', ingredient)
+function applyCustomization() {
+  emit('update-product', { ...item });
+  close();
 }
 
-function decrease (ingredient) {
-  emit('decrease-quantity', ingredient)
+function increase(ingredient) {
+  ingredient.currentQuantity++;
+  emit('update-product', { ...item });
+}
+
+function decrease(ingredient) {
+  if (ingredient.currentQuantity > 0) {
+    ingredient.currentQuantity--;
+    emit('update-product', { ...item });
+  }
 }
 </script>
 

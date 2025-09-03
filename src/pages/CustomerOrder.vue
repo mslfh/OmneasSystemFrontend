@@ -568,6 +568,15 @@ function proceedToCheckout() {
   showCart.value = false;
 }
 
+function handleAddToCart(updatedProduct) {
+  const existingItem = cartItems.value.find(item => item.id === updatedProduct.id);
+  if (existingItem) {
+    Object.assign(existingItem, updatedProduct);
+  } else {
+    cartItems.value.push(updatedProduct);
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   try {

@@ -228,11 +228,7 @@
     transition-hide="slide-down"
   >
     <q-card
-      :style="
-        $q.screen.lt.sm
-          ? { maxWidth: '100%' }
-          : { width: '400px' }
-      "
+      :style="$q.screen.lt.sm ? { maxWidth: '100%' } : { width: '400px' }"
       class="rounded-borders-lg"
     >
       <q-card-section class="q-pa-md">
@@ -264,63 +260,146 @@
         <div class="q-mb-md">
           <div class="text-caption text-grey-6 q-mb-xs">Price</div>
           <div class="text-h6 text-deep-orange">
-            ${{ (localProduct.price || 0).toFixed(2) }}
+            ${{
+              (localProduct.currentPrice || localProduct.price || 0).toFixed(2)
+            }}
           </div>
         </div>
 
-        <div v-if="localProduct.ingredients && localProduct.ingredients.length > 0">
-          <div class="text-subtitle2 q-mb-sm">Ingredients</div>
-
+        <div
+          v-if="localProduct.ingredients && localProduct.ingredients.length > 0"
+        >
           <div class="ingredients-scroll q-gutter-sm">
-            <div v-if="Object.keys(grouped.customizable || {}).length > 0" class="ingredient-group">
+            <div
+              v-if="Object.keys(grouped.customizable || {}).length > 0"
+              class="ingredient-group"
+            >
               <div class="group-header">
                 <q-icon name="tune" color="deep-orange" class="q-mr-sm" />
-                <span class="group-title text-deep-orange">Customizable Ingredients</span>
+                <span class="group-title text-deep-orange"
+                  >Customizable Ingredients</span
+                >
               </div>
 
-              <div v-for="(ingredients, type) in grouped.customizable" :key="`customizable-${type}`" class="type-section">
+              <div
+                v-for="(ingredients, type) in grouped.customizable"
+                :key="`customizable-${type}`"
+                class="type-section"
+              >
                 <div class="type-header">{{ type }}</div>
 
-                <div v-for="ingredient in ingredients" :key="ingredient.id" class="q-mb-md q-pa-sm" style="background: white; border-radius: 6px;">
+                <div
+                  v-for="ingredient in ingredients"
+                  :key="ingredient.id"
+                  class="q-pl-sm text-grey-8"
+                  style="background: white; border-radius: 6px"
+                >
                   <div class="row items-center justify-between q-mb-sm">
                     <div class="text-weight-medium">{{ ingredient.name }}</div>
 
-                    <div class="row items-center q-gutter-sm">
-                      <div v-if="ingredient.mode === 'variable' || ingredient.mode === 'replaceable_variable'" class="row items-center q-gutter-xs">
-                        <q-btn round dense size="8px" icon="remove" color="grey-6" @click.stop="decrease(ingredient)" />
-                        <span class="text-weight-medium text-caption">{{ ingredient.currentQuantity }}</span>
-                        <q-btn round dense size="8px" icon="add" color="deep-orange-6" @click.stop="increase(ingredient)" />
+                    <!-- dotted connector to show relation between name and actions -->
+                    <div
+                      class="connector dotted q-mx-sm"
+                      aria-hidden="true"
+                    ></div>
+
+                    <!--ingredient action -->
+                    <div class="row items-center q-gutter-sm action-group">
+                      <div
+                        v-if="
+                          ingredient.mode === 'variable' ||
+                          ingredient.mode === 'replaceable_variable'
+                        "
+                        class="row items-center q-gutter-xs"
+                      >
+                        <q-btn
+                          round
+                          dense
+                          size="6px"
+                          icon="remove"
+                          color="grey-6"
+                          @click.stop="decrease(ingredient)"
+                        />
+                        <span class="text-weight-medium text-caption">{{
+                          ingredient.currentQuantity
+                        }}</span>
+                        <q-btn
+                          round
+                          dense
+                          size="6px"
+                          icon="add"
+                          color="deep-orange-6"
+                          @click.stop="increase(ingredient)"
+                        />
                       </div>
 
-                      <q-btn dense flat color="deep-orange" label="Change" v-if="ingredient.replacementOptions && ingredient.replacementOptions.length" @click.stop="openReplacementDialog(ingredient)" />
+                      <q-btn
+                        dense
+                        flat
+                        color="deep-orange"
+                        label="Change"
+                        v-if="
+                          ingredient.replacementOptions &&
+                          ingredient.replacementOptions.length
+                        "
+                        @click.stop="openReplacementDialog(ingredient)"
+                      />
                     </div>
                   </div>
 
-                  <div v-if="ingredient.mode === 'variable' || ingredient.mode === 'replaceable_variable'" class="text-caption text-grey-6 q-mb-sm">
-                    {{ getQuantityPriceInfo(ingredient) || 'Standard portion' }}
+                  <div
+                    v-if="
+                      ingredient.mode === 'variable' ||
+                      ingredient.mode === 'replaceable_variable'
+                    "
+                    class="text-caption text-grey-6"
+                  >
+                    {{ getQuantityPriceInfo(ingredient) || "Standard portion" }}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div v-if="Object.keys(grouped.fixed || {}).length > 0" class="ingredient-group">
+            <div
+              v-if="Object.keys(grouped.fixed || {}).length > 0"
+              class="ingredient-group"
+            >
               <div class="group-header">
                 <q-icon name="flatware" color="deep-orange-6" class="q-mr-sm" />
-                <span class="group-title text-deep-orange-6">Standard Ingredients</span>
+                <span class="group-title text-deep-orange-6"
+                  >Fixed Ingredients</span
+                >
               </div>
 
               <div class="info-notice">
                 <div class="row items-center">
-                  <span class="text-caption text-grey-7"><q-icon name="info" color="grey-6" size="xs" /> <strong> Note:</strong>Please add special requests when checkout if you'd like to change these.</span>
+                  <span class="text-caption text-grey-7"
+                    ><q-icon name="info" color="grey-6" size="xs" />
+                    <strong> Note:</strong>Please add special requests when
+                    checkout if you'd like to change these.</span
+                  >
                 </div>
               </div>
 
-              <div v-for="(ingredients, type) in grouped.fixed" :key="`fixed-${type}`" class="type-section">
+              <div
+                v-for="(ingredients, type) in grouped.fixed"
+                :key="`fixed-${type}`"
+                class="type-section"
+              >
                 <div class="type-header">{{ type }}</div>
-                <div v-for="ingredient in ingredients" :key="ingredient.id" class="q-mb-md q-pa-sm" style="background: white; border-radius: 6px;">
+                <div
+                  v-for="ingredient in ingredients"
+                  :key="ingredient.id"
+                  class="q-pa-sm"
+                  style="background: white; border-radius: 6px"
+                >
                   <div class="row items-center justify-between">
-                    <div class="text-weight-medium text-grey-6">{{ ingredient.name }}</div>
-                    <div class="text-caption text-grey-5">Standard • Qty: {{ ingredient.currentQuantity }}</div>
+                    <div class="text-weight-medium text-grey-6">
+                      {{ ingredient.name }}
+                    </div>
+                    <div class="text-caption text-grey-5">
+                      Standard • Qty: {{ ingredient.currentQuantity }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -330,7 +409,13 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn color="deep-orange" label="Add to Cart" class="q-mr-sm" @click="addFromDetails" :disable="localProduct.stock === 0" />
+        <q-btn
+          color="deep-orange"
+          label="Add to Cart"
+          class="q-mr-sm"
+          @click="addFromDetails"
+          :disable="localProduct.stock === 0"
+        />
         <q-btn flat label="Close" color="grey" @click="closeDetails" />
       </q-card-actions>
     </q-card>
@@ -338,7 +423,7 @@
   <ReplacementSelectDialog
     :model-value="showReplacementDialog"
     :ingredient="selectedReplacement"
-    @update:model-value="val => (showReplacementDialog.value = val)"
+    @update:model-value="(val) => (showReplacementDialog.value = val)"
     @select="onReplacementSelected"
   />
 </template>
@@ -346,7 +431,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import axios from "axios";
-import ReplacementSelectDialog from 'src/components/ReplacementSelectDialog.vue'
+import ReplacementSelectDialog from "src/components/ReplacementSelectDialog.vue";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -376,7 +461,14 @@ const currentQuantity = computed(() => {
 
 // 方法
 function addToCart() {
-  emit("add-to-cart", props.product);
+  emit("add-to-cart", {
+    id: localProduct.value.id,
+    quantity: 1,
+    snapshot: JSON.parse(JSON.stringify(localProduct.value)),
+    customized: true,
+    currentPrice:
+      localProduct.value.currentPrice || localProduct.value.price || 0,
+  });
 }
 
 function removeFromCart() {
@@ -405,7 +497,6 @@ function formatLastOrdered(dateString) {
   }
 }
 
-
 // local copy of product to avoid mutating parent object directly in dialogs
 const localProduct = ref(JSON.parse(JSON.stringify(props.product || {})));
 
@@ -432,14 +523,14 @@ const grouped = computed(() => {
   const byType = (arr) => {
     const r = {};
     arr.forEach((i) => {
-      const t = i.type || 'Other';
+      const t = i.type || "Other";
       (r[t] = r[t] || []).push(i);
     });
     return r;
   };
 
-  const customizable = ingredients.filter((i) => i.mode !== 'fixed');
-  const fixed = ingredients.filter((i) => i.mode === 'fixed');
+  const customizable = ingredients.filter((i) => i.mode !== "fixed");
+  const fixed = ingredients.filter((i) => i.mode === "fixed");
   groups.customizable = byType(customizable);
   groups.fixed = byType(fixed);
   return groups;
@@ -447,10 +538,17 @@ const grouped = computed(() => {
 
 function increase(ingredient) {
   ingredient.currentQuantity = (ingredient.currentQuantity || 0) + 1;
+  const extra = ingredient.extraPrice || ingredient.extra_price || 0;
+  localProduct.value.currentPrice = Number((localProduct.value.currentPrice + extra).toFixed(2));
 }
 
 function decrease(ingredient) {
-  ingredient.currentQuantity = Math.max(0, (ingredient.currentQuantity || 0) - 1);
+  if ((ingredient.currentQuantity || 0) > 0) {
+    ingredient.currentQuantity--;
+    const extra = ingredient.extraPrice || ingredient.extra_price || 0;
+    localProduct.value.currentPrice = Number((localProduct.value.currentPrice - extra).toFixed(2));
+    if (localProduct.value.currentPrice < 0) localProduct.value.currentPrice = 0;
+  }
 }
 
 function getQuantityPriceInfo(ingredient) {
@@ -474,9 +572,11 @@ async function loadIngredientsForProduct(productId) {
   ingredientsError.value = null;
 
   try {
-    const resp = await axios.get(`${VITE_API_URL}/api/get-product-customization/${productId}`);
+    const resp = await axios.get(
+      `${VITE_API_URL}/api/get-product-customization/${productId}`
+    );
     if (!resp.data || !resp.data.success) {
-      ingredientsError.value = 'No customization data';
+      ingredientsError.value = "No customization data";
       localProduct.value.ingredients = [];
       return;
     }
@@ -487,13 +587,20 @@ async function loadIngredientsForProduct(productId) {
     const { items, customizationItems } = data;
 
     const customMap = {};
-    (customizationItems || []).forEach((c) => { customMap[c.item_id] = c; });
+    (customizationItems || []).forEach((c) => {
+      customMap[c.item_id] = c;
+    });
 
     const allIngredientIds = new Set();
     (items || []).forEach((it) => allIngredientIds.add(it.id));
     (customizationItems || []).forEach((custom) => {
-      if (custom.mode === 'replaceable' || custom.mode === 'replaceable_variable') {
-        (custom.replacement_list || []).forEach((id) => allIngredientIds.add(id));
+      if (
+        custom.mode === "replaceable" ||
+        custom.mode === "replaceable_variable"
+      ) {
+        (custom.replacement_list || []).forEach((id) =>
+          allIngredientIds.add(id)
+        );
       }
     });
 
@@ -501,14 +608,20 @@ async function loadIngredientsForProduct(productId) {
     const ingredientDetails = new Map();
     if (allIngredientIds.size > 0) {
       try {
-        const idsString = Array.from(allIngredientIds).join(',');
-        const bulkResp = await axios.get(`${VITE_API_URL}/api/get-bulk-items/${idsString}`);
-        if (bulkResp.data && bulkResp.data.success && Array.isArray(bulkResp.data.data)) {
+        const idsString = Array.from(allIngredientIds).join(",");
+        const bulkResp = await axios.get(
+          `${VITE_API_URL}/api/get-bulk-items/${idsString}`
+        );
+        if (
+          bulkResp.data &&
+          bulkResp.data.success &&
+          Array.isArray(bulkResp.data.data)
+        ) {
           bulkResp.data.data.forEach((it) => ingredientDetails.set(it.id, it));
         }
       } catch (e) {
         // non-fatal: continue with available data
-        console.error('Error fetching bulk items:', e);
+        console.error("Error fetching bulk items:", e);
       }
     }
 
@@ -519,8 +632,8 @@ async function loadIngredientsForProduct(productId) {
       const ingredient = {
         id: item.id,
         name: details ? details.name : item.name,
-        type: details ? details.type : 'Other',
-        mode: custom ? custom.mode : 'fixed',
+        type: details ? details.type : "Other",
+        mode: custom ? custom.mode : "fixed",
         originalQuantity: item.quantity || 1,
         currentQuantity: item.quantity || 1,
         extra_price: 0,
@@ -528,9 +641,15 @@ async function loadIngredientsForProduct(productId) {
       };
 
       if (custom) {
-        try { ingredient.extra_price = (custom.quantity_price && custom.quantity_price.extra) || 0 } catch(e){ }
+        try {
+          ingredient.extra_price =
+            (custom.quantity_price && custom.quantity_price.extra) || 0;
+        } catch (e) {}
 
-        if (custom.mode === 'replaceable' || custom.mode === 'replaceable_variable') {
+        if (
+          custom.mode === "replaceable" ||
+          custom.mode === "replaceable_variable"
+        ) {
           ingredient.replacementId = item.id;
           ingredient.replacementOptions = [
             {
@@ -538,9 +657,11 @@ async function loadIngredientsForProduct(productId) {
               value: item.id,
               price_change: 0,
               name: details ? details.name : item.name,
-              type: details ? details.type : 'Original',
-              description: details ? details.description : 'Original ingredient'
-            }
+              type: details ? details.type : "Original",
+              description: details
+                ? details.description
+                : "Original ingredient",
+            },
           ];
 
           try {
@@ -548,18 +669,23 @@ async function loadIngredientsForProduct(productId) {
             const replacementDiff = custom.replacement_diff || {};
             replacementList.forEach((repId) => {
               const repDetails = ingredientDetails.get(repId);
-              const priceChange = replacementDiff[repId.toString()] || replacementDiff[repId] || 0;
+              const priceChange =
+                replacementDiff[repId.toString()] ||
+                replacementDiff[repId] ||
+                0;
               ingredient.replacementOptions.push({
                 label: repDetails ? repDetails.name : `Item ${repId}`,
                 value: repId,
                 price_change: priceChange,
                 name: repDetails ? repDetails.name : `Item ${repId}`,
-                type: repDetails ? repDetails.type : 'Alternative',
-                description: repDetails ? repDetails.description : 'Alternative ingredient'
+                type: repDetails ? repDetails.type : "Alternative",
+                description: repDetails
+                  ? repDetails.description
+                  : "Alternative ingredient",
               });
             });
           } catch (e) {
-            console.error('Error parsing replacement data:', e);
+            console.error("Error parsing replacement data:", e);
           }
         }
       }
@@ -569,8 +695,8 @@ async function loadIngredientsForProduct(productId) {
 
     localProduct.value.ingredients = built;
   } catch (err) {
-    console.error('Error loading customization:', err);
-    ingredientsError.value = 'Failed to load ingredients';
+    console.error("Error loading customization:", err);
+    ingredientsError.value = "Failed to load ingredients";
     localProduct.value.ingredients = [];
   } finally {
     isLoadingIngredients.value = false;
@@ -586,7 +712,6 @@ async function openDetails() {
 
 function closeDetails() {
   showDetailsDialog.value = false;
-
 }
 
 function openReplacementDialog(ingredient) {
@@ -596,42 +721,42 @@ function openReplacementDialog(ingredient) {
 
 function onReplacementSelected(val) {
   if (selectedReplacement.value) {
-    selectedReplacement.value.replacementId = val;
+    const ingredient = localProduct.value.ingredients.find(i => i.id === selectedReplacement.value.id);
+    if (ingredient && ingredient.replacementOptions) {
+      const oldOption = ingredient.replacementOptions.find(opt => opt.value === ingredient.replacementId);
+      const newOption = ingredient.replacementOptions.find(opt => opt.value === val);
+      if (newOption) {
+        if (oldOption && oldOption.price) {
+          localProduct.value.currentPrice -= oldOption.price;
+        }
+        if (newOption.price) {
+          localProduct.value.currentPrice += newOption.price;
+        }
+        ingredient.replacementId = val;
+        ingredient.name = newOption.name;
+        ingredient.extraPrice = newOption.price || 0;
+        localProduct.value.currentPrice = Number(localProduct.value.currentPrice.toFixed(2));
+        if (localProduct.value.currentPrice < 0) localProduct.value.currentPrice = 0;
+      }
+    }
   }
   showReplacementDialog.value = false;
 }
 
-function addFromDetails() {
-  // Build a snapshot of the customized product and emit it so the cart can store the customization
-  try {
-    const snapshot = JSON.parse(JSON.stringify(localProduct.value || {}));
-
-    // calculate an adjusted price based on ingredients similar to CustomerConfirm.recalculateItemPrice
-    let totalPrice = snapshot.originalPrice || snapshot.price || 0;
-    let priceAdjustment = 0;
-    (snapshot.ingredients || []).forEach((ingredient) => {
-      const quantityDiff = (ingredient.currentQuantity || 0) - (ingredient.originalQuantity || 0);
-      if (quantityDiff !== 0) priceAdjustment += quantityDiff * (ingredient.extra_price || 0);
-
-      if (ingredient.replacementId && ingredient.replacementId !== ingredient.id) {
-        const replacement = (ingredient.replacementOptions || []).find((opt) => opt.value === ingredient.replacementId);
-        if (replacement) priceAdjustment += replacement.price_change || 0;
-      }
-    });
-
-    const currentPrice = Math.max(0, (snapshot.price || totalPrice) + priceAdjustment);
-
-    emit('add-to-cart', {
-      id: props.product.id,
-      customized: true,
-      snapshot,
-      quantity: 1,
-      currentPrice,
-    });
-  } catch (e) {
-    // fallback to original emit
-    emit('add-to-cart', props.product);
+function updateIngredient(ingredientId, updatedData) {
+  const ingredient = localProduct.value.ingredients.find(
+    (i) => i.id === ingredientId
+  );
+  if (ingredient) {
+    Object.assign(ingredient, updatedData);
+    recalculatePrice();
   }
+}
+
+// recalculatePrice方法已废弃，价格逻辑已分散到各自操作中
+
+function addFromDetails() {
+  emit("add-to-cart", { ...localProduct.value });
   showDetailsDialog.value = false;
 }
 </script>
@@ -654,10 +779,6 @@ function addFromDetails() {
   transform: scale(1.05);
 }
 
-.rounded-borders-lg {
-  border-radius: 12px;
-}
-
 .ellipsis {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -674,8 +795,28 @@ function addFromDetails() {
   height: 2.8em;
 }
 
-.text-deep-orange {
-  color: #ff5722 !important;
+.ingredient-group {
+  margin-bottom: 8px;
+}
+.group-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.group-title {
+  font-weight: 600;
+}
+.type-section {
+  margin-bottom: 12px;
+}
+.type-header {
+  font-weight: 600;
+}
+.info-notice {
+  background: #fff7ed;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 12px;
 }
 
 /* scrollable ingredients area similar to CustomizeDialog */
@@ -713,6 +854,32 @@ function addFromDetails() {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* dotted connector between ingredient name and actions */
+.connector {
+  flex: 1 1 auto;
+  height: 1px;
+  align-self: center;
+  min-width: 8px;
+}
+.connector.dotted {
+  /* thicker, more visible dotted line */
+  border-bottom: 2px dotted rgba(0, 0, 0, 0.32);
+  margin-left: 8px;
+  margin-right: 8px;
+}
+.action-group {
+  flex: 0 0 auto; /* prevent actions from shrinking */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 600px) {
+  .connector {
+    display: none; /* hide connector on small screens to save space */
   }
 }
 </style>

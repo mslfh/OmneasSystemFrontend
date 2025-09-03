@@ -174,7 +174,7 @@ const currentItemIndex = ref(-1);
 const currentReplaceIngredient = ref(null);
 
 /** 订单商品列表 */
-const orderItems = ref([]);
+const orderItems = ref(JSON.parse(sessionStorage.getItem('pendingOrder'))?.items || []);
 
 /** 就餐类型 */
 const diningType = ref("takeaway");

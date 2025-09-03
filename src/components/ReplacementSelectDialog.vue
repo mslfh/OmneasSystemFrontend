@@ -52,7 +52,8 @@ function close () {
 }
 
 function select (val) {
-  emit('select', val)
+  emit('select', val);
+  emit('update-product', { replacementId: val });
 }
 </script>
 
