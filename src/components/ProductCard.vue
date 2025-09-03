@@ -287,15 +287,26 @@
                 class="type-section"
               >
                 <div class="type-header">{{ type }}</div>
-
                 <div
                   v-for="ingredient in ingredients"
                   :key="ingredient.id"
                   class="q-pl-sm text-grey-8"
                   style="background: white; border-radius: 6px"
                 >
-                  <div class="row items-center justify-between q-mb-sm">
-                    <div class="text-weight-medium">{{ ingredient.name }}</div>
+                  <div class="row items-center justify-between q-mt-xs">
+                    <div class="text-weight-medium">
+                      {{ getCurrentReplacementName(ingredient) }}
+                      <q-chip
+                        v-if=" ingredient.replacementId && ingredient.replacementId !== ingredient.id"
+                        dense
+                        size="sm"
+                        color="orange"
+                        text-color="white"
+                        class="q-ml-xs"
+                      >
+                        Changed
+                      </q-chip>
+                    </div>
 
                     <!-- dotted connector to show relation between name and actions -->
                     <div
@@ -352,7 +363,7 @@
                       ingredient.mode === 'variable' ||
                       ingredient.mode === 'replaceable_variable'
                     "
-                    class="text-caption text-grey-6"
+                    class="text-caption text-grey-6 q-ml-xs"
                   >
                     {{ getQuantityPriceInfo(ingredient) || "Standard portion" }}
                   </div>
@@ -406,6 +417,31 @@
             </div>
           </div>
         </div>
+
+        <!-- 定制化摘要 -->
+        <div
+          v-if="
+            localProduct.customizations &&
+            localProduct.customizations.length > 0
+          "
+          class="q-mt-md"
+        >
+          <div class="text-subtitle2 text-weight-medium text-deep-orange q-mb-sm">
+           <q-icon name="edit" /> Changes
+          </div>
+          <div class="customization-tags">
+            <q-chip
+              v-for="(custom, index) in localProduct.customizations"
+              :key="index"
+              :color="getCustomizationColor(custom)"
+              text-color="white"
+              dense
+              size="sm"
+            >
+              {{ formatCustomization(custom) }}
+            </q-chip>
+          </div>
+        </div>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -420,11 +456,13 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
   <ReplacementSelectDialog
-    :model-value="showReplacementDialog"
+    :modelValue="showReplacementDialog"
     :ingredient="selectedReplacement"
     @update:model-value="(val) => (showReplacementDialog.value = val)"
     @select="onReplacementSelected"
+    @close="showReplacementDialog.value = false"
   />
 </template>
 
@@ -461,14 +499,24 @@ const currentQuantity = computed(() => {
 
 // 方法
 function addToCart() {
-  emit("add-to-cart", {
-    id: localProduct.value.id,
-    quantity: 1,
-    snapshot: JSON.parse(JSON.stringify(localProduct.value)),
-    customized: true,
-    currentPrice:
-      localProduct.value.currentPrice || localProduct.value.price || 0,
-  });
+  // 如果商品已经被定制化（有配料信息），传递定制化数据
+  if (localProduct.value.ingredients && localProduct.value.ingredients.length > 0) {
+    const customizedProduct = {
+      id: localProduct.value.id,
+      quantity: 1,
+      snapshot: JSON.parse(JSON.stringify(localProduct.value)),
+      customized: true,
+      currentPrice: localProduct.value.currentPrice || localProduct.value.price || 0,
+    };
+    emit("add-to-cart", customizedProduct);
+  } else {
+    // 普通商品，传递简单结构
+    emit("add-to-cart", {
+      id: props.product.id,
+      quantity: 1,
+      customized: false,
+    });
+  }
 }
 
 function removeFromCart() {
@@ -539,15 +587,22 @@ const grouped = computed(() => {
 function increase(ingredient) {
   ingredient.currentQuantity = (ingredient.currentQuantity || 0) + 1;
   const extra = ingredient.extraPrice || ingredient.extra_price || 0;
-  localProduct.value.currentPrice = Number((localProduct.value.currentPrice + extra).toFixed(2));
+  localProduct.value.currentPrice = Number(
+    (localProduct.value.currentPrice + extra).toFixed(2)
+  );
+  autoApplyCustomization();
 }
 
 function decrease(ingredient) {
   if ((ingredient.currentQuantity || 0) > 0) {
     ingredient.currentQuantity--;
     const extra = ingredient.extraPrice || ingredient.extra_price || 0;
-    localProduct.value.currentPrice = Number((localProduct.value.currentPrice - extra).toFixed(2));
-    if (localProduct.value.currentPrice < 0) localProduct.value.currentPrice = 0;
+    localProduct.value.currentPrice = Number(
+      (localProduct.value.currentPrice - extra).toFixed(2)
+    );
+    if (localProduct.value.currentPrice < 0)
+      localProduct.value.currentPrice = 0;
+    autoApplyCustomization();
   }
 }
 
@@ -562,10 +617,6 @@ function getQuantityPriceInfo(ingredient) {
   }
 }
 
-/**
- * Load customization data for a product and build ingredients list.
- * Mirrors the logic used in CustomerConfirm.vue buildIngredients + bulk fetch.
- */
 async function loadIngredientsForProduct(productId) {
   if (!productId) return;
   isLoadingIngredients.value = true;
@@ -608,9 +659,16 @@ async function loadIngredientsForProduct(productId) {
     const ingredientDetails = new Map();
     if (allIngredientIds.size > 0) {
       try {
-        const idsString = Array.from(allIngredientIds).join(",");
-        const bulkResp = await axios.get(
-          `${VITE_API_URL}/api/get-bulk-items/${idsString}`
+        const formData = new FormData();
+        formData.append('ids', Array.from(allIngredientIds).join(","));
+        const bulkResp = await axios.post(
+          `${VITE_API_URL}/api/get-bulk-items`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
         );
         if (
           bulkResp.data &&
@@ -694,6 +752,13 @@ async function loadIngredientsForProduct(productId) {
     });
 
     localProduct.value.ingredients = built;
+    // 确保设置正确的当前价格
+    if (!localProduct.value.currentPrice) {
+      localProduct.value.currentPrice = localProduct.value.price || 0;
+    }
+
+    // 初始化定制化信息
+    autoApplyCustomization();
   } catch (err) {
     console.error("Error loading customization:", err);
     ingredientsError.value = "Failed to load ingredients";
@@ -721,22 +786,40 @@ function openReplacementDialog(ingredient) {
 
 function onReplacementSelected(val) {
   if (selectedReplacement.value) {
-    const ingredient = localProduct.value.ingredients.find(i => i.id === selectedReplacement.value.id);
+    const ingredient = localProduct.value.ingredients.find(
+      (i) => i.id === selectedReplacement.value.id
+    );
     if (ingredient && ingredient.replacementOptions) {
-      const oldOption = ingredient.replacementOptions.find(opt => opt.value === ingredient.replacementId);
-      const newOption = ingredient.replacementOptions.find(opt => opt.value === val);
+      const oldOption = ingredient.replacementOptions.find(
+        (opt) => opt.value === ingredient.replacementId
+      );
+      const newOption = ingredient.replacementOptions.find(
+        (opt) => opt.value === val
+      );
+
       if (newOption) {
-        if (oldOption && oldOption.price) {
-          localProduct.value.currentPrice -= oldOption.price;
-        }
-        if (newOption.price) {
-          localProduct.value.currentPrice += newOption.price;
-        }
+        // 计算价格变化 - 使用 price_change 而不是 price
+        const oldPriceChange = oldOption ? oldOption.price_change || 0 : 0;
+        const newPriceChange = newOption.price_change || 0;
+        const priceDifference = newPriceChange - oldPriceChange;
+
+        // 更新配料信息
         ingredient.replacementId = val;
-        ingredient.name = newOption.name;
-        ingredient.extraPrice = newOption.price || 0;
-        localProduct.value.currentPrice = Number(localProduct.value.currentPrice.toFixed(2));
-        if (localProduct.value.currentPrice < 0) localProduct.value.currentPrice = 0;
+        ingredient.displayName = newOption.name;
+
+        // 更新价格
+        localProduct.value.currentPrice = Number(
+          (localProduct.value.currentPrice + priceDifference).toFixed(2)
+        );
+        if (localProduct.value.currentPrice < 0) {
+          localProduct.value.currentPrice = 0;
+        }
+
+        // 应用定制化信息
+        autoApplyCustomization();
+
+        // 显示成功通知
+        console.log(`Replaced with ${newOption.name}`);
       }
     }
   }
@@ -749,14 +832,145 @@ function updateIngredient(ingredientId, updatedData) {
   );
   if (ingredient) {
     Object.assign(ingredient, updatedData);
-    recalculatePrice();
+    autoApplyCustomization();
   }
 }
 
-// recalculatePrice方法已废弃，价格逻辑已分散到各自操作中
+/**
+ * 自动应用定制更改 - 参考 CustomerConfirm.vue 的实现
+ */
+function autoApplyCustomization() {
+  if (!localProduct.value) {
+    return;
+  }
+
+  // 更新定制信息
+  const customizations = [];
+
+  (localProduct.value.ingredients || []).forEach((ingredient) => {
+    // 记录数量变化
+    if (ingredient.currentQuantity !== ingredient.originalQuantity) {
+      const change =
+        ingredient.currentQuantity > ingredient.originalQuantity
+          ? `+${ingredient.currentQuantity - ingredient.originalQuantity}`
+          : `${ingredient.currentQuantity - ingredient.originalQuantity}`;
+
+      const priceChange =
+        (ingredient.currentQuantity - ingredient.originalQuantity) *
+        ingredient.extra_price;
+
+      // 使用替换后的名称（如果有替换）或原始名称
+      const displayName = getCurrentReplacementName(ingredient);
+
+      customizations.push({
+        type: "quantity",
+        ingredientName: displayName,
+        change: change,
+        priceChange: priceChange,
+        originalQuantity: ingredient.originalQuantity,
+        currentQuantity: ingredient.currentQuantity,
+      });
+    }
+
+    // 记录替换
+    if (
+      ingredient.replacementId &&
+      ingredient.replacementId !== ingredient.id
+    ) {
+      const replacement = ingredient.replacementOptions?.find(
+        (opt) => opt.value === ingredient.replacementId
+      );
+
+      if (replacement) {
+        customizations.push({
+          type: "replacement",
+          originalName:
+            ingredient.replacementOptions?.find(
+              (opt) => opt.value === ingredient.id
+            )?.name || ingredient.name,
+          replacementName: replacement.name,
+          priceChange: replacement.price_change || 0,
+        });
+      }
+    }
+  });
+
+  localProduct.value.customizations = customizations;
+}
+
+/**
+ * 获取当前替换配料的显示名称 - 参考 CustomerConfirm.vue
+ * @param {Object} ingredient - 配料对象
+ * @returns {string} 显示名称
+ */
+function getCurrentReplacementName(ingredient) {
+  if (!ingredient.replacementOptions) {
+    return ingredient.name;
+  }
+
+  const current = ingredient.replacementOptions.find(
+    (opt) => opt.value === ingredient.replacementId
+  );
+
+  return current ? current.name : ingredient.name;
+}
+
+/**
+ * 格式化定制信息显示文本 - 参考 CustomerConfirm.vue
+ * @param {Object} custom - 定制对象
+ * @returns {string} 格式化后的文本
+ */
+function formatCustomization(custom) {
+  if (custom.type === "quantity") {
+    const changeNum = parseInt(custom.change);
+    const ingredientName = custom.ingredientName;
+
+    if (changeNum === 0) {
+      return `${ingredientName} (Standard)`;
+    } else if (changeNum < 0) {
+      if (custom.currentQuantity === 0) {
+        return `No ${ingredientName}`;
+      } else {
+        return `${ingredientName} (${custom.currentQuantity})`;
+      }
+    } else {
+      return `Extra ${ingredientName} (${custom.change})`;
+    }
+  } else if (custom.type === "replacement") {
+    return `${custom.originalName} → ${custom.replacementName}`;
+  }
+
+  return custom.toString();
+}
+
+/**
+ * 获取定制标签的颜色 - 参考 CustomerConfirm.vue
+ * @param {Object} custom - 定制对象
+ * @returns {string} Quasar颜色名称
+ */
+function getCustomizationColor(custom) {
+  if (custom.type === "quantity") {
+    if (custom.currentQuantity === 0) return "negative";
+    if (custom.currentQuantity > custom.originalQuantity) return "positive";
+    if (custom.currentQuantity < custom.originalQuantity) return "warning";
+    return "primary";
+  } else if (custom.type === "replacement") {
+    return "orange";
+  }
+  return "primary";
+}
 
 function addFromDetails() {
-  emit("add-to-cart", { ...localProduct.value });
+  // 构建定制化商品数据结构，参考 CustomerOrder.vue 的期望格式
+  const customizedProduct = {
+    id: localProduct.value.id,
+    quantity: 1,
+    snapshot: JSON.parse(JSON.stringify(localProduct.value)), // 深拷贝完整的商品快照
+    customized: true,
+    currentPrice: localProduct.value.currentPrice || localProduct.value.price || 0,
+  };
+
+  emit("add-to-cart", customizedProduct);
   showDetailsDialog.value = false;
 }
 </script>
@@ -855,6 +1069,27 @@ function addFromDetails() {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* 定制标签样式 */
+.customization-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.customization-tags .q-chip {
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.customization-tags .q-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* dotted connector between ingredient name and actions */

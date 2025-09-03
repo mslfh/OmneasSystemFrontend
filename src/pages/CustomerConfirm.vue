@@ -174,7 +174,9 @@ const currentItemIndex = ref(-1);
 const currentReplaceIngredient = ref(null);
 
 /** 订单商品列表 */
-const orderItems = ref(JSON.parse(sessionStorage.getItem('pendingOrder'))?.items || []);
+const orderItems = ref(
+  JSON.parse(sessionStorage.getItem("pendingOrder"))?.items || []
+);
 
 /** 就餐类型 */
 const diningType = ref("takeaway");
@@ -256,6 +258,9 @@ function openCustomization(index) {
  * 关闭定制弹窗
  */
 function closeCustomization() {
+  // 在关闭弹窗时保存更改
+  saveChangesToSessionStorage();
+
   showCustomDialog.value = false;
   currentItemIndex.value = -1;
 }
@@ -534,9 +539,12 @@ function autoApplyCustomization() {
         (ingredient.currentQuantity - ingredient.originalQuantity) *
         ingredient.extra_price;
 
+      // 使用替换后的名称（如果有替换）或原始名称
+      const displayName = getCurrentReplacementName(ingredient);
+
       customizations.push({
         type: "quantity",
-        ingredientName: ingredient.name,
+        ingredientName: displayName,
         change: change,
         priceChange: priceChange,
         originalQuantity: ingredient.originalQuantity,
@@ -565,6 +573,23 @@ function autoApplyCustomization() {
   });
 
   currentItem.value.customizations = customizations;
+
+  // 立即保存更改到 sessionStorage
+  saveChangesToSessionStorage();
+}
+
+/**
+ * 保存当前更改到 sessionStorage
+ */
+function saveChangesToSessionStorage() {
+  const orderData = {
+    items: orderItems.value,
+    total: totalAmount.value,
+    diningType: diningType.value,
+  };
+
+  sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
+  console.log("Saved changes to sessionStorage:", orderData); // 调试日志
 }
 
 /**
@@ -611,7 +636,7 @@ function getCustomizationColor(custom) {
     if (custom.currentQuantity < custom.originalQuantity) return "warning";
     return "primary";
   } else if (custom.type === "replacement") {
-    return "info";
+    return "orange";
   }
   return "primary";
 }
@@ -799,33 +824,47 @@ function proceedToCheckout() {
  * 组件挂载时的初始化逻辑
  */
 onMounted(async () => {
+  console.log("CustomerConfirm mounted"); // 调试日志
+
   // 从sessionStorage加载订单数据
   const pendingOrder = sessionStorage.getItem("pendingOrder");
 
   if (pendingOrder) {
     const orderData = JSON.parse(pendingOrder);
+    console.log("Loaded order data from sessionStorage:", orderData); // 调试日志
+
     orderItems.value = orderData.items || [];
     diningType.value = orderData.diningType || "takeaway";
 
-    // 为每个商品初始化ingredients
+    // 为每个商品初始化基本字段
     orderItems.value.forEach((item) => {
-      // if the order item already includes an ingredients snapshot (from ProductCard), keep it
-      if (!item.ingredients || item.ingredients.length === 0) {
+      console.log("Processing order item:", item); // 调试日志
+
+      // 如果是定制化商品且已经有配料信息，保持不变
+      if (item.ingredients && item.ingredients.length > 0) {
+        console.log("Item already has ingredients, keeping existing data"); // 调试日志
+      } else if (!item.ingredients) {
+        // 如果没有配料信息，初始化空数组
         item.ingredients = [];
       }
 
-      // ensure price fields exist
+      // 确保价格字段存在
       item.originalPrice = item.originalPrice || item.price || 0;
-      item.currentPrice = item.currentPrice || item.price || item.originalPrice || 0;
+      item.currentPrice =
+        item.currentPrice || item.price || item.originalPrice || 0;
 
-      // ensure customizations array exists (may be filled later by autoApplyCustomization)
+      // 确保定制化数组存在
       item.customizations = item.customizations || [];
     });
 
-    // 为可定制商品获取定制数据
+    // 只为没有配料信息的可定制商品获取定制数据
     const customizableItems = orderItems.value.filter(
-      (item) => item.customizable && (!item.ingredients || item.ingredients.length === 0)
+      (item) =>
+        item.customizable &&
+        (!item.ingredients || item.ingredients.length === 0)
     );
+
+    console.log("Items needing customization data:", customizableItems); // 调试日志
 
     if (customizableItems.length > 0) {
       try {
@@ -844,39 +883,67 @@ onMounted(async () => {
 
         const customizationResults = await Promise.all(customizationPromises);
 
-        // For each result, only build ingredients if the orderItem doesn't already have them
-        customizationResults.forEach((result) => {
+        // 为没有配料信息的商品构建配料数据
+        for (const result of customizationResults) {
           if (result) {
             const item = orderItems.value.find((i) => i.id === result.itemId);
 
             if (item && (!item.ingredients || item.ingredients.length === 0)) {
-              // ensure bulkItemsCache has details for ids used in buildIngredients
-              // buildIngredients will use getBulkItemsDetails which reads from bulkItemsCache
-              const { items, customizationItems } = result.data || { items: [], customizationItems: [] };
+              console.log("Building ingredients for item:", item.id); // 调试日志
+
+              // 获取需要的配料详细信息
+              const { items, customizationItems } = result.data || {
+                items: [],
+                customizationItems: [],
+              };
               const idsToFetch = new Set();
               items.forEach((it) => idsToFetch.add(it.id));
               (customizationItems || []).forEach((custom) => {
-                if (custom.mode === 'replaceable' || custom.mode === 'replaceable_variable') {
-                  (custom.replacement_list || []).forEach(id => idsToFetch.add(id));
+                if (
+                  custom.mode === "replaceable" ||
+                  custom.mode === "replaceable_variable"
+                ) {
+                  (custom.replacement_list || []).forEach((id) =>
+                    idsToFetch.add(id)
+                  );
                 }
               });
 
               if (idsToFetch.size > 0) {
                 try {
-                  const idsString = Array.from(idsToFetch).join(',');
-                  const bulkResponse = await axios.get(`${VITE_API_URL}/api/get-bulk-items/${idsString}`);
+                  const formData = new FormData();
+                  formData.append(
+                    "ids",
+                    Array.from(idsToFetch).join(",")
+                  );
+                  const bulkResponse = await axios.post(
+                    `${VITE_API_URL}/api/get-bulk-items`,
+                    formData,
+                    {
+                      headers: {
+                        "Content-Type": "multipart/form-data",
+                      },
+                    }
+                  );
                   if (bulkResponse.data && bulkResponse.data.success) {
-                    (bulkResponse.data.data || []).forEach((it) => bulkItemsCache.value.set(it.id, it));
+                    (bulkResponse.data.data || []).forEach((it) =>
+                      bulkItemsCache.value.set(it.id, it)
+                    );
                   }
                 } catch (e) {
-                  console.error('Error fetching bulk items for item', item.id, e);
+                  console.error(
+                    "Error fetching bulk items for item",
+                    item.id,
+                    e
+                  );
                 }
               }
 
               item.ingredients = buildIngredients(result.data);
+              console.log("Built ingredients for item:", item.ingredients); // 调试日志
             }
           }
-        });
+        }
       } catch (error) {
         console.error("Error fetching customizations:", error);
       }
@@ -884,7 +951,10 @@ onMounted(async () => {
   } else {
     // 如果没有待处理的订单，设置空数组
     orderItems.value = [];
+    console.log("No pending order found"); // 调试日志
   }
+
+  console.log("Final order items:", orderItems.value); // 调试日志
 
   // 如果没有商品，返回菜单页
   if (orderItems.value.length === 0) {

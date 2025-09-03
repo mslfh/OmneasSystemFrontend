@@ -245,6 +245,31 @@
                   <q-item-label caption
                     >${{ item.price.toFixed(2) }}</q-item-label
                   >
+                  <!-- 显示定制化标签 -->
+                  <div v-if="item.customized && item.customizations && item.customizations.length > 0"
+                       class="q-mt-xs">
+                    <q-chip
+                      v-for="(custom, index) in item.customizations"
+                      :key="index"
+                      :color="getCustomizationColor(custom)"
+                      text-color="white"
+                      dense
+                      size="xs"
+                      class="q-mr-xs"
+                    >
+                      {{ formatCustomization(custom) }}
+                    </q-chip>
+                  </div>
+                  <div v-else-if="item.customized" class="q-mt-xs">
+                    <q-chip
+                      color="orange"
+                      text-color="white"
+                      dense
+                      size="xs"
+                    >
+                      Customized
+                    </q-chip>
+                  </div>
                 </q-item-section>
 
                 <q-item-section side>
@@ -303,10 +328,12 @@
 import { ref, computed, onMounted } from "vue";
 import ProductCard from "../components/ProductCard.vue";
 import { useRouter } from "vue-router";
+import { useQuasar } from "quasar";
 import axios from "axios";
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 const router = useRouter();
+const $q = useQuasar();
 
 // 响应式数据
 const diningType = ref("");
@@ -389,6 +416,13 @@ const cartItemsCount = computed(() => {
 
 const totalAmount = computed(() => {
   const total = cartItems.value.reduce((sum, item) => {
+    // 如果是定制化商品，使用定制化价格
+    if (item.snapshot) {
+      const itemPrice = item.currentPrice || item.snapshot.currentPrice || item.snapshot.price || 0;
+      return sum + (itemPrice * item.quantity);
+    }
+
+    // 普通商品，从 products 中获取价格
     const product = products.value.find((p) => p.id === item.id);
     return sum + (product ? product.price * item.quantity : 0);
   }, 0);
@@ -402,11 +436,12 @@ const cartItemsWithDetails = computed(() => {
       return {
         id: cartItem.id,
         title: cartItem.snapshot.title || cartItem.snapshot.name || 'Item',
-        price: cartItem.currentPrice || cartItem.snapshot.price || 0,
+        price: cartItem.currentPrice || cartItem.snapshot.currentPrice || cartItem.snapshot.price || 0,
         image: cartItem.snapshot.image || '',
         quantity: cartItem.quantity,
         snapshot: cartItem.snapshot,
         customized: true,
+        customizations: cartItem.snapshot.customizations || [],
       };
     }
 
@@ -415,6 +450,7 @@ const cartItemsWithDetails = computed(() => {
       return {
         ...product,
         quantity: cartItem.quantity,
+        customized: false,
       };
     }
     const historicalItem = userOrderedItems.value.find(
@@ -424,6 +460,7 @@ const cartItemsWithDetails = computed(() => {
       return {
         ...historicalItem,
         quantity: cartItem.quantity,
+        customized: false,
       };
     }
     return {
@@ -432,6 +469,7 @@ const cartItemsWithDetails = computed(() => {
       price: 0,
       image: "",
       quantity: cartItem.quantity,
+      customized: false,
     };
   });
 });
@@ -446,6 +484,8 @@ function selectCategory(categoryId) {
 }
 
 function addToCart(product) {
+  console.log('Adding to cart:', product); // 调试日志
+
   // product may be a simple product or a customized snapshot object
   if (product && product.customized && product.snapshot) {
     // push the customized snapshot as a cart item with its own id (keep original id for reference)
@@ -453,9 +493,11 @@ function addToCart(product) {
       id: product.id,
       quantity: product.quantity || 1,
       snapshot: product.snapshot,
-      currentPrice: product.currentPrice || product.snapshot.price || 0,
+      currentPrice: product.currentPrice || product.snapshot.currentPrice || product.snapshot.price || 0,
       customized: true,
     });
+    console.log('Added customized item to cart:', cartItems.value[cartItems.value.length - 1]);
+    saveCartToSessionStorage(); // 保存到 sessionStorage
     return;
   }
 
@@ -468,6 +510,7 @@ function addToCart(product) {
       quantity: 1,
     });
   }
+  saveCartToSessionStorage(); // 保存到 sessionStorage
 }
 
 function removeFromCart(product) {
@@ -486,11 +529,13 @@ function removeFromCart(product) {
       const index = cartItems.value.indexOf(existingItem);
       cartItems.value.splice(index, 1);
     }
+    saveCartToSessionStorage(); // 保存到 sessionStorage
   }
 }
 
 function increaseQuantity(cartItem) {
   cartItem.quantity++;
+  saveCartToSessionStorage(); // 保存到 sessionStorage
 }
 
 function decreaseQuantity(cartItem) {
@@ -501,16 +546,9 @@ function decreaseQuantity(cartItem) {
     cartItems.value.splice(index, 1);
     if (cartItems.value.length === 0) {
       showCart.value = false;
-      $q.notify({
-        type: "info",
-        message: "Your cart is empty. Redirecting to menu...",
-        position: "top",
-      });
-      setTimeout(() => {
-        router.push("/");
-      }, 1200);
     }
   }
+  saveCartToSessionStorage(); // 保存到 sessionStorage
 }
 
 function proceedToCheckout() {
@@ -522,10 +560,88 @@ function proceedToCheckout() {
     });
     return;
   }
+
+  console.log('Processing checkout with cart items:', cartItems.value); // 调试日志
+
   // Build order data preserving snapshots for customized items
   const items = cartItems.value.map((cartItem) => {
     if (cartItem.snapshot) {
       // snapshot already contains ingredients and other metadata
+      const itemPrice = cartItem.currentPrice || cartItem.snapshot.currentPrice || cartItem.snapshot.price || 0;
+      const orderItem = {
+        id: cartItem.id,
+        title: cartItem.snapshot.title || 'Item',
+        description: cartItem.snapshot.description || '',
+        image: cartItem.snapshot.image || '',
+        quantity: cartItem.quantity || 1,
+        customizable: true,
+        originalPrice: cartItem.snapshot.originalPrice || cartItem.snapshot.price || 0,
+        price: itemPrice,
+        currentPrice: Number((itemPrice * (cartItem.quantity || 1)).toFixed(2)),
+        ingredients: cartItem.snapshot.ingredients || [],
+        customizations: cartItem.snapshot.customizations || [],
+      };
+
+      console.log('Built customized order item:', orderItem); // 调试日志
+      return orderItem;
+    }
+
+    const product = products.value.find((p) => p.id === cartItem.id) || {};
+    const orderItem = {
+      id: cartItem.id,
+      title: product.title || 'Item',
+      description: product.description || '',
+      image: product.image || '',
+      quantity: cartItem.quantity || 1,
+      customizable: product.customizable || false,
+      originalPrice: product.originalPrice || product.price || 0,
+      price: product.price || 0,
+      currentPrice: Number(((product.price || 0) * (cartItem.quantity || 1)).toFixed(2)),
+      ingredients: [],
+      customizations: [],
+    };
+
+    console.log('Built regular order item:', orderItem); // 调试日志
+    return orderItem;
+  });
+
+  const orderData = {
+    diningType: diningType.value,
+    items,
+    total: Number(totalAmount.value.toFixed(2)),
+  };
+
+  console.log('Final order data being saved to sessionStorage:', orderData); // 调试日志
+  sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
+  router.push("/confirm");
+  showCart.value = false;
+}
+
+function handleAddToCart(updatedProduct) {
+  const existingItem = cartItems.value.find(item => item.id === updatedProduct.id);
+  if (existingItem) {
+    Object.assign(existingItem, updatedProduct);
+  } else {
+    cartItems.value.push(updatedProduct);
+  }
+}
+
+/**
+ * 保存购物车状态到 sessionStorage
+ */
+function saveCartToSessionStorage() {
+  // 如果购物车为空，清除 sessionStorage
+  if (cartItems.value.length === 0) {
+    sessionStorage.removeItem("pendingOrder");
+    console.log('Cart is empty, removed pendingOrder from sessionStorage'); // 调试日志
+    return;
+  }
+
+  // Build order data preserving snapshots for customized items
+  const items = cartItems.value.map((cartItem) => {
+    if (cartItem.snapshot) {
+      // snapshot already contains ingredients and other metadata
+      const itemPrice = cartItem.currentPrice || cartItem.snapshot.currentPrice || cartItem.snapshot.price || 0;
       return {
         id: cartItem.id,
         title: cartItem.snapshot.title || 'Item',
@@ -534,8 +650,8 @@ function proceedToCheckout() {
         quantity: cartItem.quantity || 1,
         customizable: true,
         originalPrice: cartItem.snapshot.originalPrice || cartItem.snapshot.price || 0,
-        price: cartItem.snapshot.price || cartItem.currentPrice || 0,
-        currentPrice: Number(((cartItem.currentPrice || cartItem.snapshot.price || 0) * (cartItem.quantity || 1)).toFixed(2)),
+        price: itemPrice,
+        currentPrice: Number((itemPrice * (cartItem.quantity || 1)).toFixed(2)),
         ingredients: cartItem.snapshot.ingredients || [],
         customizations: cartItem.snapshot.customizations || [],
       };
@@ -564,17 +680,48 @@ function proceedToCheckout() {
   };
 
   sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
-  router.push("/confirm");
-  showCart.value = false;
+  console.log('Cart state saved to sessionStorage:', orderData); // 调试日志
 }
 
-function handleAddToCart(updatedProduct) {
-  const existingItem = cartItems.value.find(item => item.id === updatedProduct.id);
-  if (existingItem) {
-    Object.assign(existingItem, updatedProduct);
-  } else {
-    cartItems.value.push(updatedProduct);
+/**
+ * 格式化定制信息显示文本 - 参考 CustomerConfirm.vue
+ */
+function formatCustomization(custom) {
+  if (custom.type === "quantity") {
+    const changeNum = parseInt(custom.change);
+    const ingredientName = custom.ingredientName;
+
+    if (changeNum === 0) {
+      return `${ingredientName} (Standard)`;
+    } else if (changeNum < 0) {
+      if (custom.currentQuantity === 0) {
+        return `No ${ingredientName}`;
+      } else {
+        return `${ingredientName} (${custom.currentQuantity})`;
+      }
+    } else {
+      return `Extra ${ingredientName} (${custom.change})`;
+    }
+  } else if (custom.type === "replacement") {
+    return `${custom.originalName} → ${custom.replacementName}`;
   }
+
+  return custom.toString();
+}
+
+/**
+ * 获取定制标签的颜色 - 参考 CustomerConfirm.vue
+ */
+function getCustomizationColor(custom) {
+  if (custom.type === "quantity") {
+    if (custom.currentQuantity === 0) return "negative";
+    if (custom.currentQuantity > custom.originalQuantity) return "positive";
+    if (custom.currentQuantity < custom.originalQuantity) return "warning";
+    return "primary";
+  } else if (custom.type === "replacement") {
+    return "orange";
+  }
+  return "primary";
 }
 
 // 生命周期
@@ -616,5 +763,81 @@ onMounted(async () => {
   if (storedUserOrders) {
     userOrderedItems.value = JSON.parse(storedUserOrders);
   }
+
+  // 从 sessionStorage 加载购物车数据（如果有的话）
+  const pendingOrder = sessionStorage.getItem("pendingOrder");
+  if (pendingOrder) {
+    try {
+      const orderData = JSON.parse(pendingOrder);
+      console.log('Loading cart data from sessionStorage:', orderData); // 调试日志
+
+      // 重建购物车数据结构
+      cartItems.value = [];
+
+      (orderData.items || []).forEach(item => {
+        if (item.customizable && item.ingredients && item.ingredients.length > 0) {
+          // 定制化商品 - 构建 snapshot 结构
+          const cartItem = {
+            id: item.id,
+            quantity: item.quantity || 1,
+            snapshot: {
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              image: item.image,
+              price: item.price || item.originalPrice || 0,
+              currentPrice: item.currentPrice || item.price || item.originalPrice || 0,
+              originalPrice: item.originalPrice || item.price || 0,
+              ingredients: item.ingredients || [],
+              customizations: item.customizations || []
+            },
+            currentPrice: item.currentPrice || item.price || item.originalPrice || 0,
+            customized: true
+          };
+          cartItems.value.push(cartItem);
+          console.log('Added customized cart item:', cartItem);
+        } else {
+          // 普通商品
+          const cartItem = {
+            id: item.id,
+            quantity: item.quantity || 1
+          };
+          cartItems.value.push(cartItem);
+          console.log('Added regular cart item:', cartItem);
+        }
+      });
+
+      console.log('Final cart items loaded:', cartItems.value);
+    } catch (error) {
+      console.error('Error loading cart data from sessionStorage:', error);
+    }
+  }
+
+  // 初始化就餐类型，优先从 sessionStorage 获取，否则默认为外带
+  const storedDiningType = sessionStorage.getItem("diningType");
+  diningType.value = storedDiningType || "takeaway";
 });
 </script>
+
+<style scoped>
+/* 定制化标签样式 */
+.q-chip {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.q-chip.dense {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+}
+
+/* 购物车项目样式 */
+.q-item {
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.q-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+</style>
