@@ -41,6 +41,7 @@ const routes = [
       { path: 'product', component: () => import('pages/AdminProduct.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'product/detail', component: () => import('pages/AdminProductDetail.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'product/add', component: () => import('pages/AdminProductAdd.vue'), beforeEnter: adminDeskOnlyGuard },
+      { path: 'product/edit', component: () => import('pages/AdminProductEdit.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'category', component: () => import('pages/AdminCategory.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'item', component: () => import('pages/AdminItem.vue'), beforeEnter: adminDeskOnlyGuard },
       { path: 'option', component: () => import('pages/AdminOption.vue'), beforeEnter: adminDeskOnlyGuard },

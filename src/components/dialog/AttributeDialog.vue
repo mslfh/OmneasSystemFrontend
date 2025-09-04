@@ -25,11 +25,17 @@
 
           <q-select
             v-model="form.type"
-            :options="typeOptions"
+            :options="filteredTypeOptions"
             label="Type"
             outlined
             clearable
-            hint="Type of the product attribute"
+            use-input
+            new-value-mode="add-unique"
+            @filter="filterTypeOptions"
+            @new-value="createNewType"
+            @input-value="onTypeInput"
+            hint="Type of the product attribute (select from list or type to create new)"
+            :loading="typesLoading"
           />
 
           <q-input
@@ -61,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 
@@ -84,6 +90,7 @@ const emit = defineEmits(['update:modelValue', 'close', 'success'])
 
 const $q = useQuasar()
 const loading = ref(false)
+const typesLoading = ref(false)
 
 const dialogVisible = computed({
   get: () => props.modelValue,
@@ -96,14 +103,71 @@ const form = ref({
   extra_cost: 0
 })
 
-const typeOptions = [
-  'material',
-  'sweetness',
-  'spice_level',
-  'texture',
-  'temperature',
-  'cooking_method'
-]
+const typeOptions = ref([])
+const filteredTypeOptions = ref([])
+
+// Fetch attribute types from API
+const fetchAttributeTypes = async () => {
+  try {
+    typesLoading.value = true
+    const response = await api.get('/api/get-attribute-type')
+
+    // Handle API response format: {"success":true,"data":["EXTRA","CHILLI","NO","ONLY"],"message":"..."}
+    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      typeOptions.value = response.data.data
+    } else {
+      // Fallback if response format is unexpected
+      typeOptions.value = []
+    }
+
+    filteredTypeOptions.value = [...typeOptions.value]
+  } catch (error) {
+    console.error('Error fetching attribute types:', error)
+    // Fallback to default types if API fails
+    typeOptions.value = [
+      'material',
+      'sweetness',
+      'spice_level',
+      'texture',
+      'temperature',
+      'cooking_method'
+    ]
+    filteredTypeOptions.value = [...typeOptions.value]
+  } finally {
+    typesLoading.value = false
+  }
+}
+
+// Filter type options based on user input
+const filterTypeOptions = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredTypeOptions.value = [...typeOptions.value]
+    } else {
+      const needle = val.toLowerCase()
+      filteredTypeOptions.value = typeOptions.value.filter(
+        type => type.toLowerCase().indexOf(needle) > -1
+      )
+    }
+  })
+}
+
+// Create new type when user types a new value
+const createNewType = (val, done) => {
+  if (val.length > 0) {
+    const newType = val.toUpperCase().replace(/\s+/g, '_')
+    if (!typeOptions.value.includes(newType)) {
+      typeOptions.value.push(newType)
+    }
+    done(newType, 'add-unique')
+  }
+}
+
+// Handle input value change to convert to uppercase
+const onTypeInput = (val) => {
+  // This will be called when user types in the select input
+  // We don't need to do anything here as the createNewType handles the conversion
+}
 
 const resetForm = () => {
   form.value = {
@@ -126,11 +190,20 @@ watch(() => props.attribute, (newAttribute) => {
   }
 }, { immediate: true })
 
-// Watch for dialog visibility to reset form when opening for new attribute
+// Watch for dialog visibility to reset form and fetch types when opening
 watch(() => props.modelValue, (newVal) => {
-  if (newVal && !props.isEdit) {
-    resetForm()
+  if (newVal) {
+    if (!props.isEdit) {
+      resetForm()
+    }
+    // Fetch attribute types when dialog opens
+    fetchAttributeTypes()
   }
+})
+
+onMounted(() => {
+  // Fetch attribute types on component mount
+  fetchAttributeTypes()
 })
 
 const onSubmit = async () => {

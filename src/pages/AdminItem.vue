@@ -198,6 +198,14 @@ const columns = [
     sortable: true,
     format: (val) => `$${val}`,
   },
+  {
+    name: "extra_price",
+    label: "Extra Price",
+    align: "right",
+    field: "extra_price",
+    sortable: true,
+    format: (val) => val ? `$${val}` : "-",
+  },
   { name: "actions", label: "Actions", align: "center" },
 ];
 
@@ -205,6 +213,7 @@ const filterFields = [
   { label: "Name", value: "name" },
   { label: "Type", value: "type" },
   { label: "Description", value: "description" },
+  { label: "Extra Price", value: "extra_price" },
 ];
 
 const searchFields = [
@@ -212,6 +221,8 @@ const searchFields = [
   { icon: "sauce", label: "Sauce Type", value: "type:sauce" },
   { icon: "attach_money", label: "Price > $3", value: "price:>3" },
   { icon: "money_off", label: "Price < $3", value: "price:<3" },
+  { icon: "add_circle", label: "Has Extra Price", value: "extra_price:>0" },
+  { icon: "remove_circle", label: "No Extra Price", value: "extra_price:0" },
 ];
 
 const filter = ref({

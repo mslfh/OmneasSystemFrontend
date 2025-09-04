@@ -152,8 +152,8 @@
           <q-chip
             size="12px"
             dense
-            :color="props.row.stock > 0 ? 'green' : 'red'"
-            :label="props.row.stock"
+            :color="props.row.stock === -1 ? 'blue' : props.row.stock > 0 ? 'green' : 'red'"
+            :label="props.row.stock === -1 ? '不限量' : props.row.stock"
             text-color="white"
           />
         </q-td>
@@ -187,13 +187,13 @@
               <q-list style="min-width: 100px">
                 <q-btn
                   flat
-                  icon="receipt_long"
+                  icon="edit"
                   color="grey"
                   size="10px"
-                  label="invoice"
+                  label="edit"
                   @click="
                     router.push({
-                      path: '/admin/product/invoice',
+                      path: '/admin/product/edit',
                       query: { id: props.row.id },
                     })
                   "

@@ -25,10 +25,16 @@
 
           <q-select
             v-model="form.type"
-            :options="typeOptions"
+            :options="filteredTypeOptions"
             label="Type *"
             outlined
-            hint="Type of the product item"
+            clearable
+            use-input
+            new-value-mode="add-unique"
+            @filter="filterTypeOptions"
+            @new-value="createNewType"
+            hint="Type of the product item (select from list or type to create new)"
+            :loading="typesLoading"
             :rules="[val => val && val.length > 0 || 'Type is required']"
           />
 
@@ -55,6 +61,20 @@
               val => val >= 0 || 'Price cannot be negative'
             ]"
           />
+
+          <q-input
+            v-model="form.extra_price"
+            label="Extra Price"
+            type="number"
+            step="0.01"
+            min="0"
+            outlined
+            prefix="$"
+            hint="Extra price if add this product item (optional)"
+            :rules="[
+              val => val === null || val === '' || val >= 0 || 'Extra price cannot be negative'
+            ]"
+          />
         </q-form>
       </q-card-section>
 
@@ -73,7 +93,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 
@@ -96,6 +116,7 @@ const emit = defineEmits(['update:modelValue', 'close', 'success'])
 
 const $q = useQuasar()
 const loading = ref(false)
+const typesLoading = ref(false)
 
 const dialogVisible = computed({
   get: () => props.modelValue,
@@ -106,26 +127,79 @@ const form = ref({
   name: '',
   type: '',
   description: '',
-  price: 0
+  price: 0,
+  extra_price: null
 })
 
-const typeOptions = [
-  'addon',
-  'sauce',
-  'material',
-  'ingredient',
-  'taste',
-  'spice',
-  'seasoning',
-  'topping'
-]
+const typeOptions = ref([])
+const filteredTypeOptions = ref([])
+
+// Fetch item types from API
+const fetchItemTypes = async () => {
+  try {
+    typesLoading.value = true
+    const response = await api.get('/api/get-item-type')
+
+    // Handle API response format: {"success":true,"data":["type1","type2"],"message":"..."}
+    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      typeOptions.value = response.data.data
+    } else {
+      // Fallback if response format is unexpected
+      typeOptions.value = []
+    }
+
+    filteredTypeOptions.value = [...typeOptions.value]
+  } catch (error) {
+    console.error('Error fetching item types:', error)
+    // Fallback to default types if API fails
+    typeOptions.value = [
+      'addon',
+      'sauce',
+      'material',
+      'ingredient',
+      'taste',
+      'spice',
+      'seasoning',
+      'topping'
+    ]
+    filteredTypeOptions.value = [...typeOptions.value]
+  } finally {
+    typesLoading.value = false
+  }
+}
+
+// Filter type options based on user input
+const filterTypeOptions = (val, update) => {
+  update(() => {
+    if (val === '') {
+      filteredTypeOptions.value = [...typeOptions.value]
+    } else {
+      const needle = val.toLowerCase()
+      filteredTypeOptions.value = typeOptions.value.filter(
+        type => type.toLowerCase().indexOf(needle) > -1
+      )
+    }
+  })
+}
+
+// Create new type when user types a new value
+const createNewType = (val, done) => {
+  if (val.length > 0) {
+    const newType = val.toUpperCase().replace(/\s+/g, '_')
+    if (!typeOptions.value.includes(newType)) {
+      typeOptions.value.push(newType)
+    }
+    done(newType, 'add-unique')
+  }
+}
 
 const resetForm = () => {
   form.value = {
     name: '',
     type: '',
     description: '',
-    price: 0
+    price: 0,
+    extra_price: null
   }
 }
 
@@ -136,18 +210,28 @@ watch(() => props.item, (newItem) => {
       name: newItem.name || '',
       type: newItem.type || '',
       description: newItem.description || '',
-      price: parseFloat(newItem.price) || 0
+      price: parseFloat(newItem.price) || 0,
+      extra_price: newItem.extra_price ? parseFloat(newItem.extra_price) : null
     }
   } else {
     resetForm()
   }
 }, { immediate: true })
 
-// Watch for dialog visibility to reset form when opening for new item
+// Watch for dialog visibility to reset form and fetch types when opening
 watch(() => props.modelValue, (newVal) => {
-  if (newVal && !props.isEdit) {
-    resetForm()
+  if (newVal) {
+    if (!props.isEdit) {
+      resetForm()
+    }
+    // Fetch item types when dialog opens
+    fetchItemTypes()
   }
+})
+
+onMounted(() => {
+  // Fetch item types on component mount
+  fetchItemTypes()
 })
 
 const onSubmit = async () => {
@@ -183,7 +267,8 @@ const onSubmit = async () => {
       name: form.value.name.trim(),
       type: form.value.type.trim(),
       description: form.value.description ? form.value.description.trim() : null,
-      price: parseFloat(form.value.price)
+      price: parseFloat(form.value.price),
+      extra_price: form.value.extra_price ? parseFloat(form.value.extra_price) : null
     }
 
     if (props.isEdit) {

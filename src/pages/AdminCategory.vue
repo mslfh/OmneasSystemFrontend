@@ -14,7 +14,7 @@
     >
       <template v-slot:top-left>
         <div class="text-h6 q-mr-md">Category</div>
-        <q-chip outline color="primary" icon="add"> Add </q-chip>
+        <q-chip outline color="primary" icon="add" clickable @click="openAddDialog"> Add </q-chip>
       </template>
 
       <template v-slot:top-right>
@@ -201,12 +201,7 @@
                   color="grey"
                   size="10px"
                   label="Edit"
-                  @click="
-                    router.push({
-                      path: '/admin/category/edit',
-                      query: { id: props.row.id },
-                    })
-                  "
+                  @click="openEditDialog(props.row)"
                 />
               </q-list>
             </q-menu>
@@ -214,6 +209,15 @@
         </q-td>
       </template>
     </q-table>
+
+    <!-- Category Dialog -->
+    <CategoryDialog
+      v-model="showDialog"
+      :category="selectedCategory"
+      :is-edit="isEditMode"
+      @success="onDialogSuccess"
+      @close="onDialogClose"
+    />
   </div>
 </template>
 
@@ -222,6 +226,7 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 import { format, useQuasar } from "quasar";
+import CategoryDialog from "src/components/dialog/CategoryDialog.vue";
 
 const router = useRouter();
 const $q = useQuasar();
@@ -314,6 +319,11 @@ const pagination = ref({
   rowsPerPage: 10,
   rowsNumber: 0,
 });
+
+// Dialog related variables
+const showDialog = ref(false);
+const isEditMode = ref(false);
+const selectedCategory = ref({});
 
 onMounted(() => {
   onRequest({
@@ -424,5 +434,32 @@ const deleteRow = async (id) => {
     .onCancel(() => {
       return;
     });
+};
+
+// Dialog methods
+const openAddDialog = () => {
+  selectedCategory.value = {};
+  isEditMode.value = false;
+  showDialog.value = true;
+};
+
+const openEditDialog = (category) => {
+  selectedCategory.value = { ...category };
+  isEditMode.value = true;
+  showDialog.value = true;
+};
+
+const onDialogSuccess = () => {
+  // Refresh the categories list after successful add/edit
+  onRequest({
+    pagination: pagination.value,
+    filter: undefined,
+  });
+};
+
+const onDialogClose = () => {
+  showDialog.value = false;
+  selectedCategory.value = {};
+  isEditMode.value = false;
 };
 </script>
