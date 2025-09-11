@@ -107,19 +107,19 @@
                 Current Order
               </div>
               <!-- 如果显示的是历史商品，显示历史标题 -->
-              <div v-else-if="userOrderedItems.length > 0" class="q-mb-md">
+              <div v-else-if="historicalOrders.length > 0" class="q-mb-md">
                 <div class="text-h6 text-grey-8 q-mb-xs">
                   Your Previous Orders
                 </div>
                 <div class="text-body2 text-grey-6">
-                  Click "Add to Cart" to order again
+                  Click "Add to Cart" to order again with same customizations
                 </div>
               </div>
 
               <div class="row q-gutter-md">
                 <product-card
-                  v-for="item in historicalOrderedItems"
-                  :key="`ordered-${item.id}`"
+                  v-for="(item, index) in historicalOrderedItems"
+                  :key="`ordered-${item.id}-${index}-${item.customized ? JSON.stringify(item.customizations) : ''}`"
                   :product="item"
                   :is-ordered="!item.isHistorical"
                   @add-to-cart="addToCart"
@@ -356,6 +356,9 @@ const products = ref([]);
 // 用户点过的餐品（从localStorage加载）
 const userOrderedItems = ref([]);
 
+// 历史订单数据（从localStorage的orderHistory加载）
+const historicalOrders = ref([]);
+
 // 计算属性
 const popularItems = computed(() => {
   return products.value
@@ -386,18 +389,47 @@ const historicalOrderedItems = computed(() => {
   if (orderedItems.value.length > 0) {
     return orderedItems.value;
   }
-  return userOrderedItems.value.map((item) => {
-    // 计算该产品的总数量（包括所有定制化版本）
-    const totalQuantity = cartItems.value
-      .filter(cartItem => cartItem.id === item.id)
-      .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
 
-    return {
-      ...item,
-      quantity: totalQuantity,
-      isHistorical: true,
-    };
+  // 从历史订单中获取所有已点过的菜品，包括定制信息
+  const allHistoricalItems = [];
+
+  historicalOrders.value.forEach(order => {
+    if (order.items && Array.isArray(order.items)) {
+      order.items.forEach(item => {
+        // 计算该产品的总数量（包括所有定制化版本）
+        const totalQuantity = cartItems.value
+          .filter(cartItem => cartItem.id === item.id)
+          .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
+        allHistoricalItems.push({
+          ...item,
+          quantity: totalQuantity,
+          isHistorical: true,
+          orderNumber: order.orderNumber,
+          orderDate: order.createdAt,
+          customized: item.customizations && item.customizations.length > 0,
+        });
+      });
+    }
   });
+
+  // 去重并只显示前10个
+  const uniqueItems = [];
+  const seenItems = new Set();
+
+  allHistoricalItems.forEach(item => {
+    // 创建唯一标识符，包括定制信息
+    const itemKey = item.customized
+      ? `${item.id}-${JSON.stringify(item.customizations)}`
+      : `${item.id}`;
+
+    if (!seenItems.has(itemKey) && uniqueItems.length < 10) {
+      seenItems.add(itemKey);
+      uniqueItems.push(item);
+    }
+  });
+
+  return uniqueItems;
 });
 
 const filteredProducts = computed(() => {
@@ -497,6 +529,42 @@ function selectCategory(categoryId) {
 
 function addToCart(product) {
   console.log('Adding to cart:', product); // 调试日志
+
+  // 如果是历史订单中的定制商品
+  if (product.isHistorical && product.customized) {
+    // 创建包含定制信息的快照
+    const customizedSnapshot = {
+      id: product.id,
+      title: product.title,
+      description: product.description || '',
+      image: product.image || '',
+      originalPrice: product.originalPrice || product.price || 0,
+      currentPrice: product.currentPrice || product.price || 0,
+      price: product.price || 0,
+      ingredients: product.ingredients || [],
+      customizations: product.customizations || [],
+    };
+
+    cartItems.value.push({
+      id: product.id,
+      quantity: 1,
+      snapshot: customizedSnapshot,
+      currentPrice: product.currentPrice || product.price || 0,
+      customized: true,
+    });
+
+    console.log('Added historical customized item to cart:', cartItems.value[cartItems.value.length - 1]);
+
+    $q.notify({
+      type: 'positive',
+      message: `Added "${product.title}" with customizations to cart`,
+      position: 'top',
+      timeout: 2000
+    });
+
+    saveCartToSessionStorage();
+    return;
+  }
 
   // product may be a simple product or a customized snapshot object
   if (product && product.customized && product.snapshot) {
@@ -779,6 +847,30 @@ onMounted(async () => {
   const storedUserOrders = localStorage.getItem("userOrderedItems");
   if (storedUserOrders) {
     userOrderedItems.value = JSON.parse(storedUserOrders);
+  }
+
+  // 从localStorage加载订单历史数据
+  const storedOrderHistory = localStorage.getItem("orderHistory");
+  if (storedOrderHistory) {
+    try {
+      const orderHistory = JSON.parse(storedOrderHistory);
+      console.log('Loading order history from localStorage:', orderHistory); // 调试日志
+
+      // 按时间倒序排列，最新的订单在前
+      historicalOrders.value = orderHistory.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.orderTime || 0);
+        const dateB = new Date(b.createdAt || b.orderTime || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      console.log('Historical orders loaded:', historicalOrders.value.length, 'orders');
+    } catch (error) {
+      console.error('Error loading order history from localStorage:', error);
+      historicalOrders.value = [];
+    }
+  } else {
+    console.log('No order history found in localStorage');
+    historicalOrders.value = [];
   }
 
   // 从 sessionStorage 加载购物车数据（在产品数据加载完成后）

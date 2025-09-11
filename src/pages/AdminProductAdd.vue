@@ -7,6 +7,14 @@
           <div class="q-gutter-sm">
             <q-btn
               flat
+              icon="refresh"
+              color="grey-7"
+              label="Reset Form"
+              @click="resetForm()"
+              :disable="saving"
+            />
+            <q-btn
+              flat
               icon="save"
               color="positive"
               label="Save Product"
@@ -24,6 +32,12 @@
             <!-- removed extra closing div tag -->
           </div>
         </div>
+        <!-- 缓存状态提示 -->
+        <StatusBanner
+          :show="hasUnsavedChanges"
+          type="info"
+          message="数据已自动保存到本地缓存，即使刷新页面也不会丢失"
+        />
         <div class="q-pa-md">
           <q-form @submit="saveProduct" class="q-gutter-md" ref="formRef">
             <q-list>
@@ -209,7 +223,7 @@
                                       max="99"
                                       dense
                                       outlined
-                                      style="width: 50px"
+                                      style="width: 60px"
                                     />
                                     <q-select
                                       :model-value="getIngredientUnit(item.id)"
@@ -506,30 +520,30 @@
 
 <script setup>
 import { useQuasar } from "quasar";
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { api } from "boot/axios";
 import { useRouter } from "vue-router";
 import ProductCustomizationOptions from "components/ProductCustomizationOptions.vue";
+import StatusBanner from "components/StatusBanner.vue";
+import { useFormCache, useFormLeaveConfirm } from "../composables/useFormCache.js";
+import { debounce } from "../utils/helpers.js";
 
 const router = useRouter();
 const $q = useQuasar();
 const formRef = ref(null);
 
-// State refs
-const saving = ref(false);
-const categorySelected = ref(null);
-const categoryExpanded = ref([]);
-const loadingCategories = ref(false);
-const loadingIngredients = ref(false);
+// 缓存管理
+const CACHE_KEY = 'admin_product_add'
+const {
+  loadFromCache,
+  saveToCache,
+  clearCache,
+  hasCache,
+  getCacheTimestamp
+} = useFormCache(CACHE_KEY)
 
-// Optimized data structures
-const ingredientMap = ref(new Map());
-const ingredientsByType = ref(new Map());
-const selectedIngredientsMap = ref(new Map());
-const customizationsMap = ref(new Map());
-
-// Product data model
-const product = ref({
+// 初始产品数据模型
+const initialProductData = {
   code: "",
   title: "",
   second_title: "",
@@ -551,7 +565,26 @@ const product = ref({
   categories: [],
   ingredients: [],
   customizations: [],
-});
+}
+
+// State refs
+const saving = ref(false);
+const categorySelected = ref(null);
+const categoryExpanded = ref([]);
+const loadingCategories = ref(false);
+const loadingIngredients = ref(false);
+const hasUnsavedChanges = ref(false);
+
+// 从缓存加载或使用初始数据
+const product = ref(loadFromCache());
+
+// Optimized data structures
+const ingredientMap = ref(new Map());
+const ingredientsByType = ref(new Map());
+const selectedIngredientsMap = ref(new Map());
+const customizationsMap = ref(new Map());
+
+// Product data model - removed since we're using cached data
 
 // Data refs
 const categoryOptions = ref([]);
@@ -699,6 +732,9 @@ function toggleIngredient(item) {
     product.value.ingredients.push(newIngredient);
     selectedIngredientsMap.value.set(item.id, newIngredient);
   }
+
+  // 手动触发缓存保存
+  autosaveToCache();
 }
 
 function isIngredientSelected(itemId) {
@@ -719,6 +755,8 @@ function updateIngredientQuantity(itemId, quantity) {
   const ingredient = selectedIngredientsMap.value.get(itemId);
   if (ingredient) {
     ingredient.quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
+    // 手动触发缓存保存
+    autosaveToCache();
   }
 }
 
@@ -726,6 +764,8 @@ function updateIngredientUnit(itemId, unit) {
   const ingredient = selectedIngredientsMap.value.get(itemId);
   if (ingredient) {
     ingredient.unit = unit;
+    // 手动触发缓存保存
+    autosaveToCache();
   }
 }
 
@@ -841,6 +881,10 @@ async function saveProduct() {
 
     const response = await api.post("/api/products", submitData);
 
+    // 保存成功后清除缓存
+    clearCache();
+    hasUnsavedChanges.value = false;
+
     $q.notify({
       type: "positive",
       message: "Product created successfully",
@@ -850,7 +894,7 @@ async function saveProduct() {
 
     router.push({
       path: "/admin/product/detail",
-      query: { id: response.data.id },
+      query: { id: response.data.data.id },
     });
   } catch (error) {
     console.error("Error creating product:", error);
@@ -863,6 +907,72 @@ async function saveProduct() {
   } finally {
     saving.value = false;
   }
+}
+
+// 缓存管理函数
+const debouncedAutosave = debounce(() => {
+  saveToCache(product.value);
+  hasUnsavedChanges.value = true;
+}, 1000); // 1秒防抖
+
+function autosaveToCache() {
+  debouncedAutosave();
+}
+
+function showCacheRestoreDialog() {
+  if (hasCache()) {
+    const timestamp = getCacheTimestamp();
+    const timeStr = timestamp ? new Date(timestamp).toLocaleString() : '未知时间';
+
+    $q.dialog({
+      title: '发现缓存数据',
+      message: `检测到您之前有未完成的产品录入数据（保存时间：${timeStr}），是否要恢复这些数据？`,
+      cancel: {
+        label: '不恢复',
+        color: 'grey',
+        flat: true
+      },
+      ok: {
+        label: '恢复数据',
+        color: 'primary'
+      },
+      persistent: true
+    }).onOk(() => {
+      // 数据已经在初始化时加载了
+      $q.notify({
+        type: 'positive',
+        message: '已恢复之前的录入数据',
+        position: 'top',
+        timeout: 2000
+      });
+    }).onCancel(() => {
+      // 重置为初始数据并清除缓存
+      product.value = { ...initialProductData };
+      clearCache();
+      hasUnsavedChanges.value = false;
+    });
+  }
+}
+
+function resetForm() {
+  $q.dialog({
+    title: '重置表单',
+    message: '确定要重置表单吗？所有已填写的数据将被清除。',
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    product.value = { ...initialProductData };
+    clearCache();
+    hasUnsavedChanges.value = false;
+    // 重新初始化映射
+    initializeMaps();
+    $q.notify({
+      type: 'info',
+      message: '表单已重置',
+      position: 'top',
+      timeout: 2000
+    });
+  });
 }
 
 function imageError() {
@@ -890,10 +1000,38 @@ watch(
   }
 );
 
+// 监听产品数据变化并自动保存到缓存
+watch(
+  product,
+  () => {
+    autosaveToCache();
+  },
+  { deep: true }
+);
+
+// 页面离开确认
+const { setupLeaveConfirm } = useFormLeaveConfirm(hasUnsavedChanges);
+let cleanupLeaveConfirm = null;
+
 // Lifecycle hooks
 onMounted(async () => {
+  // 设置页面离开确认
+  cleanupLeaveConfirm = setupLeaveConfirm();
+
   await Promise.all([fetchCategories(), fetchIngredients()]);
   initializeMaps();
+
+  // 检查是否有缓存数据需要恢复
+  if (hasCache()) {
+    showCacheRestoreDialog();
+  }
+});
+
+onUnmounted(() => {
+  // 清理页面离开监听器
+  if (cleanupLeaveConfirm) {
+    cleanupLeaveConfirm();
+  }
 });
 </script>
 
