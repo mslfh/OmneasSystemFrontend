@@ -379,7 +379,7 @@
               <div class="group-header">
                 <q-icon name="flatware" color="deep-orange-6" class="q-mr-sm" />
                 <span class="group-title text-deep-orange-6"
-                  >Fixed Ingredients</span
+                  >Set Ingredients</span
                 >
               </div>
 
@@ -387,8 +387,7 @@
                 <div class="row items-center">
                   <span class="text-caption text-grey-7"
                     ><q-icon name="info" color="grey-6" size="xs" />
-                    <strong> Note:</strong>Please add special requests when
-                    checkout if you'd like to change these.</span
+                    <strong> Note: </strong>Please leave a comment at checkout if you’d like to make changes.</span
                   >
                 </div>
               </div>
@@ -402,7 +401,7 @@
                 <div
                   v-for="ingredient in ingredients"
                   :key="ingredient.id"
-                  class="q-pa-sm"
+                  class="q-pl-sm q-pr-sm q-pt-sm"
                   style="background: white; border-radius: 6px"
                 >
                   <div class="row items-center justify-between">
@@ -410,7 +409,8 @@
                       {{ ingredient.name }}
                     </div>
                     <div class="text-caption text-grey-5">
-                      Standard • Qty: {{ ingredient.currentQuantity }}
+                       • Standard
+                       <!-- Qty: {{ ingredient.currentQuantity }} -->
                     </div>
                   </div>
                 </div>
@@ -463,7 +463,7 @@
     :ingredient="selectedReplacement"
     @update:model-value="(val) => (showReplacementDialog.value = val)"
     @select="onReplacementSelected"
-    @close="showReplacementDialog.value = false"
+    @close="showReplacementDialog = false"
   />
 </template>
 
@@ -612,7 +612,7 @@ function getQuantityPriceInfo(ingredient) {
     if (!ingredient) return null;
     const extra = ingredient.extra_price || 0;
     if (extra === 0) return null;
-    return `Extra $${extra.toFixed(2)} per extra portion`;
+    return `$${extra.toFixed(2)} per extra ${ingredient.name}`;
   } catch (e) {
     return null;
   }
@@ -687,6 +687,7 @@ async function loadIngredientsForProduct(productId) {
     const built = (items || []).map((item) => {
       const custom = customMap[item.id];
       const details = ingredientDetails.get(item.id);
+      console.log("Building ingredient:", item);
 
       const ingredient = {
         id: item.id,
@@ -1019,7 +1020,7 @@ function addFromDetails() {
   margin-bottom: 8px;
 }
 .group-title {
-  font-weight: 600;
+  font-weight: 700;
 }
 .type-section {
   margin-bottom: 12px;

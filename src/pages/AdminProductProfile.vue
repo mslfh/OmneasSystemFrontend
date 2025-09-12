@@ -1,7 +1,7 @@
 <template>
   <div class="q-pa-md">
     <q-table
-      no-data-label="No product configuration found"
+      no-data-label="No product profile found"
       :dense="$q.screen.lt.md"
       :columns="columns"
       :rows="data"
@@ -13,7 +13,7 @@
       binary-state-sort
     >
       <template v-slot:top-left>
-        <div class="text-h6 q-mr-md">Product Configuration</div>
+        <div class="text-h6 q-mr-md">Product Profile</div>
         <q-chip
           outline
           color="primary"
@@ -21,7 +21,7 @@
           clickable
           @click="openAddDialog"
         >
-        Add Configuration
+        Add Profile
         </q-chip>
       </template>
 
@@ -160,7 +160,7 @@
     <q-dialog v-model="showDialog" persistent>
       <q-card style="min-width: 400px;">
         <q-card-section>
-          <div class="text-h6">{{ isEditMode ? 'Edit' : 'Add' }} Product Configuration</div>
+          <div class="text-h6">{{ isEditMode ? 'Edit' : 'Add' }} Product Profile</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -168,7 +168,7 @@
             <q-input
               filled
               v-model="configurationForm.name"
-              label="Configuration Name *"
+              label="Name *"
               lazy-rules
               :rules="[ val => val && val.length > 0 || 'Please enter a name']"
             />

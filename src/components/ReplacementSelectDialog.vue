@@ -74,7 +74,7 @@ function onDialogUpdate(val) {
 }
 
 function close() {
-  emit("update:modelValue", false);
+  console.log("Closing dialog");
   emit("close");
 }
 

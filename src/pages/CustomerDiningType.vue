@@ -71,7 +71,7 @@ const router = useRouter();
 // 方法
 function selectDiningType(type) {
   // 将选择的就餐方式保存到sessionStorage或传递给下一页
-  sessionStorage.setItem('selectedDiningType', type)
+  sessionStorage.setItem('diningType', type)
 
   // 跳转到点餐页面
   router.push('/order')

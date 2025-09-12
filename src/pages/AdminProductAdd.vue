@@ -494,7 +494,7 @@ const initialProductData = {
   tag: "",
   sort: 3,
   is_featured: false,
-  customizable: true,
+  customizable: false,
   categories: [],
   ingredients: [],
   customizations: [],

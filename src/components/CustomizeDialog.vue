@@ -125,7 +125,7 @@
             <div class="group-header">
               <q-icon name="flatware" color="deep-orange-6" class="q-mr-sm" />
               <span class="group-title text-deep-orange-6"
-                >Standard Ingredients</span
+                >Set Ingredients</span
               >
             </div>
 
@@ -133,7 +133,7 @@
               <div class="row items-center">
                 <span class="text-caption text-grey-7"
                   ><q-icon name="info" color="grey-6" size="xs" />
-                  <strong> Note:</strong>Please add special requests when
+                  <strong> Note:</strong>Please leave a comment at
                   checkout if you'd like to change these.</span
                 >
               </div>
@@ -156,7 +156,8 @@
                     {{ getCurrentReplacementName(ingredient) }}
                   </div>
                   <div class="text-caption text-grey-5">
-                    Standard • Qty: {{ ingredient.currentQuantity }}
+                    • Standard
+                    <!-- • Qty: {{ ingredient.currentQuantity }} -->
                   </div>
                 </div>
               </div>
@@ -272,7 +273,7 @@ function getLocalQuantityPriceInfo(ingredient) {
     if (!ingredient) return "Standard portion";
     const extra = ingredient.extra_price || 0;
     if (extra === 0) return "Standard portion";
-    return `Extra $${extra.toFixed(2)} per extra portion`;
+    return `$${extra.toFixed(2)} per extra portion`;
   } catch (e) {
     return "Standard portion";
   }
@@ -300,9 +301,9 @@ function getReplacementPriceInfo(ingredient) {
     if (priceChange === 0) {
       return "No additional charge";
     } else if (priceChange > 0) {
-      return `+$${priceChange.toFixed(2)} price difference`;
+      return `+$${priceChange.toFixed(2)}`;
     } else {
-      return `-$${Math.abs(priceChange).toFixed(2)} discount`;
+      return `No additional charge`;
     }
   } catch (e) {
     return "";

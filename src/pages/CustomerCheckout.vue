@@ -4,7 +4,8 @@
       <div class="col-12 col-md-10 col-lg-8">
         <!-- 页面标题 -->
         <div class="text-h4 text-weight-bold text-grey-7 q-mb-lg text-center">
-          Checkout & Payment
+          Checkout
+          <!-- & Payment -->
         </div>
 
         <!-- 订单摘要卡片 -->
@@ -43,7 +44,7 @@
                 <!-- 商品信息 -->
                 <div class="col q-pl-md">
                   <div class="text-body2 text-weight-medium">
-                    {{ orderItem.title }}
+                   • {{ orderItem.title }}
                     <span class="text-grey-6"
                       > x {{ orderItem.quantity || 1 }}</span
                     >
@@ -98,23 +99,13 @@
                   dense
                 />
               </div>
-              <div class="col-12">
-                <q-input
-                  v-model="customerInfo.notes"
-                  label="Any Comments"
-                  outlined
-                  dense
-                  type="textarea"
-                  rows="3"
-                  hint="Please leave any comments or special requests here"
-                />
 
                 <!-- Preset Comment Chips -->
-                <div class="q-mt-md">
-                  <div class="text-caption text-grey-6 q-mb-sm">
+                <div class="col-12 q-mt-md q-pl-xs">
+                  <div class="text-caption text-grey-6">
                     Quick Options:
                   </div>
-                  <div class="row q-gutter-xs">
+                  <div class="row q-gutter-xs q-mt-xs">
                     <q-chip
                       v-for="chip in commentChips"
                       :key="chip"
@@ -130,6 +121,17 @@
                     </q-chip>
                   </div>
                 </div>
+
+              <div class="col-12">
+                <q-input
+                  v-model="customerInfo.notes"
+                  label="Any Comments"
+                  outlined
+                  dense
+                  type="textarea"
+                  rows="3"
+                  hint="Please leave any comments or special requests here"
+                />
               </div>
             </div>
           </q-card-section>
@@ -192,7 +194,6 @@ const commentChips = [
   "Mild",
   "Not Spicy",
   "Less Salt",
-  "Extra Cheese",
   "No Onions",
   "Well Done",
   "Medium Rare",
@@ -234,7 +235,7 @@ function toggleChip(chip) {
   // 更新notes字段
   const existingNotes = customerInfo.value.notes
     .replace(
-      /,?\s*(Extra Sauce|Mild|Not Spicy|Less Salt|Extra Cheese|No Onions|Well Done|Medium Rare|Extra Hot|On the Side|No Ice|Less Sugar)/g,
+      /,?\s*(Extra Sauce|Mild|Not Spicy|Less Salt|No Onions|Well Done|Medium Rare|Extra Hot|On the Side|No Ice|Less Sugar)/g,
       ""
     )
     .trim();

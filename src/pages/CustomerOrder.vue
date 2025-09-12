@@ -618,22 +618,52 @@ function removeFromCart(product) {
   }
 }
 
-function increaseQuantity(cartItem) {
-  cartItem.quantity++;
-  saveCartToSessionStorage(); // 保存到 sessionStorage
+function increaseQuantity(cartItemWithDetails) {
+  // 找到原始的购物车项目
+  const originalCartItem = cartItems.value.find(item => {
+    if (cartItemWithDetails.snapshot) {
+      // 对于定制化商品，需要比较快照数据
+      return item.id === cartItemWithDetails.id &&
+             item.snapshot &&
+             JSON.stringify(item.snapshot.customizations) === JSON.stringify(cartItemWithDetails.snapshot.customizations);
+    } else {
+      // 对于普通商品，直接比较ID且没有快照
+      return item.id === cartItemWithDetails.id && !item.snapshot;
+    }
+  });
+
+  if (originalCartItem) {
+    originalCartItem.quantity++;
+    saveCartToSessionStorage(); // 保存到 sessionStorage
+  }
 }
 
-function decreaseQuantity(cartItem) {
-  if (cartItem.quantity > 1) {
-    cartItem.quantity--;
-  } else {
-    const index = cartItems.value.indexOf(cartItem);
-    cartItems.value.splice(index, 1);
-    if (cartItems.value.length === 0) {
-      showCart.value = false;
+function decreaseQuantity(cartItemWithDetails) {
+  // 找到原始的购物车项目
+  const originalCartItem = cartItems.value.find(item => {
+    if (cartItemWithDetails.snapshot) {
+      // 对于定制化商品，需要比较快照数据
+      return item.id === cartItemWithDetails.id &&
+             item.snapshot &&
+             JSON.stringify(item.snapshot.customizations) === JSON.stringify(cartItemWithDetails.snapshot.customizations);
+    } else {
+      // 对于普通商品，直接比较ID且没有快照
+      return item.id === cartItemWithDetails.id && !item.snapshot;
     }
+  });
+
+  if (originalCartItem) {
+    if (originalCartItem.quantity > 1) {
+      originalCartItem.quantity--;
+    } else {
+      const index = cartItems.value.indexOf(originalCartItem);
+      cartItems.value.splice(index, 1);
+      if (cartItems.value.length === 0) {
+        showCart.value = false;
+      }
+    }
+    saveCartToSessionStorage(); // 保存到 sessionStorage
   }
-  saveCartToSessionStorage(); // 保存到 sessionStorage
 }
 
 function proceedToCheckout() {
