@@ -148,8 +148,8 @@ export function useFormLeaveConfirm(hasUnsavedChanges) {
     const handleBeforeUnload = (event) => {
       if (hasUnsavedChanges.value) {
         event.preventDefault()
-        event.returnValue = '您有未保存的更改，确定要离开吗？'
-        return '您有未保存的更改，确定要离开吗？'
+        event.returnValue = 'You have unsaved changes, are you sure you want to leave?'
+        return 'You have unsaved changes, are you sure you want to leave?'
       }
     }
 

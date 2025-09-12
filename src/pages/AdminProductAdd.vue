@@ -32,12 +32,6 @@
             <!-- removed extra closing div tag -->
           </div>
         </div>
-        <!-- 缓存状态提示 -->
-        <StatusBanner
-          :show="hasUnsavedChanges"
-          type="info"
-          message="数据已自动保存到本地缓存，即使刷新页面也不会丢失"
-        />
         <div class="q-pa-md">
           <q-form @submit="saveProduct" class="q-gutter-md" ref="formRef">
             <q-list>
@@ -1015,18 +1009,18 @@ function autosaveToCache() {
 function showCacheRestoreDialog() {
   if (hasCache()) {
     const timestamp = getCacheTimestamp();
-    const timeStr = timestamp ? new Date(timestamp).toLocaleString() : '未知时间';
+    const timeStr = timestamp ? new Date(timestamp).toLocaleString() : 'unknown time';
 
     $q.dialog({
-      title: '发现缓存数据',
-      message: `检测到您之前有未完成的产品录入数据（保存时间：${timeStr}），是否要恢复这些数据？`,
+      title: 'Cache Detected',
+      message: `Unsaved data from previous session detected (saved at ${timeStr}). Do you want to restore it?`,
       cancel: {
-        label: '不恢复',
+        label: 'Do Not Restore',
         color: 'grey',
         flat: true
       },
       ok: {
-        label: '恢复数据',
+        label: 'Restore Data',
         color: 'primary'
       },
       persistent: true
@@ -1034,7 +1028,7 @@ function showCacheRestoreDialog() {
       // 数据已经在初始化时加载了
       $q.notify({
         type: 'positive',
-        message: '已恢复之前的录入数据',
+        message: 'Data restored from cache',
         position: 'top',
         timeout: 2000
       });
@@ -1049,8 +1043,8 @@ function showCacheRestoreDialog() {
 
 function resetForm() {
   $q.dialog({
-    title: '重置表单',
-    message: '确定要重置表单吗？所有已填写的数据将被清除。',
+    title: 'Reset Form',
+    message: 'Are you sure you want to reset the form? All filled data will be cleared.',
     cancel: true,
     persistent: true
   }).onOk(() => {
@@ -1061,7 +1055,7 @@ function resetForm() {
     initializeMaps();
     $q.notify({
       type: 'info',
-      message: '表单已重置',
+      message: 'Form has been reset',
       position: 'top',
       timeout: 2000
     });
