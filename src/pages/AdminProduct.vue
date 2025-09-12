@@ -153,7 +153,7 @@
             size="12px"
             dense
             :color="props.row.stock === -1 ? 'blue' : props.row.stock > 0 ? 'green' : 'red'"
-            :label="props.row.stock === -1 ? '不限量' : props.row.stock"
+            :label="props.row.stock === -1 ? '---' : props.row.stock"
             text-color="white"
           />
         </q-td>

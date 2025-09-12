@@ -19,10 +19,12 @@
               icon="tune"
               color="secondary"
               label="Advanced Edit"
-              @click="router.push({
-                path: '/admin/product/edit',
-                query: { id: product.id }
-              })"
+              @click="
+                router.push({
+                  path: '/admin/product/edit',
+                  query: { id: product.id },
+                })
+              "
             />
             <q-btn
               v-if="isEditing"
@@ -84,7 +86,10 @@
                           :readonly="!isEditing"
                           outlined
                           dense
-                          :rules="[val => val && val.length > 0 || 'Title is required']"
+                          :rules="[
+                            (val) =>
+                              (val && val.length > 0) || 'Title is required',
+                          ]"
                         />
                       </div>
 
@@ -132,7 +137,14 @@
                       <!-- Categories -->
                       <div class="col-12">
                         <div class="text-subtitle2 q-mb-sm">Categories</div>
-                        <div v-if="product && product.categories && product.categories.length > 0" class="q-gutter-xs">
+                        <div
+                          v-if="
+                            product &&
+                            product.categories &&
+                            product.categories.length > 0
+                          "
+                          class="q-gutter-xs"
+                        >
                           <q-chip
                             v-for="category in product.categories"
                             :key="category.id"
@@ -167,23 +179,39 @@
                     <div class="row q-col-gutter-md q-row-gutter-md">
                       <!-- Ingredient Details -->
                       <div class="col-12">
-                        <div class="text-subtitle2 q-mb-sm">Ingredient Details</div>
-                        <div v-if="product && product.items && product.items.length > 0">
-                          <div v-for="(items, type) in groupedItems" :key="type" class="q-mb-md">
-                            <div class="text-subtitle2 q-mb-sm text-primary">{{ type }}</div>
+                        <div class="text-subtitle2 q-mb-sm">
+                          Ingredient Details
+                        </div>
+                        <div
+                          v-if="
+                            product && product.items && product.items.length > 0
+                          "
+                        >
+                          <div
+                            v-for="(items, type) in groupedItems"
+                            :key="type"
+                            class="q-mb-md"
+                          >
+                            <div class="text-subtitle2 q-mb-sm text-primary">
+                              {{ type }}
+                            </div>
                             <div class="row q-gutter-sm">
                               <q-card
                                 v-for="item in items"
                                 :key="item.id"
                                 flat
                                 bordered
-                                class="col-12 col-md-6 col-lg-4"
+                                class="col-12 col-md-3"
                               >
                                 <q-card-section class="q-pa-sm">
                                   <div class="row items-center">
                                     <div class="col">
-                                      <div class="text-weight-medium">{{ item.name }}</div>
-                                      <div class="text-caption text-grey-6">{{ item.description }}</div>
+                                      <div class="text-weight-medium">
+                                        {{ item.name }}
+                                      </div>
+                                      <div class="text-caption text-grey-6">
+                                        {{ item.description }}
+                                      </div>
                                     </div>
                                   </div>
                                 </q-card-section>
@@ -212,7 +240,12 @@
                 <q-separator />
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section class="q-pa-md">
-                    <div v-if="product.customization_items && product.customization_items.length > 0">
+                    <div
+                      v-if="
+                        product.customization_items &&
+                        product.customization_items.length > 0
+                      "
+                    >
                       <q-card
                         v-for="customization in product.customization_items"
                         :key="customization.id"
@@ -234,7 +267,9 @@
 
                           <!-- Base Item Price Information -->
                           <div class="q-mb-sm">
-                            <div class="text-caption text-grey-7 q-mb-xs">Base Item:</div>
+                            <div class="text-caption text-grey-7 q-mb-xs">
+                              Base Item:
+                            </div>
                             <q-chip
                               size="sm"
                               color="grey-2"
@@ -243,15 +278,29 @@
                             >
                               <template v-slot:default>
                                 {{ getItemName(customization.item_id) }} -
-                                Price: ${{ getItemPrices(customization.item_id).price }} |
-                                Extra: ${{ getItemPrices(customization.item_id).extra_price }}
+                                Price: ${{
+                                  getItemPrices(customization.item_id).price
+                                }}
+                                | Extra: ${{
+                                  getItemPrices(customization.item_id)
+                                    .extra_price
+                                }}
                               </template>
                             </q-chip>
                           </div>
 
                           <!-- Replacement Options for "replaceable" mode -->
-                          <div v-if="customization.mode === 'replaceable' && customization.replacement_list && customization.replacement_list.length > 0" class="q-mb-sm">
-                            <div class="text-caption text-grey-7 q-mb-xs">Available Replacements (replaceable mode):</div>
+                          <div
+                            v-if="
+                              customization.mode === 'replaceable' &&
+                              customization.replacement_list &&
+                              customization.replacement_list.length > 0
+                            "
+                            class="q-mb-sm"
+                          >
+                            <div class="text-caption text-grey-7 q-mb-xs">
+                              Available Replacements (replaceable mode):
+                            </div>
                             <div class="q-gutter-xs">
                               <q-chip
                                 v-for="replacementId in customization.replacement_list"
@@ -263,8 +312,20 @@
                               >
                                 <template v-slot:default>
                                   {{ getItemName(replacementId) }}
-                                  <span v-if="customization.replacement_diff && customization.replacement_diff[replacementId] !== undefined" class="text-green-7">
-                                    | Extra Cost: +${{ customization.replacement_diff[replacementId] }}
+                                  <span
+                                    v-if="
+                                      customization.replacement_diff &&
+                                      customization.replacement_diff[
+                                        replacementId
+                                      ] !== undefined
+                                    "
+                                    class="text-green-7"
+                                  >
+                                    | Extra Cost: +${{
+                                      customization.replacement_diff[
+                                        replacementId
+                                      ]
+                                    }}
                                   </span>
                                 </template>
                               </q-chip>
@@ -272,8 +333,18 @@
                           </div>
 
                           <!-- Replacement Options for "replaceable_variable" mode -->
-                          <div v-if="customization.mode === 'replaceable_variable' && customization.replacement_list && customization.replacement_list.length > 0" class="q-mb-sm">
-                            <div class="text-caption text-grey-7 q-mb-xs">Available Replacements (replaceable + variable mode):</div>
+                          <div
+                            v-if="
+                              customization.mode === 'replaceable_variable' &&
+                              customization.replacement_list &&
+                              customization.replacement_list.length > 0
+                            "
+                            class="q-mb-sm"
+                          >
+                            <div class="text-caption text-grey-7 q-mb-xs">
+                              Available Replacements (replaceable + variable
+                              mode):
+                            </div>
                             <div class="q-gutter-xs">
                               <q-chip
                                 v-for="replacementId in customization.replacement_list"
@@ -285,11 +356,35 @@
                               >
                                 <template v-slot:default>
                                   {{ getItemName(replacementId) }}
-                                  <span v-if="customization.replacement_diff && customization.replacement_diff[replacementId] !== undefined" class="text-green-7">
-                                    | Replace Cost: +${{ customization.replacement_diff[replacementId] }}
+                                  <span
+                                    v-if="
+                                      customization.replacement_diff &&
+                                      customization.replacement_diff[
+                                        replacementId
+                                      ] !== undefined
+                                    "
+                                    class="text-green-7"
+                                  >
+                                    | Replace Cost: +${{
+                                      customization.replacement_diff[
+                                        replacementId
+                                      ]
+                                    }}
                                   </span>
-                                  <span v-if="customization.replacement_extra && customization.replacement_extra[replacementId] !== undefined" class="text-orange-7">
-                                    | Quantity Extra: ${{ customization.replacement_extra[replacementId] }}
+                                  <span
+                                    v-if="
+                                      customization.replacement_extra &&
+                                      customization.replacement_extra[
+                                        replacementId
+                                      ] !== undefined
+                                    "
+                                    class="text-orange-7"
+                                  >
+                                    | Quantity Extra: ${{
+                                      customization.replacement_extra[
+                                        replacementId
+                                      ]
+                                    }}
                                   </span>
                                 </template>
                               </q-chip>
@@ -297,8 +392,16 @@
                           </div>
 
                           <!-- Quantity Pricing for "variable" and "replaceable_variable" modes -->
-                          <div v-if="customization.mode.includes('variable') && customization.quantity_price" class="q-mb-sm">
-                            <div class="text-caption text-grey-7 q-mb-xs">Quantity Pricing (without replacement):</div>
+                          <div
+                            v-if="
+                              customization.mode.includes('variable') &&
+                              customization.quantity_price
+                            "
+                            class="q-mb-sm"
+                          >
+                            <div class="text-caption text-grey-7 q-mb-xs">
+                              Quantity Pricing (without replacement):
+                            </div>
                             <div class="row q-gutter-sm">
                               <q-chip
                                 size="sm"
@@ -325,7 +428,19 @@
               </q-expansion-item>
 
               <!-- Pricing Information -->
+              <PricingInformation
+                v-if="isEditing"
+                :pricing="{
+                  price: editableProduct.price,
+                  discount: editableProduct.discount,
+                  selling_price: editableProduct.selling_price,
+                  tax_rate: editableProduct.tax_rate,
+                  profile_id: editableProduct.profile_id,
+                }"
+                @update:pricing="updatePricing"
+              />
               <q-expansion-item
+                v-else
                 popup
                 icon="attach_money"
                 label="Pricing Information"
@@ -338,43 +453,37 @@
                     <div class="row q-col-gutter-md q-row-gutter-md">
                       <div class="col-12 col-md-3">
                         <q-input
-                          v-model.number="editableProduct.price"
+                          :model-value="editableProduct.price"
                           label="Price"
-                          :readonly="!isEditing"
+                          readonly
                           outlined
                           dense
-                          type="number"
-                          step="0.01"
+                          type="text"
                           prefix="$"
-                          :rules="[val => val >= 0 || 'Price must be positive']"
                         />
                       </div>
 
                       <div class="col-12 col-md-3">
                         <q-input
-                          v-model.number="editableProduct.discount"
+                          :model-value="editableProduct.discount"
                           label="Discount"
-                          :readonly="!isEditing"
+                          readonly
                           outlined
                           dense
-                          type="number"
-                          step="0.01"
+                          type="text"
                           prefix="$"
-                          :rules="[val => val >= 0 || 'Discount must be positive']"
                         />
                       </div>
 
                       <div class="col-12 col-md-3">
                         <q-input
-                          v-model.number="editableProduct.selling_price"
+                          :model-value="editableProduct.selling_price"
                           label="Selling Price"
-                          :readonly="!isEditing"
+                          readonly
                           outlined
                           dense
-                          type="number"
-                          step="0.01"
+                          type="text"
                           prefix="$"
-                          :rules="[val => val >= 0 || 'Selling price must be positive']"
                         />
                       </div>
                     </div>
@@ -382,15 +491,13 @@
                     <div class="row q-col-gutter-md q-mt-sm">
                       <div class="col-12 col-md-3">
                         <q-input
-                          v-model.number="editableProduct.tax_rate"
+                          :model-value="editableProduct.tax_rate"
                           label="Tax Rate (%)"
-                          :readonly="!isEditing"
+                          readonly
                           outlined
                           dense
-                          type="number"
-                          step="0.01"
+                          type="text"
                           suffix="%"
-                          :rules="[val => (val >= 0 && val <= 100) || 'Tax rate must be between 0% and 100%']"
                         />
                       </div>
                       <div class="col-12 col-md-3">
@@ -442,7 +549,10 @@
                           outlined
                           dense
                           type="number"
-                          :rules="[val => val >= -1 || 'Stock must be -1 or positive']"
+                          :rules="[
+                            (val) =>
+                              val >= -1 || 'Stock must be -1 or positive',
+                          ]"
                           hint="-1 for unlimited stock"
                         />
                         <q-input
@@ -464,7 +574,7 @@
                           dense
                           :options="[
                             { label: 'Active', value: 'active' },
-                            { label: 'Inactive', value: 'inactive' }
+                            { label: 'Inactive', value: 'inactive' },
                           ]"
                           option-value="value"
                           option-label="label"
@@ -660,6 +770,7 @@ import { useQuasar } from "quasar";
 import { onMounted, ref, computed, watch } from "vue";
 import { api } from "boot/axios";
 import { useRouter, useRoute } from "vue-router";
+import PricingInformation from "components/PricingInformation.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -678,26 +789,31 @@ const itemDetailsMap = ref(new Map());
 // Computed property for image list string
 const imageListString = computed({
   get() {
-    if (editableProduct.value.image_list && Array.isArray(editableProduct.value.image_list)) {
-      return editableProduct.value.image_list.join('\n');
+    if (
+      editableProduct.value.image_list &&
+      Array.isArray(editableProduct.value.image_list)
+    ) {
+      return editableProduct.value.image_list.join("\n");
     }
-    return '';
+    return "";
   },
   set(value) {
     if (value) {
-      editableProduct.value.image_list = value.split('\n').filter(url => url.trim());
+      editableProduct.value.image_list = value
+        .split("\n")
+        .filter((url) => url.trim());
     } else {
       editableProduct.value.image_list = [];
     }
-  }
+  },
 });
 
 // Computed property for stock display
 const stockDisplayValue = computed(() => {
   if (editableProduct.value.stock === -1) {
-    return '不限量';
+    return "unlimited";
   }
-  return editableProduct.value.stock?.toString() || '0';
+  return editableProduct.value.stock?.toString() || "0";
 });
 
 // Sort options
@@ -715,7 +831,7 @@ const taxSales = computed(() => {
 
   if (sellingPrice <= 0 || taxRate < 0) return "0.00";
 
-  const taxSales = sellingPrice / (1 + (taxRate / 100));
+  const taxSales = sellingPrice / (1 + taxRate / 100);
   return (Math.floor(taxSales * 100) / 100).toFixed(2);
 });
 
@@ -725,8 +841,8 @@ const taxFee = computed(() => {
 
   if (sellingPrice <= 0 || taxRate < 0) return "0.00";
 
-  const taxSalesAmount = sellingPrice / (1 + (taxRate / 100));
-  const taxFee = sellingPrice - (Math.floor(taxSalesAmount * 100) / 100);
+  const taxSalesAmount = sellingPrice / (1 + taxRate / 100);
+  const taxFee = sellingPrice - Math.floor(taxSalesAmount * 100) / 100;
   return Math.max(0, taxFee).toFixed(2);
 });
 
@@ -737,8 +853,8 @@ const groupedItems = computed(() => {
   }
 
   const groups = {};
-  product.value.items.forEach(item => {
-    const type = item.type || 'OTHER';
+  product.value.items.forEach((item) => {
+    const type = item.type || "OTHER";
     if (!groups[type]) {
       groups[type] = [];
     }
@@ -757,35 +873,38 @@ const getItemName = (itemId) => {
 
   // Fallback to product items
   if (product.value && product.value.items) {
-    const item = product.value.items.find(item => item.id === itemId);
+    const item = product.value.items.find((item) => item.id === itemId);
     if (item) {
       return item.name;
     }
   }
 
-  return 'Unknown Item';
-};const getModeLabel = (mode) => {
+  return "Unknown Item";
+};
+const getModeLabel = (mode) => {
   const labels = {
-    'replaceable': 'Replaceable',
-    'variable': 'Variable Quantity',
-    'replaceable_variable': 'Replaceable + Variable',
-    'fixed': 'Fixed'
+    replaceable: "Replaceable",
+    variable: "Variable Quantity",
+    replaceable_variable: "Replaceable + Variable",
+    fixed: "Fixed",
   };
   return labels[mode] || mode;
 };
 
 const getModeColor = (mode) => {
   const colors = {
-    'replaceable': 'blue-6',
-    'variable': 'green-6',
-    'replaceable_variable': 'purple-6',
-    'fixed': 'grey-6'
+    replaceable: "blue-6",
+    variable: "green-6",
+    replaceable_variable: "purple-6",
+    fixed: "grey-6",
   };
-  return colors[mode] || 'grey-6';
+  return colors[mode] || "grey-6";
 };
 
 const getSortLabel = (sortValue) => {
-  const sortOption = sortOptions.value.find(option => option.value === sortValue);
+  const sortOption = sortOptions.value.find(
+    (option) => option.value === sortValue
+  );
   return sortOption ? sortOption.label : `Level ${sortValue}`;
 };
 
@@ -795,11 +914,18 @@ const getItemPrices = (itemId) => {
     return { price: 0, extra_price: 0 };
   }
 
-  const item = product.value.items.find(item => item.id === itemId);
-  return item ? {
-    price: parseFloat(item.price) || 0,
-    extra_price: parseFloat(item.extra_price) || 0
-  } : { price: 0, extra_price: 0 };
+  const item = product.value.items.find((item) => item.id === itemId);
+  return item
+    ? {
+        price: parseFloat(item.price) || 0,
+        extra_price: parseFloat(item.extra_price) || 0,
+      }
+    : { price: 0, extra_price: 0 };
+};
+
+// Pricing update handler
+const updatePricing = (newPricing) => {
+  Object.assign(editableProduct.value, newPricing);
 };
 
 // Function to fetch bulk item details
@@ -810,20 +936,23 @@ const fetchBulkItemDetails = async () => {
 
   // Add items from product.items
   if (product.value.items) {
-    product.value.items.forEach(item => allItemIds.add(item.id));
+    product.value.items.forEach((item) => allItemIds.add(item.id));
   }
 
   // Add items from customization_items replacement_list
   if (product.value.customization_items) {
-    product.value.customization_items.forEach(customization => {
+    product.value.customization_items.forEach((customization) => {
       // Add the base item
       if (customization.item_id) {
         allItemIds.add(customization.item_id);
       }
 
       // Add replacement items
-      if (customization.replacement_list && Array.isArray(customization.replacement_list)) {
-        customization.replacement_list.forEach(replacementId => {
+      if (
+        customization.replacement_list &&
+        Array.isArray(customization.replacement_list)
+      ) {
+        customization.replacement_list.forEach((replacementId) => {
           allItemIds.add(replacementId);
         });
       }
@@ -834,23 +963,27 @@ const fetchBulkItemDetails = async () => {
 
   try {
     const formData = new FormData();
-    formData.append('ids', Array.from(allItemIds).join(","));
+    formData.append("ids", Array.from(allItemIds).join(","));
 
-    const bulkResp = await api.post('/api/get-bulk-items', formData, {
+    const bulkResp = await api.post("/api/get-bulk-items", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
 
-    if (bulkResp.data && bulkResp.data.success && Array.isArray(bulkResp.data.data)) {
+    if (
+      bulkResp.data &&
+      bulkResp.data.success &&
+      Array.isArray(bulkResp.data.data)
+    ) {
       // Clear the map and populate with new data
       itemDetailsMap.value.clear();
-      bulkResp.data.data.forEach(item => {
+      bulkResp.data.data.forEach((item) => {
         itemDetailsMap.value.set(item.id, item);
       });
     }
   } catch (error) {
-    console.error('Error fetching bulk item details:', error);
+    console.error("Error fetching bulk item details:", error);
   }
 };
 
@@ -865,26 +998,44 @@ const fetchProductDetail = async (id) => {
     } else {
       product.value = response.data;
     }
+    // Initialize profile
+    if (product.value.profiles && Array.isArray(product.value.profiles)) {
+      const matchedProfile = product.value.profiles.find(
+        (profile) => profile.type === "tax"
+      );
+      product.value.profile_id = matchedProfile ? matchedProfile.id : null;
+    }
 
     editableProduct.value = { ...product.value };
     originalProduct.value = { ...product.value };
 
     // Ensure boolean values are properly set
-    editableProduct.value.is_featured = Boolean(editableProduct.value.is_featured);
+    editableProduct.value.is_featured = Boolean(
+      editableProduct.value.is_featured
+    );
     editableProduct.value.viewable = Boolean(editableProduct.value.viewable);
-    editableProduct.value.customizable = Boolean(editableProduct.value.customizable);
+    editableProduct.value.customizable = Boolean(
+      editableProduct.value.customizable
+    );
 
-    // Ensure numeric values are properly set
-    editableProduct.value.price = Number(editableProduct.value.price);
-    editableProduct.value.discount = Number(editableProduct.value.discount);
-    editableProduct.value.selling_price = Number(editableProduct.value.selling_price);
-    editableProduct.value.tax_rate = Number(editableProduct.value.tax_rate || 10);
+    // Ensure pricing values are properly formatted as strings for PricingInformation component
+    editableProduct.value.price = Number(editableProduct.value.price).toFixed(
+      2
+    );
+    editableProduct.value.discount = Number(
+      editableProduct.value.discount
+    ).toFixed(2);
+    editableProduct.value.selling_price = Number(
+      editableProduct.value.selling_price
+    ).toFixed(2);
+    editableProduct.value.tax_rate = Number(
+      editableProduct.value.tax_rate || 10
+    ).toFixed(2);
     editableProduct.value.stock = Number(editableProduct.value.stock);
     editableProduct.value.sort = Number(editableProduct.value.sort || 3);
 
     // Fetch bulk item details for replacement items
     await fetchBulkItemDetails();
-
   } catch (error) {
     console.error("Error fetching product details:", error);
     $q.notify({
@@ -903,9 +1054,25 @@ const toggleEdit = () => {
   editableProduct.value = { ...originalProduct.value };
 
   // Ensure boolean values are properly set
-  editableProduct.value.is_featured = Boolean(editableProduct.value.is_featured);
+  editableProduct.value.is_featured = Boolean(
+    editableProduct.value.is_featured
+  );
   editableProduct.value.viewable = Boolean(editableProduct.value.viewable);
-  editableProduct.value.customizable = Boolean(editableProduct.value.customizable);
+  editableProduct.value.customizable = Boolean(
+    editableProduct.value.customizable
+  );
+
+  // Ensure pricing values are properly formatted as strings for PricingInformation component
+  editableProduct.value.price = Number(editableProduct.value.price).toFixed(2);
+  editableProduct.value.discount = Number(
+    editableProduct.value.discount
+  ).toFixed(2);
+  editableProduct.value.selling_price = Number(
+    editableProduct.value.selling_price
+  ).toFixed(2);
+  editableProduct.value.tax_rate = Number(
+    editableProduct.value.tax_rate || 10
+  ).toFixed(2);
 };
 
 const cancelEdit = () => {
@@ -917,20 +1084,49 @@ const saveProduct = async () => {
   try {
     saving.value = true;
 
-    // Prepare data for submission
-    const submitData = { ...editableProduct.value };
-
-    // Convert boolean values
-    submitData.is_featured = submitData.is_featured ? 1 : 0;
-    submitData.viewable = submitData.viewable ? 1 : 0;
-    submitData.customizable = submitData.customizable ? 1 : 0;
+    // Prepare data for submission - only include editable fields
+    const submitData = {
+      code: editableProduct.value.code,
+      title: editableProduct.value.title,
+      second_title: editableProduct.value.second_title,
+      acronym: editableProduct.value.acronym,
+      description: editableProduct.value.description,
+      tip: editableProduct.value.tip,
+      price: editableProduct.value.price,
+      discount: editableProduct.value.discount,
+      selling_price: editableProduct.value.selling_price,
+      tax_rate: editableProduct.value.tax_rate,
+      profile_id: editableProduct.value.profile_id,
+      stock: editableProduct.value.stock,
+      status: editableProduct.value.status,
+      image: editableProduct.value.image,
+      image_list: editableProduct.value.image_list,
+      tag: editableProduct.value.tag,
+      sort: editableProduct.value.sort,
+      is_featured: editableProduct.value.is_featured ? 1 : 0,
+      viewable: editableProduct.value.viewable ? 1 : 0,
+      customizable: editableProduct.value.customizable ? 1 : 0,
+    };
 
     // Ensure image_list is an array
-    if (typeof submitData.image_list === 'string') {
-      submitData.image_list = submitData.image_list.split('\n').filter(url => url.trim());
+    if (typeof submitData.image_list === "string") {
+      submitData.image_list = submitData.image_list
+        .split("\n")
+        .filter((url) => url.trim());
     }
 
-    const response = await api.put(`/api/products/${product.value.id}`, submitData);
+    // Remove empty optional fields
+    if (!submitData.second_title) delete submitData.second_title;
+    if (!submitData.acronym) delete submitData.acronym;
+    if (!submitData.description) delete submitData.description;
+    if (!submitData.tip) delete submitData.tip;
+    if (!submitData.image) delete submitData.image;
+    if (!submitData.tag) delete submitData.tag;
+
+    const response = await api.put(
+      `/api/products/${product.value.id}`,
+      submitData
+    );
 
     // Update the product data
     if (response.data.success && response.data.data) {
@@ -943,9 +1139,27 @@ const saveProduct = async () => {
     editableProduct.value = { ...product.value };
 
     // Ensure boolean values are properly set
-    editableProduct.value.is_featured = Boolean(editableProduct.value.is_featured);
+    editableProduct.value.is_featured = Boolean(
+      editableProduct.value.is_featured
+    );
     editableProduct.value.viewable = Boolean(editableProduct.value.viewable);
-    editableProduct.value.customizable = Boolean(editableProduct.value.customizable);
+    editableProduct.value.customizable = Boolean(
+      editableProduct.value.customizable
+    );
+
+    // Ensure pricing values are properly formatted as strings for PricingInformation component
+    editableProduct.value.price = Number(editableProduct.value.price).toFixed(
+      2
+    );
+    editableProduct.value.discount = Number(
+      editableProduct.value.discount
+    ).toFixed(2);
+    editableProduct.value.selling_price = Number(
+      editableProduct.value.selling_price
+    ).toFixed(2);
+    editableProduct.value.tax_rate = Number(
+      editableProduct.value.tax_rate || 10
+    ).toFixed(2);
 
     isEditing.value = false;
 
@@ -955,7 +1169,6 @@ const saveProduct = async () => {
       position: "top",
       timeout: 3000,
     });
-
   } catch (error) {
     console.error("Error updating product:", error);
     $q.notify({
@@ -970,7 +1183,7 @@ const saveProduct = async () => {
 };
 
 const formatDate = (dateString) => {
-  if (!dateString) return '';
+  if (!dateString) return "";
   return new Date(dateString).toLocaleString();
 };
 

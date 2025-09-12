@@ -257,123 +257,17 @@
                 @customization-changed="buildCustomizationsMap"
               />
 
-              <q-expansion-item
-                popup
-                icon="attach_money"
-                label="Pricing Information"
-                caption="Set price, discount, and selling price"
-                class="q-mb-md"
-              >
-                <q-separator />
-                <q-card flat bordered class="bg-grey-1">
-                  <q-card-section class="q-pa-md">
-                    <div class="row q-col-gutter-md q-row-gutter-md">
-                      <div class="col-12 col-md-3">
-                        <q-input
-                          v-model="product.price"
-                          label="Price *"
-                          outlined
-                          dense
-                          type="text"
-                          step="0.01"
-                          prefix="$"
-                          :rules="[
-                            (val) =>
-                              (!isNaN(Number(val)) && Number(val) >= 0) ||
-                              'Price must be positive',
-                          ]"
-                          @blur="onAllPriceBlur"
-                          @input="onPriceInput('price', $event)"
-                        />
-                      </div>
-                      <div class="col-12 col-md-3">
-                        <q-input
-                          v-model="product.discount"
-                          label="Discount"
-                          outlined
-                          dense
-                          type="text"
-                          step="0.01"
-                          prefix="$"
-                          :rules="[
-                            (val) =>
-                              (!isNaN(Number(val)) && Number(val) >= 0) ||
-                              'Discount must be positive',
-                          ]"
-                          @blur="onAllPriceBlur"
-                          @input="
-                            onPriceInput('discount', $event);
-                            calculateSellingPrice();
-                          "
-                        />
-                      </div>
-                      <div class="col-12 col-md-3">
-                        <q-input
-                          v-model="product.selling_price"
-                          label="Selling Price *"
-                          outlined
-                          dense
-                          type="text"
-                          step="0.01"
-                          prefix="$"
-                          :rules="[
-                            (val) =>
-                              (!isNaN(Number(val)) && Number(val) >= 0) ||
-                              'Selling price must be positive',
-                          ]"
-                          @blur="onAllPriceBlur"
-                          @input="onPriceInput('selling_price', $event)"
-                        />
-                      </div>
-                    </div>
-                    <!-- Tax Rate -->
-                    <div class="row q-col-gutter-md q-mt-sm">
-                       <div class="col-12 col-md-3">
-                        <q-input
-                          v-model="product.tax_rate"
-                          label="Tax Rate (%)"
-                          outlined
-                          dense
-                          type="text"
-                          step="0.01"
-                          suffix="%"
-                          :rules="[
-                            (val) =>
-                              (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100) ||
-                              'Tax rate must be between 0% and 100%',
-                          ]"
-                          @blur="onAllPriceBlur"
-                          @input="onPriceInput('tax_rate', $event)"
-                        />
-                      </div>
-                      <div class="col-12 col-md-3">
-                        <q-input
-                          :model-value="taxSales"
-                          label="Tax Sales"
-                          outlined
-                          dense
-                          type="text"
-                          prefix="$"
-                          readonly
-                          class="bg-grey-2"
-                        />
-                      </div>
-                      <div class="col-12 col-md-3">
-                        <q-input
-                          :model-value="taxFee"
-                          label="Tax Fee"
-                          outlined
-                          dense
-                          type="text"
-                          prefix="$"
-                          readonly
-                          class="bg-grey-2"
-                        />
-                      </div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </q-expansion-item>
+              <!-- Pricing Information Component -->
+              <PricingInformation
+                :pricing="{
+                  price: product.price,
+                  discount: product.discount,
+                  selling_price: product.selling_price,
+                  tax_rate: product.tax_rate,
+                  profile_id: product.profile_id
+                }"
+                @update:pricing="updatePricing"
+              />
 
               <q-expansion-item
                 popup
@@ -582,6 +476,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRouter, useRoute } from "vue-router";
 import ProductCustomizationOptions from "components/ProductCustomizationOptions.vue";
+import PricingInformation from "components/PricingInformation.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -614,6 +509,7 @@ const product = ref({
   discount: "0.00",
   selling_price: "0.00",
   tax_rate: "10.00",
+  profile_id: null,
   stock: 0,
   status: "active",
   viewable: true,
@@ -677,27 +573,6 @@ const isFormValid = computed(() => {
   );
 });
 
-const taxSales = computed(() => {
-  const sellingPrice = parseFloat(product.value.selling_price) || 0;
-  const taxRate = parseFloat(product.value.tax_rate) || 0;
-
-  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
-
-  const taxSales = sellingPrice / (1 + (taxRate / 100));
-  return (Math.floor(taxSales * 100) / 100).toFixed(2);
-});
-
-const taxFee = computed(() => {
-  const sellingPrice = parseFloat(product.value.selling_price) || 0;
-  const taxRate = parseFloat(product.value.tax_rate) || 0;
-
-  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
-
-  const taxSalesAmount = sellingPrice / (1 + (taxRate / 100));
-  const taxFee = sellingPrice - (Math.floor(taxSalesAmount * 100) / 100);
-  return Math.max(0, taxFee).toFixed(2);
-});
-
 // Utility functions
 function buildCategoryTree(list) {
   const map = {};
@@ -749,35 +624,9 @@ function initializeMaps() {
   buildCustomizationsMap();
 }
 
-// Price handling functions
-function onAllPriceBlur() {
-  ["price", "discount", "selling_price", "tax_rate"].forEach((field) => {
-    let val = product.value[field];
-    if (val === "" || val === null || val === undefined || isNaN(Number(val))) {
-      if (field === "tax_rate") {
-        product.value[field] = "10.00";
-      } else {
-        product.value[field] = "0.00";
-      }
-    } else {
-      product.value[field] = Number(val).toFixed(2);
-    }
-  });
-}
-
-function onPriceInput(field, val) {
-  let filtered = String(val).replace(/[^\d.]/g, "");
-  filtered = filtered.replace(/(\..*)\./g, "$1");
-  product.value[field] = filtered;
-}
-
-function calculateSellingPrice() {
-  if (product.value.price && product.value.discount >= 0) {
-    product.value.selling_price = Math.max(
-      0,
-      product.value.price - product.value.discount
-    ).toFixed(2);
-  }
+// Pricing update handler
+function updatePricing(newPricing) {
+  Object.assign(product.value, newPricing);
 }
 
 // Ingredient management functions
@@ -940,6 +789,14 @@ async function fetchProductDetail(id) {
         customizations: [],
       };
 
+      // Initialize tax profile
+      if(productData.profiles && Array.isArray(productData.profiles)) {
+        const matchedProfile = productData.profiles.find(
+          profile => profile.type === "tax"
+        )
+        product.value.profile_id = matchedProfile ? matchedProfile.id : null;
+      }
+
       // Transform items to ingredients format
       if (productData.items && Array.isArray(productData.items)) {
         product.value.ingredients = productData.items.map(item => ({
@@ -1057,11 +914,6 @@ function imageError() {
 }
 
 // Watchers - reduced to essential only
-watch(
-  [() => product.value.price, () => product.value.discount],
-  calculateSellingPrice
-);
-
 watch(
   () => product.value.customizable,
   (newValue) => {
