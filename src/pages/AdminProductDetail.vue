@@ -336,7 +336,7 @@
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section class="q-pa-md">
                     <div class="row q-col-gutter-md q-row-gutter-md">
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model.number="editableProduct.price"
                           label="Price"
@@ -350,7 +350,7 @@
                         />
                       </div>
 
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model.number="editableProduct.discount"
                           label="Discount"
@@ -364,7 +364,7 @@
                         />
                       </div>
 
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model.number="editableProduct.selling_price"
                           label="Selling Price"
@@ -375,6 +375,46 @@
                           step="0.01"
                           prefix="$"
                           :rules="[val => val >= 0 || 'Selling price must be positive']"
+                        />
+                      </div>
+                    </div>
+                    <!-- Tax Information -->
+                    <div class="row q-col-gutter-md q-mt-sm">
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          v-model.number="editableProduct.tax_rate"
+                          label="Tax Rate (%)"
+                          :readonly="!isEditing"
+                          outlined
+                          dense
+                          type="number"
+                          step="0.01"
+                          suffix="%"
+                          :rules="[val => (val >= 0 && val <= 100) || 'Tax rate must be between 0% and 100%']"
+                        />
+                      </div>
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          :model-value="taxSales"
+                          label="Tax Sales"
+                          outlined
+                          dense
+                          type="text"
+                          prefix="$"
+                          readonly
+                          class="bg-grey-2"
+                        />
+                      </div>
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          :model-value="taxFee"
+                          label="Tax Fee"
+                          outlined
+                          dense
+                          type="text"
+                          prefix="$"
+                          readonly
+                          class="bg-grey-2"
                         />
                       </div>
                     </div>
@@ -434,13 +474,26 @@
                       </div>
 
                       <div class="col-12 col-md-4">
-                        <q-input
-                          v-model.number="editableProduct.sort"
-                          label="Sort Order"
-                          :readonly="!isEditing"
+                        <q-select
+                          v-if="isEditing"
+                          v-model="editableProduct.sort"
+                          :options="sortOptions"
+                          option-label="label"
+                          option-value="value"
+                          emit-value
+                          map-options
+                          label="Priority Level"
                           outlined
                           dense
-                          type="number"
+                          hint="Hot has highest priority"
+                        />
+                        <q-input
+                          v-else
+                          :model-value="getSortLabel(editableProduct.sort)"
+                          label="Priority Level"
+                          readonly
+                          outlined
+                          dense
                         />
                       </div>
                     </div>
@@ -647,6 +700,36 @@ const stockDisplayValue = computed(() => {
   return editableProduct.value.stock?.toString() || '0';
 });
 
+// Sort options
+const sortOptions = ref([
+  { label: "Hot", value: 1 },
+  { label: "High", value: 2 },
+  { label: "Medium", value: 3 },
+  { label: "Low", value: 4 },
+]);
+
+// Tax calculations
+const taxSales = computed(() => {
+  const sellingPrice = parseFloat(editableProduct.value.selling_price) || 0;
+  const taxRate = parseFloat(editableProduct.value.tax_rate) || 0;
+
+  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
+
+  const taxSales = sellingPrice / (1 + (taxRate / 100));
+  return (Math.floor(taxSales * 100) / 100).toFixed(2);
+});
+
+const taxFee = computed(() => {
+  const sellingPrice = parseFloat(editableProduct.value.selling_price) || 0;
+  const taxRate = parseFloat(editableProduct.value.tax_rate) || 0;
+
+  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
+
+  const taxSalesAmount = sellingPrice / (1 + (taxRate / 100));
+  const taxFee = sellingPrice - (Math.floor(taxSalesAmount * 100) / 100);
+  return Math.max(0, taxFee).toFixed(2);
+});
+
 // Computed property for grouping items by type
 const groupedItems = computed(() => {
   if (!product.value || !product.value.items) {
@@ -699,6 +782,11 @@ const getModeColor = (mode) => {
     'fixed': 'grey-6'
   };
   return colors[mode] || 'grey-6';
+};
+
+const getSortLabel = (sortValue) => {
+  const sortOption = sortOptions.value.find(option => option.value === sortValue);
+  return sortOption ? sortOption.label : `Level ${sortValue}`;
 };
 
 // Helper function to get item price and extra price
@@ -790,8 +878,9 @@ const fetchProductDetail = async (id) => {
     editableProduct.value.price = Number(editableProduct.value.price);
     editableProduct.value.discount = Number(editableProduct.value.discount);
     editableProduct.value.selling_price = Number(editableProduct.value.selling_price);
+    editableProduct.value.tax_rate = Number(editableProduct.value.tax_rate || 10);
     editableProduct.value.stock = Number(editableProduct.value.stock);
-    editableProduct.value.sort = Number(editableProduct.value.sort || 0);
+    editableProduct.value.sort = Number(editableProduct.value.sort || 3);
 
     // Fetch bulk item details for replacement items
     await fetchBulkItemDetails();

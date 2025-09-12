@@ -268,7 +268,7 @@
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section class="q-pa-md">
                     <div class="row q-col-gutter-md q-row-gutter-md">
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model="product.price"
                           label="Price *"
@@ -286,7 +286,7 @@
                           @input="onPriceInput('price', $event)"
                         />
                       </div>
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model="product.discount"
                           label="Discount"
@@ -307,7 +307,7 @@
                           "
                         />
                       </div>
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model="product.selling_price"
                           label="Selling Price *"
@@ -326,6 +326,51 @@
                         />
                       </div>
                     </div>
+                    <!-- Tax Rate -->
+                    <div class="row q-col-gutter-md q-mt-sm">
+                       <div class="col-12 col-md-3">
+                        <q-input
+                          v-model="product.tax_rate"
+                          label="Tax Rate (%)"
+                          outlined
+                          dense
+                          type="text"
+                          step="0.01"
+                          suffix="%"
+                          :rules="[
+                            (val) =>
+                              (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100) ||
+                              'Tax rate must be between 0% and 100%',
+                          ]"
+                          @blur="onAllPriceBlur"
+                          @input="onPriceInput('tax_rate', $event)"
+                        />
+                      </div>
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          :model-value="taxSales"
+                          label="Tax Sales"
+                          outlined
+                          dense
+                          type="text"
+                          prefix="$"
+                          readonly
+                          class="bg-grey-2"
+                        />
+                      </div>
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          :model-value="taxFee"
+                          label="Tax Fee"
+                          outlined
+                          dense
+                          type="text"
+                          prefix="$"
+                          readonly
+                          class="bg-grey-2"
+                        />
+                      </div>
+                    </div>
                   </q-card-section>
                 </q-card>
               </q-expansion-item>
@@ -340,9 +385,9 @@
                 <q-separator />
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section class="q-pa-md">
-                    <div class="row q-col-gutter-md q-row-gutter-md">
+                    <div class="row q-col-gutter-md justify-between q-row-gutter-md">
                       <div class="col-12 col-md-4">
-                        <div class="row items-center q-gutter-sm">
+                        <div class="row items-center justify-between q-gutter-sm">
                           <div class="col">
                             <q-input
                               v-model.number="product.stock"
@@ -359,7 +404,7 @@
                               ]"
                             />
                           </div>
-                          <div class="col-auto">
+                           <div class="col-auto">
                             <q-checkbox
                               :model-value="product.stock === -1"
                               @update:model-value="
@@ -371,7 +416,23 @@
                           </div>
                         </div>
                       </div>
-                      <div class="col-12 col-md-4 flex items-center">
+
+                      <div class="col-12 col-md-4">
+                        <q-select
+                          v-model="product.sort"
+                          :options="sortOptions"
+                          option-label="label"
+                          option-value="value"
+                          emit-value
+                          map-options
+                          label="Priority Level"
+                          outlined
+                          dense
+                          hint="Hot has highest priority"
+                        />
+                      </div>
+
+                        <div class="col-12 col-md-3">
                         <q-toggle
                           v-model="product.status"
                           true-value="active"
@@ -379,16 +440,6 @@
                           color="primary"
                           label="Active Status"
                           left-label
-                        />
-                      </div>
-                      <div class="col-12 col-md-4">
-                        <q-input
-                          v-model.number="product.sort"
-                          label="Sort Order"
-                          outlined
-                          dense
-                          type="number"
-                          hint="Lower numbers appear first"
                         />
                       </div>
                     </div>
@@ -408,15 +459,16 @@
                   <q-card-section class="q-pa-md">
                     <div class="row q-col-gutter-md q-row-gutter-md">
                       <div class="col-12 col-md-6">
+                        <q-icon name="star" />
                         <q-checkbox
                           v-model="product.is_featured"
-                          label="Featured Product"
+                          label="Popular Product"
                         />
                       </div>
                       <div class="col-12 col-md-6">
                         <q-checkbox
                           v-model="product.viewable"
-                          label="Viewable"
+                          label="Viewable for Customers"
                         />
                       </div>
                       <div class="col-12">
@@ -425,7 +477,7 @@
                           label="Tags"
                           outlined
                           dense
-                          hint="Separate tags with commas (e.g., Popular,Asian,Spicy)"
+                          hint="Separate tags with commas (e.g., Sweet, Asian, Spicy)"
                         />
                       </div>
                     </div>
@@ -539,13 +591,14 @@ const product = ref({
   price: "0.00",
   discount: "0.00",
   selling_price: "0.00",
-  stock: 0,
+  tax_rate: "10.00",
+  stock: -1,
   status: "active",
   viewable: true,
   image: "",
   image_list: [],
   tag: "",
-  sort: 1,
+  sort: 3,
   is_featured: false,
   customizable: true,
   categories: [],
@@ -562,6 +615,13 @@ const ingredientOptions = ref([]);
 const unitOptions = ref([
   { label: "Several", value: "several" },
   { label: "Piece", value: "piece" },
+]);
+
+const sortOptions = ref([
+  { label: "Hot", value: 1 },
+  { label: "High", value: 2 },
+  { label: "Medium", value: 3 },
+  { label: "Low", value: 4 },
 ]);
 
 // Computed properties
@@ -593,6 +653,14 @@ const isFormValid = computed(() => {
     product.value.selling_price >= 0 &&
     product.value.status
   );
+});
+
+const taxSales = computed(() => {
+  return calculateTaxSales();
+});
+
+const taxFee = computed(() => {
+  return calculateTaxFee();
 });
 
 // Utility functions
@@ -648,10 +716,14 @@ function initializeMaps() {
 
 // Price handling functions
 function onAllPriceBlur() {
-  ["price", "discount", "selling_price"].forEach((field) => {
+  ["price", "discount", "selling_price", "tax_rate"].forEach((field) => {
     let val = product.value[field];
     if (val === "" || val === null || val === undefined || isNaN(Number(val))) {
-      product.value[field] = "0.00";
+      if (field === "tax_rate") {
+        product.value[field] = "10.00";
+      } else {
+        product.value[field] = "0.00";
+      }
     } else {
       product.value[field] = Number(val).toFixed(2);
     }
@@ -671,6 +743,27 @@ function calculateSellingPrice() {
       product.value.price - product.value.discount
     ).toFixed(2);
   }
+}
+
+function calculateTaxSales() {
+  const sellingPrice = parseFloat(product.value.selling_price) || 0;
+  const taxRate = parseFloat(product.value.tax_rate) || 0;
+
+  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
+
+  const taxSales = sellingPrice / (1 + (taxRate / 100));
+  return (Math.floor(taxSales * 100) / 100).toFixed(2); // 向下取整保留两位小数并格式化为字符串
+}
+
+function calculateTaxFee() {
+  const sellingPrice = parseFloat(product.value.selling_price) || 0;
+  const taxRate = parseFloat(product.value.tax_rate) || 0;
+
+  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
+
+  const taxSalesAmount = sellingPrice / (1 + (taxRate / 100));
+  const taxFee = sellingPrice - (Math.floor(taxSalesAmount * 100) / 100);
+  return Math.max(0, taxFee).toFixed(2);
 }
 
 // Ingredient management functions

@@ -268,7 +268,7 @@
                 <q-card flat bordered class="bg-grey-1">
                   <q-card-section class="q-pa-md">
                     <div class="row q-col-gutter-md q-row-gutter-md">
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model="product.price"
                           label="Price *"
@@ -286,7 +286,7 @@
                           @input="onPriceInput('price', $event)"
                         />
                       </div>
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model="product.discount"
                           label="Discount"
@@ -307,7 +307,7 @@
                           "
                         />
                       </div>
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-3">
                         <q-input
                           v-model="product.selling_price"
                           label="Selling Price *"
@@ -323,6 +323,51 @@
                           ]"
                           @blur="onAllPriceBlur"
                           @input="onPriceInput('selling_price', $event)"
+                        />
+                      </div>
+                    </div>
+                    <!-- Tax Rate -->
+                    <div class="row q-col-gutter-md q-mt-sm">
+                       <div class="col-12 col-md-3">
+                        <q-input
+                          v-model="product.tax_rate"
+                          label="Tax Rate (%)"
+                          outlined
+                          dense
+                          type="text"
+                          step="0.01"
+                          suffix="%"
+                          :rules="[
+                            (val) =>
+                              (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100) ||
+                              'Tax rate must be between 0% and 100%',
+                          ]"
+                          @blur="onAllPriceBlur"
+                          @input="onPriceInput('tax_rate', $event)"
+                        />
+                      </div>
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          :model-value="taxSales"
+                          label="Tax Sales"
+                          outlined
+                          dense
+                          type="text"
+                          prefix="$"
+                          readonly
+                          class="bg-grey-2"
+                        />
+                      </div>
+                      <div class="col-12 col-md-3">
+                        <q-input
+                          :model-value="taxFee"
+                          label="Tax Fee"
+                          outlined
+                          dense
+                          type="text"
+                          prefix="$"
+                          readonly
+                          class="bg-grey-2"
                         />
                       </div>
                     </div>
@@ -382,13 +427,17 @@
                         />
                       </div>
                       <div class="col-12 col-md-4">
-                        <q-input
-                          v-model.number="product.sort"
-                          label="Sort Order"
+                        <q-select
+                          v-model="product.sort"
+                          :options="sortOptions"
+                          option-label="label"
+                          option-value="value"
+                          emit-value
+                          map-options
+                          label="Priority Level"
                           outlined
                           dense
-                          type="number"
-                          hint="Lower numbers appear first"
+                          hint="Hot has highest priority"
                         />
                       </div>
                     </div>
@@ -564,13 +613,14 @@ const product = ref({
   price: "0.00",
   discount: "0.00",
   selling_price: "0.00",
+  tax_rate: "10.00",
   stock: 0,
   status: "active",
   viewable: true,
   image: "",
   image_list: [],
   tag: "",
-  sort: 1,
+  sort: 3,
   is_featured: false,
   customizable: true,
   categories: [],
@@ -587,6 +637,13 @@ const ingredientOptions = ref([]);
 const unitOptions = ref([
   { label: "Several", value: "several" },
   { label: "Piece", value: "piece" },
+]);
+
+const sortOptions = ref([
+  { label: "Hot", value: 1 },
+  { label: "High", value: 2 },
+  { label: "Medium", value: 3 },
+  { label: "Low", value: 4 },
 ]);
 
 // Computed properties
@@ -618,6 +675,27 @@ const isFormValid = computed(() => {
     product.value.selling_price >= 0 &&
     product.value.status
   );
+});
+
+const taxSales = computed(() => {
+  const sellingPrice = parseFloat(product.value.selling_price) || 0;
+  const taxRate = parseFloat(product.value.tax_rate) || 0;
+
+  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
+
+  const taxSales = sellingPrice / (1 + (taxRate / 100));
+  return (Math.floor(taxSales * 100) / 100).toFixed(2);
+});
+
+const taxFee = computed(() => {
+  const sellingPrice = parseFloat(product.value.selling_price) || 0;
+  const taxRate = parseFloat(product.value.tax_rate) || 0;
+
+  if (sellingPrice <= 0 || taxRate < 0) return "0.00";
+
+  const taxSalesAmount = sellingPrice / (1 + (taxRate / 100));
+  const taxFee = sellingPrice - (Math.floor(taxSalesAmount * 100) / 100);
+  return Math.max(0, taxFee).toFixed(2);
 });
 
 // Utility functions
@@ -673,10 +751,14 @@ function initializeMaps() {
 
 // Price handling functions
 function onAllPriceBlur() {
-  ["price", "discount", "selling_price"].forEach((field) => {
+  ["price", "discount", "selling_price", "tax_rate"].forEach((field) => {
     let val = product.value[field];
     if (val === "" || val === null || val === undefined || isNaN(Number(val))) {
-      product.value[field] = "0.00";
+      if (field === "tax_rate") {
+        product.value[field] = "10.00";
+      } else {
+        product.value[field] = "0.00";
+      }
     } else {
       product.value[field] = Number(val).toFixed(2);
     }
@@ -843,13 +925,14 @@ async function fetchProductDetail(id) {
         price: Number(productData.price).toFixed(2),
         discount: Number(productData.discount).toFixed(2),
         selling_price: Number(productData.selling_price).toFixed(2),
+        tax_rate: Number(productData.tax_rate || 10).toFixed(2),
         stock: Number(productData.stock),
         status: productData.status,
         viewable: Boolean(productData.viewable),
         image: productData.image || "",
         image_list: productData.image_list || [],
         tag: productData.tag || "",
-        sort: Number(productData.sort || 0),
+        sort: Number(productData.sort || 3),
         is_featured: Boolean(productData.is_featured),
         customizable: Boolean(productData.customizable),
         categories: productData.categories ? productData.categories.map(cat => cat.id) : [],
