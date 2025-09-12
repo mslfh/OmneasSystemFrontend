@@ -340,11 +340,13 @@ async function placeOrder() {
     // 检查响应状态
     if (response.status === 200 || response.status === 201) {
       // 使用API返回的订单信息
-      const apiResponseData = response.data;
-      const orderNumber = apiResponseData.order_no || apiResponseData.order_number;
-      const orderStatus = apiResponseData.status || "pending";
-      const orderId = apiResponseData.id || "";
-
+      const apiResponseData = response.data.data;
+      console.log("Order placed successfully:", apiResponseData);
+      // 从API响应中提取订单号和状态
+      const orderNumber = apiResponseData.order_no;
+      const orderStatus = apiResponseData.status;
+      const orderId = apiResponseData.id;
+      console.log("Extracted order details:", { orderNumber, orderStatus, orderId });
 
       // 构建完整的订单数据用于本地存储
       const completeOrderData = {
@@ -415,6 +417,7 @@ function saveOrderToHistory(orderData) {
     }
 
     localStorage.setItem("orderHistory", JSON.stringify(existingOrders));
+
   } catch (error) {
     console.error("Failed to save order to history:", error);
   }

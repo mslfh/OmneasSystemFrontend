@@ -53,7 +53,7 @@
             </div>
 
             <!-- 预计时间 -->
-            <div class="q-mb-md" v-if="estimatedTime">
+            <div class="q-mb-md" v-if="estimatedTime" hidden>
               <div class="text-caption text-grey-6">
                 {{ orderInfo.diningType === 'takeaway' ? 'Estimated Pickup Time' : 'Estimated Ready Time' }}
               </div>
@@ -508,12 +508,12 @@ function loadOrderFromCache() {
     const orderHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]')
 
     if (orderHistory.length > 0) {
-      const latestOrder = orderHistory[0] // 最新的订单应该在第一个位置
-
+      const latestOrder = orderHistory[0] // 最新的订单应该在数组的开头
+      console.log('Found order history in cache:', latestOrder)
       // 设置基本信息
-      orderNumber.value = latestOrder.orderNumber || 'ORD-12345'
-      orderStatus.value = latestOrder.status || 'pending'
-      orderId.value = latestOrder.id || ''
+      orderNumber.value = latestOrder.orderNumber
+      orderStatus.value = latestOrder.status
+      orderId.value = latestOrder.id
 
       // 设置订单信息
       orderInfo.value = {
@@ -581,7 +581,6 @@ function clearStatusUpdates() {
 
 // 生命周期
 onMounted(() => {
-  console.log('CustomerOrderConfirmation mounted')
 
   // 首先从本地缓存加载订单数据
   const cacheLoaded = loadOrderFromCache()
@@ -591,11 +590,6 @@ onMounted(() => {
     orderNumber.value = route.query.orderNumber || 'ORD-12345'
     orderStatus.value = route.query.status || 'pending'
     orderId.value = route.query.orderId || ''
-
-    // 使用模拟数据作为后备
-    if (!orderInfo.value.items.length) {
-      loadMockData()
-    }
   }
 
   // 计算预计时间（如果没有从API获取到）
@@ -612,36 +606,6 @@ onUnmounted(() => {
   clearStatusUpdates()
 })
 
-function loadMockData() {
-  // 模拟订单数据（作为后备）
-  orderInfo.value = {
-    diningType: 'takeaway',
-    items: [
-      {
-        id: 1,
-        title: 'Margherita Pizza',
-        currentPrice: 18.99,
-        customizations: []
-      },
-      {
-        id: 2,
-        title: 'Caesar Salad',
-        currentPrice: 14.99,
-        customizations: [
-          { type: 'quantity', ingredientName: 'Chicken', change: '+1', priceChange: 4.00 }
-        ]
-      }
-    ],
-    total: 33.98
-  }
-
-  customerInfo.value = {
-    name: 'John Doe',
-    phone: '(02) 9876 5432',
-    tableNumber: '',
-    notes: 'No onions please'
-  }
-}
 </script>
 
 <style scoped>

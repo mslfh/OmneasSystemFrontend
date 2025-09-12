@@ -42,6 +42,7 @@
               class="text-grey-6 text-center q-pa-md"
             >
               Please select ingredients first to configure customization options
+              Please select ingredients first to configure customization options
             </div>
             <q-list v-else-if="customizable" separator>
               <q-item
@@ -54,6 +55,7 @@
                     <!-- 父节点：Ingredient 信息 -->
                     <div class="col-8">
                       <div class="text-body1 text-weight-medium text-primary">
+                      <div class="text-body1 text-weight-medium text-primary">
                         {{ ingredient.name }}
                         <q-chip
                           size="sm"
@@ -64,6 +66,7 @@
                         >
                           {{ ingredient.type }}
                         </q-chip>
+                        <span class="text-caption text-grey-7 q-ml-sm">
                         <span class="text-caption text-grey-7 q-ml-sm">
                           ({{
                             formatQuantityUnit(
@@ -80,6 +83,9 @@
                     <div class="col-4">
                       <q-select
                         :model-value="getCustomizationMode(ingredient.id)"
+                        @update:model-value="
+                          (val) => updateCustomizationMode(ingredient.id, val)
+                        "
                         @update:model-value="
                           (val) => updateCustomizationMode(ingredient.id, val)
                         "
@@ -111,12 +117,17 @@
                                 'replaceable' ||
                               getCustomizationMode(ingredient.id) ===
                                 'replaceable_variable'
+                              getCustomizationMode(ingredient.id) ===
+                                'replaceable' ||
+                              getCustomizationMode(ingredient.id) ===
+                                'replaceable_variable'
                             "
                           >
                             <!-- 全选/全不选按钮 -->
                             <div
                               class="row items-center justify-between q-mb-sm"
                             >
+                              <div class="text-body2 text-weight-medium">
                               <div class="text-body2 text-weight-medium">
                                 Select replacement options:
                               </div>
@@ -131,6 +142,9 @@
                                   @click="
                                     selectAllReplacements(ingredient.id, true)
                                   "
+                                  @click="
+                                    selectAllReplacements(ingredient.id, true)
+                                  "
                                 />
                                 <q-btn
                                   size="xs"
@@ -139,6 +153,9 @@
                                   color="negative"
                                   icon="o_block"
                                   label="None"
+                                  @click="
+                                    selectAllReplacements(ingredient.id, false)
+                                  "
                                   @click="
                                     selectAllReplacements(ingredient.id, false)
                                   "
@@ -182,6 +199,9 @@
                                 v-for="replacement in getReplacementOptions(
                                   ingredient
                                 )"
+                                v-for="replacement in getReplacementOptions(
+                                  ingredient
+                                )"
                                 :key="replacement.id"
                                 class="col-12 col-md-6"
                               >
@@ -194,6 +214,10 @@
                                       ingredient.id,
                                       replacement.id
                                     )
+                                    isReplacementEnabled(
+                                      ingredient.id,
+                                      replacement.id
+                                    )
                                       ? 'bg-blue-1'
                                       : ''
                                   "
@@ -201,6 +225,20 @@
                                   <div class="row items-center no-wrap">
                                     <div class="col-auto q-mr-xs">
                                       <q-checkbox
+                                        :model-value="
+                                          isReplacementEnabled(
+                                            ingredient.id,
+                                            replacement.id
+                                          )
+                                        "
+                                        @update:model-value="
+                                          (val) =>
+                                            toggleReplacement(
+                                              ingredient.id,
+                                              replacement.id,
+                                              val
+                                            )
+                                        "
                                         :model-value="
                                           isReplacementEnabled(
                                             ingredient.id,
@@ -250,6 +288,20 @@
                                               val
                                             )
                                         "
+                                        :model-value="
+                                          getReplacementPriceDiff(
+                                            ingredient.id,
+                                            replacement.id
+                                          )
+                                        "
+                                        @update:model-value="
+                                          (val) =>
+                                            updateReplacementPriceDiff(
+                                              ingredient.id,
+                                              replacement.id,
+                                              val
+                                            )
+                                        "
                                         label="Diff"
                                         prefix="$"
                                         type="number"
@@ -257,6 +309,12 @@
                                         dense
                                         outlined
                                         style="width: 75px"
+                                        :disable="
+                                          !isReplacementEnabled(
+                                            ingredient.id,
+                                            replacement.id
+                                          )
+                                        "
                                         :disable="
                                           !isReplacementEnabled(
                                             ingredient.id,
@@ -271,9 +329,27 @@
                                         getCustomizationMode(ingredient.id) ===
                                         'replaceable_variable'
                                       "
+                                      v-if="
+                                        getCustomizationMode(ingredient.id) ===
+                                        'replaceable_variable'
+                                      "
                                       class="col-auto"
                                     >
                                       <q-input
+                                        :model-value="
+                                          getReplacementExtraPrice(
+                                            ingredient.id,
+                                            replacement.id
+                                          )
+                                        "
+                                        @update:model-value="
+                                          (val) =>
+                                            updateReplacementExtraPrice(
+                                              ingredient.id,
+                                              replacement.id,
+                                              val
+                                            )
+                                        "
                                         :model-value="
                                           getReplacementExtraPrice(
                                             ingredient.id,
@@ -301,6 +377,12 @@
                                             replacement.id
                                           )
                                         "
+                                        :disable="
+                                          !isReplacementEnabled(
+                                            ingredient.id,
+                                            replacement.id
+                                          )
+                                        "
                                       />
                                     </div>
                                   </div>
@@ -311,6 +393,9 @@
 
                           <!-- Variable Mode -->
                           <div
+                            v-else-if="
+                              getCustomizationMode(ingredient.id) === 'variable'
+                            "
                             v-else-if="
                               getCustomizationMode(ingredient.id) === 'variable'
                             "
@@ -360,6 +445,17 @@
                                         val
                                       )
                                   "
+                                  :model-value="
+                                    getQuantityPricing(ingredient.id, 'extra')
+                                  "
+                                  @update:model-value="
+                                    (val) =>
+                                      updateQuantityPricing(
+                                        ingredient.id,
+                                        'extra',
+                                        val
+                                      )
+                                  "
                                   label="Extra Price"
                                   prefix="$"
                                   type="number"
@@ -371,6 +467,17 @@
                               </div>
                               <div class="col-12 col-md-6">
                                 <q-input
+                                  :model-value="
+                                    getQuantityPricing(ingredient.id, 'reduce')
+                                  "
+                                  @update:model-value="
+                                    (val) =>
+                                      updateQuantityPricing(
+                                        ingredient.id,
+                                        'reduce',
+                                        val
+                                      )
+                                  "
                                   :model-value="
                                     getQuantityPricing(ingredient.id, 'reduce')
                                   "
@@ -400,11 +507,16 @@
                         v-else-if="
                           getCustomizationMode(ingredient.id) === 'fixed'
                         "
+                        v-else-if="
+                          getCustomizationMode(ingredient.id) === 'fixed'
+                        "
                         class="q-mt-xs"
                       >
                         <div
                           class="text-caption text-grey-6 q-pa-sm bg-grey-2 rounded-borders"
                         >
+                          <q-icon name="lock" class="q-mr-xs" size="xs" />
+                          This ingredient cannot be customized by customers.
                           <q-icon name="lock" class="q-mr-xs" size="xs" />
                           This ingredient cannot be customized by customers.
                         </div>
@@ -423,27 +535,33 @@
 
 <script setup>
 import { computed } from "vue";
+import { computed } from "vue";
 
 // Props
 const props = defineProps({
   customizable: {
     type: Boolean,
     default: true,
+    default: true,
   },
   selectedIngredients: {
     type: Array,
+    default: () => [],
     default: () => [],
   },
   customizations: {
     type: Array,
     default: () => [],
+    default: () => [],
   },
   ingredientMap: {
     type: Map,
     default: () => new Map(),
+    default: () => new Map(),
   },
   ingredientsByType: {
     type: Map,
+    default: () => new Map(),
     default: () => new Map(),
   },
   unitOptions: {
@@ -451,9 +569,16 @@ const props = defineProps({
     default: () => [],
   },
 });
+    default: () => [],
+  },
+});
 
 // Emits
 const emit = defineEmits([
+  "update:customizable",
+  "update:customizations",
+  "customization-changed",
+]);
   "update:customizable",
   "update:customizations",
   "customization-changed",
@@ -478,13 +603,20 @@ const customizationModes = [
   },
   { label: "Fixed", value: "fixed", description: "Cannot be customized" },
 ];
+];
 
+const replacementOptionsCache = new Map();
 const replacementOptionsCache = new Map();
 
 // Computed
 const customizationsMap = computed(() => {
   const map = new Map();
+  const map = new Map();
   props.customizations.forEach((custom) => {
+    map.set(custom.ingredientId, custom);
+  });
+  return map;
+});
     map.set(custom.ingredientId, custom);
   });
   return map;
@@ -492,6 +624,7 @@ const customizationsMap = computed(() => {
 
 const selectedIngredientsWithDetails = computed(() => {
   return props.selectedIngredients.map((ing) => {
+    const itemDetail = props.ingredientMap.get(ing.id);
     const itemDetail = props.ingredientMap.get(ing.id);
     return {
       ...ing,
@@ -502,15 +635,22 @@ const selectedIngredientsWithDetails = computed(() => {
     };
   });
 });
+    };
+  });
+});
 
 // Methods
 function formatQuantityUnit(quantity, unit) {
   const unitLabel =
     props.unitOptions.find((opt) => opt.value === unit)?.label || "Several";
   return `${quantity} ${unitLabel}`;
+    props.unitOptions.find((opt) => opt.value === unit)?.label || "Several";
+  return `${quantity} ${unitLabel}`;
 }
 
 function getCustomizationMode(ingredientId) {
+  const customization = customizationsMap.value.get(ingredientId);
+  return customization ? customization.mode : "fixed";
   const customization = customizationsMap.value.get(ingredientId);
   return customization ? customization.mode : "fixed";
 }
@@ -528,9 +668,15 @@ function updateCustomizationType(ingredientId, type) {
   let customization = customizations.find(
     (c) => c.ingredientId === ingredientId
   );
+  const customizations = [...props.customizations];
+  let customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
 
   if (!customization) {
     // Get ingredient details to access extra_price
+    const ingredientDetail = props.ingredientMap.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
     const ingredientDetail = props.ingredientMap.get(ingredientId);
     const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
 
@@ -544,15 +690,21 @@ function updateCustomizationType(ingredientId, type) {
       quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
     };
     customizations.push(customization);
+    };
+    customizations.push(customization);
   } else {
+    customization.type = type;
     customization.type = type;
   }
 
   emit("update:customizations", customizations);
   emit("customization-changed");
+  emit("update:customizations", customizations);
+  emit("customization-changed");
 }
 
 function getCustomizationLabel(ingredientId) {
+  const mode = getCustomizationMode(ingredientId);
   const mode = getCustomizationMode(ingredientId);
   const labels = {
     replaceable: "Available Replacements",
@@ -562,9 +714,12 @@ function getCustomizationLabel(ingredientId) {
     default: "Select Customization Mode",
   };
   return labels[mode] || labels.default;
+  };
+  return labels[mode] || labels.default;
 }
 
 function getCustomizationCaption(ingredientId) {
+  const mode = getCustomizationMode(ingredientId);
   const mode = getCustomizationMode(ingredientId);
   const captions = {
     replaceable: "Configure replacement options",
@@ -574,9 +729,15 @@ function getCustomizationCaption(ingredientId) {
     default: "Choose a customization mode from the dropdown above",
   };
   return captions[mode] || captions.default;
+  };
+  return captions[mode] || captions.default;
 }
 
 function updateCustomizationMode(ingredientId, mode) {
+  const customizations = [...props.customizations];
+  let customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
   const customizations = [...props.customizations];
   let customization = customizations.find(
     (c) => c.ingredientId === ingredientId
@@ -588,13 +749,21 @@ function updateCustomizationMode(ingredientId, mode) {
     mode === "variable" || mode === "replaceable_variable"
       ? parseFloat(ingredientDetail?.extra_price) || 0
       : 0;
+  const ingredientDetail = props.ingredientMap.get(ingredientId);
+  const defaultExtraPrice =
+    mode === "variable" || mode === "replaceable_variable"
+      ? parseFloat(ingredientDetail?.extra_price) || 0
+      : 0;
 
   if (customization) {
+    const oldMode = customization.mode;
+    customization.mode = mode;
     const oldMode = customization.mode;
     customization.mode = mode;
 
     // Ensure type field exists, default to 0 (sync with product)
     if (customization.type === undefined) {
+      customization.type = 0;
       customization.type = 0;
     }
 
@@ -604,19 +773,33 @@ function updateCustomizationMode(ingredientId, mode) {
       oldMode !== "variable" &&
       oldMode !== "replaceable_variable"
     ) {
+    if (
+      (mode === "variable" || mode === "replaceable_variable") &&
+      oldMode !== "variable" &&
+      oldMode !== "replaceable_variable"
+    ) {
       if (!customization.quantityPricing) {
         customization.quantityPricing = { extra: defaultExtraPrice, reduce: 0 };
+        customization.quantityPricing = { extra: defaultExtraPrice, reduce: 0 };
       } else {
+        customization.quantityPricing.extra = defaultExtraPrice;
         customization.quantityPricing.extra = defaultExtraPrice;
       }
     }
 
     // Initialize replacementExtras when switching to replaceable_variable mode
     if (mode === "replaceable_variable" && oldMode !== "replaceable_variable") {
+    if (mode === "replaceable_variable" && oldMode !== "replaceable_variable") {
       if (!customization.replacementExtras) {
+        customization.replacementExtras = {};
         customization.replacementExtras = {};
       }
       // Initialize extra prices for already enabled replacements
+      if (
+        customization.enabledReplacements &&
+        customization.enabledReplacements.length > 0
+      ) {
+        customization.enabledReplacements.forEach((replacementId) => {
       if (
         customization.enabledReplacements &&
         customization.enabledReplacements.length > 0
@@ -628,7 +811,13 @@ function updateCustomizationMode(ingredientId, mode) {
               parseFloat(replacementDetail?.extra_price) || 0;
             customization.replacementExtras[replacementId] =
               replacementExtraPrice;
+            const replacementDetail = props.ingredientMap.get(replacementId);
+            const replacementExtraPrice =
+              parseFloat(replacementDetail?.extra_price) || 0;
+            customization.replacementExtras[replacementId] =
+              replacementExtraPrice;
           }
+        });
         });
       }
     }
@@ -643,25 +832,36 @@ function updateCustomizationMode(ingredientId, mode) {
       quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
     };
     customizations.push(customization);
+    };
+    customizations.push(customization);
   }
 
   if (!customization.replacementExtras) {
     customization.replacementExtras = {};
+    customization.replacementExtras = {};
   }
 
+  emit("update:customizations", customizations);
+  emit("customization-changed");
   emit("update:customizations", customizations);
   emit("customization-changed");
 }
 
 function getReplacementOptions(ingredient) {
   const cacheKey = `${ingredient.type}_${ingredient.id}`;
+  const cacheKey = `${ingredient.type}_${ingredient.id}`;
   if (replacementOptionsCache.has(cacheKey)) {
+    return replacementOptionsCache.get(cacheKey);
     return replacementOptionsCache.get(cacheKey);
   }
 
   const typeIngredients = props.ingredientsByType.get(ingredient.type) || [];
   const options = typeIngredients.filter((item) => item.id !== ingredient.id);
+  const typeIngredients = props.ingredientsByType.get(ingredient.type) || [];
+  const options = typeIngredients.filter((item) => item.id !== ingredient.id);
 
+  replacementOptionsCache.set(cacheKey, options);
+  return options;
   replacementOptionsCache.set(cacheKey, options);
   return options;
 }
@@ -671,9 +871,15 @@ function selectAllReplacements(ingredientId, selectAll) {
   let customization = customizations.find(
     (c) => c.ingredientId === ingredientId
   );
+  const customizations = [...props.customizations];
+  let customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
 
   if (!customization) {
     // Get ingredient details to access extra_price
+    const ingredientDetail = props.ingredientMap.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
     const ingredientDetail = props.ingredientMap.get(ingredientId);
     const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
 
@@ -687,15 +893,24 @@ function selectAllReplacements(ingredientId, selectAll) {
       quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
     };
     customizations.push(customization);
+    };
+    customizations.push(customization);
   }
 
   if (!customization.enabledReplacements)
     customization.enabledReplacements = [];
   if (!customization.replacements) customization.replacements = {};
   if (!customization.replacementExtras) customization.replacementExtras = {};
+  if (!customization.enabledReplacements)
+    customization.enabledReplacements = [];
+  if (!customization.replacements) customization.replacements = {};
+  if (!customization.replacementExtras) customization.replacementExtras = {};
 
   const ingredientDetail = props.ingredientMap.get(ingredientId);
+  const ingredientDetail = props.ingredientMap.get(ingredientId);
   if (ingredientDetail) {
+    const replacementOptions = getReplacementOptions(ingredientDetail);
+    const originalPrice = parseFloat(ingredientDetail.price) || 0;
     const replacementOptions = getReplacementOptions(ingredientDetail);
     const originalPrice = parseFloat(ingredientDetail.price) || 0;
 
@@ -703,7 +918,11 @@ function selectAllReplacements(ingredientId, selectAll) {
       replacementOptions.forEach((replacement) => {
         if (!customization.enabledReplacements.includes(replacement.id)) {
           customization.enabledReplacements.push(replacement.id);
+          customization.enabledReplacements.push(replacement.id);
 
+          const replacementPrice = parseFloat(replacement.price) || 0;
+          const priceDiff = Math.max(0, replacementPrice - originalPrice);
+          customization.replacements[replacement.id] = priceDiff;
           const replacementPrice = parseFloat(replacement.price) || 0;
           const priceDiff = Math.max(0, replacementPrice - originalPrice);
           customization.replacements[replacement.id] = priceDiff;
@@ -715,28 +934,40 @@ function selectAllReplacements(ingredientId, selectAll) {
                 parseFloat(replacement.extra_price) || 0;
               customization.replacementExtras[replacement.id] =
                 replacementExtraPrice;
+              const replacementExtraPrice =
+                parseFloat(replacement.extra_price) || 0;
+              customization.replacementExtras[replacement.id] =
+                replacementExtraPrice;
             }
           }
         }
       });
+      });
     } else {
+      const replacementIds = new Set(replacementOptions.map((r) => r.id));
       const replacementIds = new Set(replacementOptions.map((r) => r.id));
       customization.enabledReplacements =
         customization.enabledReplacements.filter(
           (id) => !replacementIds.has(id)
+        );
         );
     }
   }
 
   emit("update:customizations", customizations);
   emit("customization-changed");
+  emit("update:customizations", customizations);
+  emit("customization-changed");
 }
 
 function isReplacementEnabled(ingredientId, replacementId) {
   const customization = customizationsMap.value.get(ingredientId);
+  const customization = customizationsMap.value.get(ingredientId);
   if (!customization || !customization.enabledReplacements) {
     return false;
+    return false;
   }
+  return customization.enabledReplacements.includes(replacementId);
   return customization.enabledReplacements.includes(replacementId);
 }
 
@@ -745,9 +976,15 @@ function toggleReplacement(ingredientId, replacementId, enabled) {
   let customization = customizations.find(
     (c) => c.ingredientId === ingredientId
   );
+  const customizations = [...props.customizations];
+  let customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
 
   if (!customization) {
     // Get ingredient details to access extra_price
+    const ingredientDetail = props.ingredientMap.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
     const ingredientDetail = props.ingredientMap.get(ingredientId);
     const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
 
@@ -761,21 +998,35 @@ function toggleReplacement(ingredientId, replacementId, enabled) {
       quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
     };
     customizations.push(customization);
+    };
+    customizations.push(customization);
   }
 
   if (!customization.enabledReplacements)
     customization.enabledReplacements = [];
   if (!customization.replacements) customization.replacements = {};
   if (!customization.replacementExtras) customization.replacementExtras = {};
+  if (!customization.enabledReplacements)
+    customization.enabledReplacements = [];
+  if (!customization.replacements) customization.replacements = {};
+  if (!customization.replacementExtras) customization.replacementExtras = {};
 
   const index = customization.enabledReplacements.indexOf(replacementId);
+  const index = customization.enabledReplacements.indexOf(replacementId);
   if (enabled && index === -1) {
+    customization.enabledReplacements.push(replacementId);
     customization.enabledReplacements.push(replacementId);
 
     const originalIngredient = props.ingredientMap.get(ingredientId);
     const replacementIngredient = props.ingredientMap.get(replacementId);
+    const originalIngredient = props.ingredientMap.get(ingredientId);
+    const replacementIngredient = props.ingredientMap.get(replacementId);
 
     if (originalIngredient && replacementIngredient) {
+      const originalPrice = parseFloat(originalIngredient.price) || 0;
+      const replacementPrice = parseFloat(replacementIngredient.price) || 0;
+      const priceDiff = Math.max(0, replacementPrice - originalPrice);
+      customization.replacements[replacementId] = priceDiff;
       const originalPrice = parseFloat(originalIngredient.price) || 0;
       const replacementPrice = parseFloat(replacementIngredient.price) || 0;
       const priceDiff = Math.max(0, replacementPrice - originalPrice);
@@ -788,13 +1039,20 @@ function toggleReplacement(ingredientId, replacementId, enabled) {
             parseFloat(replacementIngredient.extra_price) || 0;
           customization.replacementExtras[replacementId] =
             replacementExtraPrice;
+          const replacementExtraPrice =
+            parseFloat(replacementIngredient.extra_price) || 0;
+          customization.replacementExtras[replacementId] =
+            replacementExtraPrice;
         }
       }
     }
   } else if (!enabled && index > -1) {
     customization.enabledReplacements.splice(index, 1);
+    customization.enabledReplacements.splice(index, 1);
   }
 
+  emit("update:customizations", customizations);
+  emit("customization-changed");
   emit("update:customizations", customizations);
   emit("customization-changed");
 }
@@ -802,8 +1060,10 @@ function toggleReplacement(ingredientId, replacementId, enabled) {
 function getReplacementPriceDiff(ingredientId, replacementId) {
   if (!isReplacementEnabled(ingredientId, replacementId)) {
     return 0;
+    return 0;
   }
 
+  const customization = customizationsMap.value.get(ingredientId);
   const customization = customizationsMap.value.get(ingredientId);
   if (
     customization &&
@@ -811,8 +1071,11 @@ function getReplacementPriceDiff(ingredientId, replacementId) {
     customization.replacements[replacementId] !== undefined
   ) {
     return customization.replacements[replacementId];
+    return customization.replacements[replacementId];
   }
 
+  const originalIngredient = props.ingredientMap.get(ingredientId);
+  const replacementIngredient = props.ingredientMap.get(replacementId);
   const originalIngredient = props.ingredientMap.get(ingredientId);
   const replacementIngredient = props.ingredientMap.get(replacementId);
 
@@ -820,25 +1083,34 @@ function getReplacementPriceDiff(ingredientId, replacementId) {
     const originalPrice = parseFloat(originalIngredient.price) || 0;
     const replacementPrice = parseFloat(replacementIngredient.price) || 0;
     return Math.max(0, replacementPrice - originalPrice);
+    const originalPrice = parseFloat(originalIngredient.price) || 0;
+    const replacementPrice = parseFloat(replacementIngredient.price) || 0;
+    return Math.max(0, replacementPrice - originalPrice);
   }
 
+  return 0;
   return 0;
 }
 
 function getReplacementExtraPrice(ingredientId, replacementId) {
   if (!isReplacementEnabled(ingredientId, replacementId)) {
     return 0;
+    return 0;
   }
 
+  const customization = customizationsMap.value.get(ingredientId);
   const customization = customizationsMap.value.get(ingredientId);
   if (customization && customization.replacementExtras) {
     // If there's a specific value set for this replacement, return it
     if (customization.replacementExtras[replacementId] !== undefined) {
       return customization.replacementExtras[replacementId];
+      return customization.replacementExtras[replacementId];
     }
   }
 
   // If no specific value set, return the replacement ingredient's extra_price as default
+  const replacementIngredient = props.ingredientMap.get(replacementId);
+  return parseFloat(replacementIngredient?.extra_price) || 0;
   const replacementIngredient = props.ingredientMap.get(replacementId);
   return parseFloat(replacementIngredient?.extra_price) || 0;
 }
@@ -848,17 +1120,26 @@ function updateReplacementExtraPrice(ingredientId, replacementId, extraPrice) {
   const customization = customizations.find(
     (c) => c.ingredientId === ingredientId
   );
+  const customizations = [...props.customizations];
+  const customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
 
   if (!customization || !isReplacementEnabled(ingredientId, replacementId)) {
+    return;
     return;
   }
 
   if (!customization.replacementExtras) {
     customization.replacementExtras = {};
+    customization.replacementExtras = {};
   }
 
   customization.replacementExtras[replacementId] = parseFloat(extraPrice) || 0;
+  customization.replacementExtras[replacementId] = parseFloat(extraPrice) || 0;
 
+  emit("update:customizations", customizations);
+  emit("customization-changed");
   emit("update:customizations", customizations);
   emit("customization-changed");
 }
@@ -868,28 +1149,40 @@ function updateReplacementPriceDiff(ingredientId, replacementId, priceDiff) {
   const customization = customizations.find(
     (c) => c.ingredientId === ingredientId
   );
+  const customizations = [...props.customizations];
+  const customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
 
   if (!customization || !isReplacementEnabled(ingredientId, replacementId)) {
+    return;
     return;
   }
 
   if (!customization.replacements) {
     customization.replacements = {};
+    customization.replacements = {};
   }
   if (!customization.replacementExtras) {
+    customization.replacementExtras = {};
     customization.replacementExtras = {};
   }
 
   customization.replacements[replacementId] = parseFloat(priceDiff) || 0;
+  customization.replacements[replacementId] = parseFloat(priceDiff) || 0;
 
+  emit("update:customizations", customizations);
+  emit("customization-changed");
   emit("update:customizations", customizations);
   emit("customization-changed");
 }
 
 function getQuantityPricing(ingredientId, type) {
   const customization = customizationsMap.value.get(ingredientId);
+  const customization = customizationsMap.value.get(ingredientId);
   return customization && customization.quantityPricing
     ? customization.quantityPricing[type] || 0
+    : 0;
     : 0;
 }
 
@@ -898,9 +1191,15 @@ function updateQuantityPricing(ingredientId, type, price) {
   let customization = customizations.find(
     (c) => c.ingredientId === ingredientId
   );
+  const customizations = [...props.customizations];
+  let customization = customizations.find(
+    (c) => c.ingredientId === ingredientId
+  );
 
   if (!customization) {
     // Get ingredient details to access extra_price
+    const ingredientDetail = props.ingredientMap.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
     const ingredientDetail = props.ingredientMap.get(ingredientId);
     const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
 
@@ -914,6 +1213,8 @@ function updateQuantityPricing(ingredientId, type, price) {
       quantityPricing: { extra: defaultExtraPrice, reduce: 0 },
     };
     customizations.push(customization);
+    };
+    customizations.push(customization);
   }
 
   if (!customization.quantityPricing) {
@@ -921,13 +1222,20 @@ function updateQuantityPricing(ingredientId, type, price) {
     const ingredientDetail = props.ingredientMap.get(ingredientId);
     const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
     customization.quantityPricing = { extra: defaultExtraPrice, reduce: 0 };
+    const ingredientDetail = props.ingredientMap.get(ingredientId);
+    const defaultExtraPrice = parseFloat(ingredientDetail?.extra_price) || 0;
+    customization.quantityPricing = { extra: defaultExtraPrice, reduce: 0 };
   }
   if (!customization.replacementExtras) {
+    customization.replacementExtras = {};
     customization.replacementExtras = {};
   }
 
   customization.quantityPricing[type] = parseFloat(price) || 0;
+  customization.quantityPricing[type] = parseFloat(price) || 0;
 
+  emit("update:customizations", customizations);
+  emit("customization-changed");
   emit("update:customizations", customizations);
   emit("customization-changed");
 }
