@@ -67,8 +67,8 @@
                     </div>
                     <div class="customization-tags">
                       <q-chip
-                        v-for="custom in item.customizations"
-                        :key="custom.id"
+                        v-for="custom in getSortedCustomizations(item.customizations)"
+                        :key="custom.id || `${custom.type}-${custom.ingredientName || custom.originalName}`"
                         size="sm"
                         :color="getCustomizationColor(custom)"
                         text-color="white"
@@ -623,6 +623,33 @@ function saveChangesToSessionStorage() {
 
   sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
   console.log("Saved changes to sessionStorage:", orderData); // 调试日志
+}
+
+/**
+ * 获取排序后的定制选项（replacement类型在前）
+ * @param {Array} customizations - 定制选项数组
+ * @returns {Array} 排序后的定制选项数组
+ */
+function getSortedCustomizations(customizations) {
+  if (!customizations || !Array.isArray(customizations)) {
+    return [];
+  }
+
+  // 创建副本以避免修改原数组
+  const sorted = [...customizations];
+
+  // 按类型排序：replacement 在前，其他类型在后
+  sorted.sort((a, b) => {
+    if (a.type === 'replacement' && b.type !== 'replacement') {
+      return -1; // a 在前
+    }
+    if (a.type !== 'replacement' && b.type === 'replacement') {
+      return 1; // b 在前
+    }
+    return 0; // 保持原有顺序
+  });
+
+  return sorted;
 }
 
 /**

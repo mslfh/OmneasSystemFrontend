@@ -270,7 +270,7 @@ function getCustomizationSimpleColor(custom) {
   if (custom.type === "quantity") {
     const change = parseInt(custom.change);
     if (custom.currentQuantity === 0) {
-      return "text-red-4";
+      return "text-red-5";
     } else if (change > 0) {
       return "text-green-4";
     }

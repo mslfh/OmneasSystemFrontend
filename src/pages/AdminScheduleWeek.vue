@@ -112,8 +112,7 @@
                 <div class="event-title">{{ event.title }}</div>
                 <div class="event-start-time">{{ event.start_time }}</div>
                 <div class="event-duration">
-                  {{ Math.floor(event.duration / 60) }}h
-                  {{ event.duration % 60 }}m
+                  {{ Math.round((event.duration / 60) * 100) / 100 + "h" }}
                 </div>
                 <div class="event-end-time">{{ event.end_time }}</div>
               </div>

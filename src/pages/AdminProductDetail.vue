@@ -626,7 +626,7 @@
                       <div class="col-12 col-md-4">
                         <q-checkbox
                           v-model="editableProduct.is_featured"
-                          label="Featured Product"
+                          label="Popular Product"
                           :disable="!isEditing"
                         />
                       </div>
@@ -634,15 +634,7 @@
                       <div class="col-12 col-md-4">
                         <q-checkbox
                           v-model="editableProduct.viewable"
-                          label="Viewable"
-                          :disable="!isEditing"
-                        />
-                      </div>
-
-                      <div class="col-12 col-md-4">
-                        <q-checkbox
-                          v-model="editableProduct.customizable"
-                          label="Customizable"
+                          label="Viewable for Customers"
                           :disable="!isEditing"
                         />
                       </div>

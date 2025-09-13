@@ -1,8 +1,8 @@
 {
-  "name": "omneas-schedule",
+  "name": "omneas-restaurant",
   "version": "0.0.1",
-  "description": "Omneas Schedule- A Vue.js application for Omneas, a platform for managing schedule and visualizing data.",
-  "productName": "Omneas Schedule",
+  "description": "Omneas Restaurant - A Vue.js application for Omneas, a platform for managing restaurant operations and visualizing data.",
+  "productName": "Omneas Restaurant",
   "author": "Fuhai Li <55822442+mslfh@users.noreply.github.com>",
   "type": "module",
   "private": true,
