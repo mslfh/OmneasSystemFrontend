@@ -235,6 +235,7 @@ function getUserInitials() {
 
           <!-- Product - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
             to="/admin/product"
             active-class="q-item-no-link-highlighting"
           >
@@ -247,7 +248,11 @@ function getUserInitials() {
           </q-item>
 
           <!-- Product Information - Only for Admin and Desk -->
-          <q-expansion-item icon="inbox" label="Product Info">
+          <q-expansion-item
+            v-if="isAdminOrDesk"
+            icon="inbox"
+            label="Product Info"
+          >
             <q-list class="q-pl-lg">
               <q-item
                 to="/admin/category"
@@ -282,7 +287,7 @@ function getUserInitials() {
                   <q-item-label>Attribute</q-item-label>
                 </q-item-section>
               </q-item>
-               <q-item
+              <q-item
                 to="/admin/product-profile"
                 active-class="q-item-no-link-highlighting"
               >
@@ -297,7 +302,11 @@ function getUserInitials() {
           </q-expansion-item>
 
           <!-- Invoice - Only for Admin and Desk -->
-          <q-item to="/admin/order" active-class="q-item-no-link-highlighting">
+          <q-item
+            v-if="isAdminOrDesk"
+            to="/admin/order"
+            active-class="q-item-no-link-highlighting"
+          >
             <q-item-section avatar>
               <q-icon name="payments" />
             </q-item-section>
@@ -391,6 +400,7 @@ function getUserInitials() {
 
           <!-- Setting - Only for Admin and Desk -->
           <q-item
+            v-if="isAdminOrDesk"
             to="/admin/setting"
             active-class="q-item-no-link-highlighting"
           >
