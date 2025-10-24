@@ -194,7 +194,7 @@ async function fetchSchedules() {
     // First day of the current month
     const startDate = new Date(year, month, 1);
     // Last day of the current month
-    const endDate = new Date(year, month + 1, 0);
+    const endDate = new Date(year, month + 1, 2);
 
     // Format dates as YYYY-MM-DD
     const start_date = startDate.toISOString().split("T")[0];
