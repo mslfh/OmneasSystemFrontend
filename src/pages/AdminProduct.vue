@@ -1,43 +1,18 @@
 <template>
   <div class="q-pa-md">
-    <q-table
-      no-data-label="No products found"
-      :dense="$q.screen.lt.md"
-      :columns="columns"
-      :rows="data"
-      row-key="id"
-      v-model:pagination="pagination"
-      :loading="loading"
-      :filter="filter"
-      @request="onRequest"
-      binary-state-sort
-    >
+    <q-table no-data-label="No products found" :dense="$q.screen.lt.md" :columns="columns" :rows="data" row-key="id"
+      v-model:pagination="pagination" :loading="loading" :filter="filter" @request="onRequest" binary-state-sort
+      :rows-per-page-options="[35, 50, 100]">
       <template v-slot:top-left>
         <div class="text-h6 q-mr-md">Product</div>
-        <q-chip
-          outline
-          color="primary"
-          icon="add"
-          clickable
-          @click="router.push('/admin/product/add')"
-        >
-        Add
+        <q-chip outline color="primary" icon="add" clickable @click="router.push('/admin/product/add')">
+          Add
         </q-chip>
       </template>
 
       <template v-slot:top-right>
-        <q-input
-          outlined
-          dense
-          clearable
-          debounce="500"
-          rounded
-          v-model="filter.value"
-          :placeholder="`Search by ${
-            filterFields.find((f) => f.value === filter.field)?.label || 'field'
-          }`"
-          class="q-mr-sm"
-        >
+        <q-input outlined dense clearable debounce="500" rounded v-model="filter.value" :placeholder="`Search by ${filterFields.find((f) => f.value === filter.field)?.label || 'field'
+          }`" class="q-mr-sm">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
@@ -46,18 +21,12 @@
         <q-btn flat dense round icon="o_filter_alt" color="grey-6">
           <q-menu>
             <q-list dense>
-              <q-item
-                v-ripple
-                clickable
-                v-for="(filterField, index) in filterFields"
-                :key="index"
-                @click="filter.field = filterField.value"
-                :class="{ 'bg-grey-3': filter.field === filterField.value }"
-              >
+              <q-item v-ripple clickable v-for="(filterField, index) in filterFields" :key="index"
+                @click="filter.field = filterField.value" :class="{ 'bg-grey-3': filter.field === filterField.value }">
                 <q-item-section>
                   <q-item-label class="text-grey-8 text-caption">{{
                     filterField.label
-                  }}</q-item-label>
+                    }}</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -67,31 +36,17 @@
         <q-btn flat round icon="o_sort" color="grey-6">
           <q-menu auto-close>
             <q-list>
-              <q-item
-                v-ripple
-                clickable
-                @click="clearSelectedField"
-                :class="{ 'bg-grey-3': !selected.field }"
-              >
-                <q-item-section
-                  class="row items-center text-grey-6 text-caption"
-                >
+              <q-item v-ripple clickable @click="clearSelectedField" :class="{ 'bg-grey-3': !selected.field }">
+                <q-item-section class="row items-center text-grey-6 text-caption">
                   <q-icon name="clear_all" size="sm" />
                   <q-item-label>Clear Filter</q-item-label>
                 </q-item-section>
               </q-item>
               <q-separator />
-              <q-item
-                v-ripple
-                clickable
-                v-for="(selectedField, index) in searchFields"
-                :key="index"
+              <q-item v-ripple clickable v-for="(selectedField, index) in searchFields" :key="index"
                 @click="handleSelectedFieldClick(selectedField.value)"
-                :class="{ 'bg-grey-3': selected.field === selectedField.value }"
-              >
-                <q-item-section
-                  class="row items-center text-grey-6 text-caption"
-                >
+                :class="{ 'bg-grey-3': selected.field === selectedField.value }">
+                <q-item-section class="row items-center text-grey-6 text-caption">
                   <q-icon :name="selectedField.icon" size="sm" />
                   <q-item-label>{{ selectedField.label }}</q-item-label>
                 </q-item-section>
@@ -122,82 +77,49 @@
 
       <template v-slot:body-cell-is_featured="props">
         <q-td :props="props">
-          <q-icon
-            :name="props.row.is_featured ? 'star' : 'star_border'"
-            :color="props.row.is_featured ? 'amber' : 'grey'"
-            size="sm"
-          />
+          <q-icon :name="props.row.is_featured ? 'star' : 'star_border'"
+            :color="props.row.is_featured ? 'amber' : 'grey'" size="sm" />
         </q-td>
       </template>
 
       <template v-slot:body-cell-categories="props">
         <q-td :props="props">
           <div class="q-gutter-xs">
-            <q-chip
-              v-for="category in props.row.categories"
-              :key="category.id"
-              size="sm"
-              dense
-              color="blue-2"
-              text-color="blue-8"
-              :label="category.title"
-              class="q-ma-xs"
-            />
+            <q-chip v-for="category in props.row.categories" :key="category.id" size="sm" dense color="blue-2"
+              text-color="blue-8" :label="category.title" class="q-ma-xs" />
           </div>
         </q-td>
       </template>
 
       <template v-slot:body-cell-stock="props">
         <q-td :props="props">
-          <q-chip
-            size="12px"
-            dense
-            :color="props.row.stock === -1 ? 'blue' : props.row.stock > 0 ? 'green' : 'red'"
-            :label="props.row.stock === -1 ? '---' : props.row.stock"
-            text-color="white"
-          />
+          <q-chip size="12px" dense :color="props.row.stock === -1 ? 'blue' : props.row.stock > 0 ? 'green' : 'red'"
+            :label="props.row.stock === -1 ? '---' : props.row.stock" text-color="white" />
         </q-td>
       </template>
 
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
-          <q-btn
-            flat
-            round
-            icon="o_delete"
-            color="negative"
-            size="10px"
-            @click="deleteRow(props.row.id)"
-          />
-          <q-btn
-            flat
-            round
-            icon="o_visibility"
-            color="grey"
-            size="10px"
-            @click="
-              router.push({
-                path: '/admin/product/detail',
-                query: { id: props.row.id },
-              })
-            "
-          />
+          <q-btn flat round icon="edit_note" color="primary" size="10px" @click="openQuickEdit(props.row)">
+            <q-tooltip>Quick Edit</q-tooltip>
+          </q-btn>
+          <q-btn flat round icon="o_visibility" color="grey" size="10px" @click="
+            router.push({
+              path: '/admin/product/detail',
+              query: { id: props.row.id },
+            })
+            " />
           <q-btn flat round icon="more_vert" color="grey" size="10px">
             <q-menu>
-              <q-list style="min-width: 100px">
-                <q-btn
-                  flat
-                  icon="edit"
-                  color="grey"
-                  size="10px"
-                  label="edit"
-                  @click="
-                    router.push({
-                      path: '/admin/product/edit',
-                      query: { id: props.row.id },
-                    })
-                  "
-                />
+              <q-list>
+                <q-btn flat icon="edit" color="grey" size="10px" label="edit" @click="
+                  router.push({
+                    path: '/admin/product/edit',
+                    query: { id: props.row.id },
+                  })
+                  " />
+                <q-btn flat icon="o_delete" label="delete" color="negative" size="10px"
+                  @click="deleteRow(props.row.id)" />
               </q-list>
             </q-menu>
           </q-btn>
@@ -206,28 +128,66 @@
 
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
-          <q-chip
-            size="12px"
-            dense
-            :color="
-              props.row.status === 'active'
-                ? 'green-5'
-                : props.row.status === 'inactive'
-                ? 'red-5'
-                : 'grey'
-            "
-            :label="props.row.status"
-            text-color="white"
-            class="q-mr-sm"
-          />
+          <q-chip size="12px" dense :color="props.row.status === 'active'
+            ? 'green-5'
+            : props.row.status === 'inactive'
+              ? 'red-5'
+              : 'grey'
+            " :label="props.row.status" text-color="white" class="q-mr-sm" />
         </q-td>
       </template>
     </q-table>
+
+    <!-- Quick Edit Dialog -->
+    <q-dialog v-model="quickEditDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">Quick Edit Product</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-form @submit="saveQuickEdit" class="q-gutter-md">
+            <q-input v-model="editForm.code" label="Code" outlined dense />
+            <q-input v-model="editForm.title" label="Title" outlined dense />
+            <q-select v-model="editForm.categories" :options="allCategories" option-label="title" option-value="id"
+              label="Categories" multiple outlined dense emit-value map-options use-chips />
+            <div class="row q-col-gutter-sm">
+              <div class="col-4">
+                <q-input v-model.number="editForm.price" type="number" step="0.01" label="Price" outlined dense />
+              </div>
+              <div class="col-4">
+                <q-input v-model.number="editForm.discount" type="number" step="0.01" label="Discount" outlined dense />
+              </div>
+              <div class="col-4">
+                <q-input v-model.number="editForm.selling_price" type="number" step="0.01" label="Selling Price"
+                  outlined dense />
+              </div>
+            </div>
+            <div class="row q-col-gutter-sm">
+              <div class="col-6">
+                <q-input v-model.number="editForm.stock" type="number" label="Stock" outlined dense
+                  hint="-1 for unlimited" />
+              </div>
+              <div class="col-6">
+                <q-select v-model="editForm.status"
+                  :options="[{ label: 'Active', value: 'active' }, { label: 'Inactive', value: 'inactive' }]"
+                  option-label="label" option-value="value" emit-value map-options label="Status" outlined dense />
+              </div>
+            </div>
+          </q-form>
+        </q-card-section>
+
+        <q-card-actions align="right" class="text-primary">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn flat label="Save" @click="saveQuickEdit" :loading="savingQuickEdit" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "boot/axios";
 import { format, useQuasar } from "quasar";
@@ -236,6 +196,71 @@ const router = useRouter();
 const $q = useQuasar();
 const API_URL = "/api/products";
 const data = ref([]);
+
+const quickEditDialog = ref(false);
+const savingQuickEdit = ref(false);
+const allCategories = ref([]);
+const editForm = ref({
+  id: '',
+  code: '',
+  title: '',
+  categories: [],
+  price: 0,
+  discount: 0,
+  selling_price: 0,
+  stock: 0,
+  status: 'active'
+});
+
+watch(
+  () => [editForm.value.price, editForm.value.discount],
+  ([newPrice, newDiscount]) => {
+    const price = Number(newPrice) || 0;
+    const discount = Number(newDiscount) || 0;
+    editForm.value.selling_price = Number((price - discount).toFixed(2));
+  }
+);
+
+const openQuickEdit = (row) => {
+  editForm.value = {
+    id: row.id,
+    code: row.code,
+    title: row.title,
+    categories: row.categories ? row.categories.map(c => c.id) : [],
+    price: row.price,
+    discount: row.discount,
+    selling_price: row.selling_price,
+    stock: row.stock,
+    status: row.status
+  };
+  quickEditDialog.value = true;
+};
+
+const saveQuickEdit = async () => {
+  savingQuickEdit.value = true;
+  try {
+    await api.put(`${API_URL}/${editForm.value.id}`, editForm.value);
+    $q.notify({ type: "positive", message: "Product updated successfully." });
+    quickEditDialog.value = false;
+    onRequest({ pagination: pagination.value, filter: undefined });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    $q.notify({ type: "negative", message: "Failed to update product." });
+  } finally {
+    savingQuickEdit.value = false;
+  }
+};
+
+const fetchCategories = async () => {
+  try {
+    const res = await api.get("/api/categories/active");
+    if (res.data && res.data.data) {
+      allCategories.value = res.data.data;
+    }
+  } catch (e) {
+    console.error("Error fetching categories:", e);
+  }
+};
 
 const columns = [
   { name: "image", label: "Image", align: "center", field: "image" },
@@ -328,7 +353,7 @@ const pagination = ref({
   sortBy: "id",
   descending: false,
   page: 1,
-  rowsPerPage: 10,
+  rowsPerPage: 35,
   rowsNumber: 0,
 });
 
@@ -337,6 +362,7 @@ onMounted(() => {
     pagination: pagination.value,
     filter: undefined,
   });
+  fetchCategories();
 });
 
 const fetchData = async (

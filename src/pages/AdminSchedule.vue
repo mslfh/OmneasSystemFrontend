@@ -1,14 +1,8 @@
 <template>
   <q-page class="q-pa-sm bg-white schedule-month-view">
     <div class="row items-center justify-between">
-      <q-btn
-        v-if="isAdminOrDesk"
-        :dense="$q.screen.lt.md"
-        label="Schedule"
-        color="accent"
-        @click="openScheduleDialog"
-        class="q-mr-md"
-      />
+      <q-btn v-if="isAdminOrDesk" :dense="$q.screen.lt.md" label="Schedule" color="accent" @click="openScheduleDialog"
+        class="q-mr-md" />
       <!-- View Switcher Component -->
       <schedule-view-switcher />
     </div>
@@ -25,42 +19,24 @@
         Click on date intervals to quickly add schedules
       </q-chip>
     </div>
-    <q-calendar-month
-      ref="calendar"
-      v-model="selectedDate"
-      animated
-      bordered
-      focusable
-      :weekdays="[1, 2, 3, 4, 5, 6, 0]"
-      hoverable
-      no-active-date
-      :focus-type="['day']"
-      :day-min-height="100"
-      @click-day="onClickDay"
-    >
+    <q-calendar-month ref="calendar" v-model="selectedDate" animated bordered focusable
+      :weekdays="[1, 2, 3, 4, 5, 6, 0]" hoverable no-active-date :focus-type="['day']" :day-min-height="100"
+      @click-day="onClickDay">
       <template #day="{ scope: { timestamp } }">
         <template v-for="event in eventsMap[timestamp.date]" :key="event.id">
-          <div
-            :class="badgeClasses(event)"
-            class="my-event"
-            @click="isAdminOrDesk ? openEventDialog(event) : null"
-            :style="!isAdminOrDesk ? 'cursor: default;' : 'cursor: pointer;'"
-          >
+          <div :class="badgeClasses(event)" class="my-event" @click="isAdminOrDesk ? openEventDialog(event) : null"
+            :style="!isAdminOrDesk ? 'cursor: default;' : 'cursor: pointer;'">
             <abbr :title="event.details" class="tooltip">
-              <div
-                :class="[
-                  event.status !== 'inactive'
-                    ? 'bg-' + eventColors[event.title]
-                    : 'bg-grey-5',
-                  'q-mt-xs text-center rounded-borders',
-                  { 'inactive-event': event.status === 'inactive' },
-                ]"
-                :style="
-                  event.status == 'inactive'
-                    ? 'text-decoration: line-through;'
-                    : ''
-                "
-              >
+              <div :class="[
+                event.status !== 'inactive'
+                  ? 'bg-' + eventColors[event.title]
+                  : 'bg-grey-5',
+                'q-mt-xs text-center rounded-borders',
+                { 'inactive-event': event.status === 'inactive' },
+              ]" :style="event.status == 'inactive'
+                ? 'text-decoration: line-through;'
+                : ''
+                ">
                 <div class="text-bold">{{ event.title }}</div>
                 {{ event.time }}
                 <div>{{ event.duration }}h</div>
@@ -73,35 +49,17 @@
     </q-calendar-month>
 
     <!-- Staff Schedule Dialog Component -->
-    <ScheduleStaffSetDialog
-      v-if="isAdminOrDesk"
-      v-model="scheduleDialog"
-      :staff-list="staffList"
-      @save="saveSchedule"
-      @cancel="closeScheduleDialog"
-    />
+    <ScheduleStaffSetDialog v-if="isAdminOrDesk" v-model="scheduleDialog" :staff-list="staffList" @save="saveSchedule"
+      @cancel="closeScheduleDialog" />
 
     <!-- Quick Schedule Dialog Component -->
-    <ScheduleQuickSetMonthDialog
-      v-if="isAdminOrDesk"
-      v-model="dayScheduleDialog"
-      :staff-list="staffList"
-      :work-date="schedule.work_date"
-      :selected-staff="selectedStaff"
-      :time-range="timeRangeModel"
-      :remark="schedule.remark"
-      @save="saveDaySchedule"
-      @cancel="closeDayScheduleDialog"
-    />
+    <ScheduleQuickSetMonthDialog v-if="isAdminOrDesk" v-model="dayScheduleDialog" :staff-list="staffList"
+      :work-date="schedule.work_date" :selected-staff="selectedStaff" :time-range="timeRangeModel"
+      :remark="schedule.remark" @save="saveDaySchedule" @cancel="closeDayScheduleDialog" />
 
     <!-- Event Details Dialog Component -->
-    <ScheduleEventDetailsDialog
-      v-if="isAdminOrDesk"
-      v-model="eventDialog"
-      :event-data="selectedEvent"
-      @save="updateEvent"
-      @delete="deleteEvent"
-    />
+    <ScheduleEventDetailsDialog v-if="isAdminOrDesk" v-model="eventDialog" :event-data="selectedEvent"
+      @save="updateEvent" @delete="deleteEvent" />
   </q-page>
 </template>
 
@@ -148,6 +106,15 @@ const eventsMap = computed(() => {
   events.value.forEach((event) => {
     (map[event.date] = map[event.date] || []).push(event);
   });
+
+  for (const date in map) {
+    map[date].sort((a, b) => {
+      const timeA = a.start_time || "00:00";
+      const timeB = b.start_time || "00:00";
+      return timeA.localeCompare(timeB);
+    });
+  }
+
   return map;
 });
 

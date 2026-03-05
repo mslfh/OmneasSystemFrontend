@@ -66,34 +66,14 @@ function getUserInitials() {
 
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header
-      class="bg-white absolute-top shadow_custom q-mx-lg q-mt-md q-py-xs"
-      style="right: 8px; border-radius: 6px"
-    >
+    <q-header class="bg-white absolute-top shadow_custom q-mx-lg q-mt-md q-py-xs"
+      style="right: 8px; border-radius: 6px">
       <q-toolbar class="no-shadow">
-        <q-btn
-          flat
-          dense
-          round
-          @click="toggleLeftDrawer"
-          icon="menu"
-          aria-label="Menu"
-          color="grey"
-        />
-        <q-input
-          borderless
-          :dense="$q.screen.lt.sm"
-          debounce="300"
-          clearable
-          v-model="searchField"
-          :placeholder="
-            $q.screen.gt.sm && isAdminOrDesk
-              ? 'Search customer by  phone, name or email.'
-              : 'Search'
-          "
-          style="width: 100%; padding-left: 20px"
-          @update:model-value="onSearch"
-        >
+        <q-btn flat dense round @click="toggleLeftDrawer" icon="menu" aria-label="Menu" color="grey" />
+        <q-input borderless :dense="$q.screen.lt.sm" debounce="300" clearable v-model="searchField" :placeholder="$q.screen.gt.sm && isAdminOrDesk
+          ? 'Search customer by  phone, name or email.'
+          : 'Search'
+          " style="width: 100%; padding-left: 20px" @update:model-value="onSearch">
           <template v-slot:before>
             <q-icon name="search" />
           </template>
@@ -106,20 +86,8 @@ function getUserInitials() {
                 <q-item-label caption>{{ user.phone }}</q-item-label>
                 <q-item-label caption>{{ user.email }}</q-item-label>
                 <q-item-label caption>
-                  <q-btn
-                    flat
-                    size="sm"
-                    color="primary"
-                    label="view history"
-                    @click="viewHistory(user)"
-                  />
-                  <q-btn
-                    flat
-                    size="sm"
-                    color="primary"
-                    label="Add Appointment "
-                    @click="addAppointment(user)"
-                  />
+                  <q-btn flat size="sm" color="primary" label="view history" @click="viewHistory(user)" />
+                  <q-btn flat size="sm" color="primary" label="Add Appointment " @click="addAppointment(user)" />
                   <!-- <q-btn
                     flat
                     size="sm"
@@ -142,41 +110,21 @@ function getUserInitials() {
           </q-list>
         </q-menu>
         <div class="q-gutter-sm row items-center no-wrap">
-          <q-btn
-            round
-            dense
-            flat
-            color="grey-8"
-            :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
+          <q-btn round dense flat color="grey-8" :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
             @click="
               () => {
                 zoomDrawer = true;
                 $q.fullscreen.toggle();
               }
-            "
-            v-if="$q.screen.gt.sm"
-          >
+            " v-if="$q.screen.gt.sm">
           </q-btn>
-          <q-btn
-            v-if="false"
-            round
-            dense
-            flat
-            color="grey-8"
-            icon="notifications"
-          >
+          <q-btn v-if="false" round dense flat color="grey-8" icon="notifications">
             <q-badge color="red" text-color="white" floating> 5 </q-badge>
             <q-menu>
               <q-list style="min-width: 100px">
                 <messages></messages>
                 <q-card class="text-center no-shadow no-border">
-                  <q-btn
-                    label="View All"
-                    style="max-width: 120px !important"
-                    flat
-                    dense
-                    class="text-indigo-8"
-                  ></q-btn>
+                  <q-btn label="View All" style="max-width: 120px !important" flat dense class="text-indigo-8"></q-btn>
                 </q-card>
               </q-list>
             </q-menu>
@@ -202,29 +150,17 @@ function getUserInitials() {
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      :width="zoomDrawer ? 70 : 250"
-      bordered
-      class="bg-white text-grey-7 items-center"
-    >
-      <q-scroll-area
-        q-scroll-area
-        style="
+    <q-drawer v-model="leftDrawerOpen" show-if-above :width="zoomDrawer ? 70 : 250" bordered
+      class="bg-white text-grey-7 items-center">
+      <q-scroll-area q-scroll-area style="
           height: calc(100% - 80px);
           padding: 10px;
           margin-top: 80px;
           border-right: 1px solid #ddd;
-        "
-      >
+        ">
         <q-list>
           <!-- Dashboard - Only for Admin and Desk -->
-          <q-item
-            v-if="isAdminOrDesk"
-            to="/admin/dashboard"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="isAdminOrDesk" to="/admin/dashboard" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
@@ -234,11 +170,7 @@ function getUserInitials() {
           </q-item>
 
           <!-- Product - Only for Admin and Desk -->
-          <q-item
-            v-if="isAdminOrDesk"
-            to="/admin/product"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="isAdminOrDesk" to="/admin/product" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="bookmark" />
             </q-item-section>
@@ -248,16 +180,9 @@ function getUserInitials() {
           </q-item>
 
           <!-- Product Information - Only for Admin and Desk -->
-          <q-expansion-item
-            v-if="isAdminOrDesk"
-            icon="inbox"
-            label="Product Info"
-          >
+          <q-expansion-item v-if="isAdminOrDesk" icon="inbox" label="Product Info">
             <q-list class="q-pl-lg">
-              <q-item
-                to="/admin/category"
-                active-class="q-item-no-link-highlighting"
-              >
+              <q-item to="/admin/category" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="o_category" />
                 </q-item-section>
@@ -265,48 +190,35 @@ function getUserInitials() {
                   <q-item-label>Category</q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item
-                to="/admin/item"
-                active-class="q-item-no-link-highlighting"
-              >
+              <q-item to="/admin/item" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="o_description" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>Item</q-item-label>
+                  <q-item-label>Ingredients</q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item
-                to="/admin/attribute"
-                active-class="q-item-no-link-highlighting"
-              >
+              <q-item to="/admin/attribute" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="o_data_object" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>Attribute</q-item-label>
+                  <q-item-label>Menu Options</q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item
-                to="/admin/product-profile"
-                active-class="q-item-no-link-highlighting"
-              >
+              <q-item to="/admin/product-profile" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="o_receipt" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>Profile</q-item-label>
+                  <q-item-label>Tax Profile</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
           </q-expansion-item>
 
           <!-- Invoice - Only for Admin and Desk -->
-          <q-item
-            v-if="isAdminOrDesk"
-            to="/admin/order"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="isAdminOrDesk" to="/admin/order" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="payments" />
             </q-item-section>
@@ -316,11 +228,7 @@ function getUserInitials() {
           </q-item>
 
           <!-- History - Only for Admin and Desk -->
-          <q-item
-            v-if="false"
-            to="/admin/history"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="false" to="/admin/history" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="schedule" />
             </q-item-section>
@@ -330,10 +238,7 @@ function getUserInitials() {
           </q-item>
 
           <!-- Schedule - Visible for all roles -->
-          <q-item
-            to="/admin/schedule"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item to="/admin/schedule" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="calendar_month" />
             </q-item-section>
@@ -343,11 +248,7 @@ function getUserInitials() {
           </q-item>
 
           <!-- Staff - Only for Admin and Desk -->
-          <q-item
-            v-if="isAdminOrDesk"
-            to="/admin/staff"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="isAdminOrDesk" to="/admin/staff" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="storefront" />
             </q-item-section>
@@ -359,10 +260,7 @@ function getUserInitials() {
           <!-- Services - Only for Admin and Desk -->
           <q-expansion-item v-if="false" icon="pages" label="Services">
             <q-list class="q-pl-lg">
-              <q-item
-                to="/admin/package"
-                active-class="q-item-no-link-highlighting"
-              >
+              <q-item to="/admin/package" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="view_list" />
                 </q-item-section>
@@ -370,10 +268,7 @@ function getUserInitials() {
                   <q-item-label>Package</q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item
-                to="/admin/service"
-                active-class="q-item-no-link-highlighting"
-              >
+              <q-item to="/admin/service" active-class="q-item-no-link-highlighting">
                 <q-item-section avatar>
                   <q-icon name="category" />
                 </q-item-section>
@@ -385,11 +280,7 @@ function getUserInitials() {
           </q-expansion-item>
 
           <!-- Voucher - Only for Admin and Desk -->
-          <q-item
-            v-if="false"
-            to="/admin/voucher"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="false" to="/admin/voucher" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="redeem" />
             </q-item-section>
@@ -399,11 +290,7 @@ function getUserInitials() {
           </q-item>
 
           <!-- Setting - Only for Admin and Desk -->
-          <q-item
-            v-if="isAdminOrDesk"
-            to="/admin/setting"
-            active-class="q-item-no-link-highlighting"
-          >
+          <q-item v-if="isAdminOrDesk" to="/admin/setting" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="settings" />
             </q-item-section>
@@ -416,53 +303,29 @@ function getUserInitials() {
 
       <div class="absolute-top" style="height: 100px; padding-left: 10px">
         <div class="absolute-bottom bg-transparent">
-          <q-toolbar
-            class="bg-white text-grey-8 drawer-toolbar"
-            :class="{ 'drawer-mini': zoomDrawer }"
-          >
-            <q-avatar
-              size="40px"
-              style="background-color: #f5f5f5"
-              @click="zoomLeftDrawer"
-              class="drawer-logo"
-            >
+          <q-toolbar class="bg-white text-grey-8 drawer-toolbar" :class="{ 'drawer-mini': zoomDrawer }">
+            <q-avatar size="40px" style="background-color: #f5f5f5" @click="zoomLeftDrawer" class="drawer-logo">
               <img src="../assets/sidebar-dashboard.png" alt="Logo" />
             </q-avatar>
-            <q-toolbar-title
-              v-show="!zoomDrawer"
-              class="text-weight-medium text-grey-8"
-              style="
+            <q-toolbar-title v-show="!zoomDrawer" class="text-weight-medium text-grey-8" style="
                 font-size: 1.3rem;
                 letter-spacing: -1px;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-              "
-            >
+              ">
               {{ APP_TITLE }}
             </q-toolbar-title>
           </q-toolbar>
         </div>
       </div>
 
-      <div
-        class="q-mini-drawer-hide absolute"
-        style="top: 30px; right: -17px"
-        v-if="!zoomDrawer"
-      >
-        <q-btn
-          round
-          flat
-          dense
-          icon="chevron_left"
-          aria-label="Close"
-          @click="zoomLeftDrawer"
-          style="
+      <div class="q-mini-drawer-hide absolute" style="top: 30px; right: -17px" v-if="!zoomDrawer">
+        <q-btn round flat dense icon="chevron_left" aria-label="Close" @click="zoomLeftDrawer" style="
             background-color: rgb(105, 108, 255);
             color: white;
             border: 6px solid rgb(242, 242, 247);
-          "
-        ></q-btn>
+          "></q-btn>
       </div>
     </q-drawer>
 
@@ -478,20 +341,24 @@ function getUserInitials() {
 .shadow_custom {
   box-shadow: 0 3px 8px #303c491f !important;
 }
+
 .drawer-toolbar {
   display: flex;
   align-items: center;
   height: 100px;
   padding: 0 8px;
 }
+
 .drawer-logo {
   margin: 0 auto;
   transition: margin 0.2s;
 }
+
 .drawer-mini .drawer-logo {
   margin-left: auto;
   margin-right: auto;
 }
+
 .drawer-mini .drawer-title {
   display: none !important;
 }
